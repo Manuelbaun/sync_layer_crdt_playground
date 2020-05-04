@@ -10,11 +10,7 @@ void main() {
 
     final syn = SyncLayerImpl('Server');
     syn.db.createTable('todo');
-    // syn.onSync = (rows, tables) {
-    //   // rows.forEach((row) => print(row.prettyJson()));
-    //   tables.forEach(print);
-    //   rows.forEach(print);
-    // };
+
 
     server.listen((HttpRequest request) {
       WebSocketTransformer.upgrade(request).then((WebSocket ws) {

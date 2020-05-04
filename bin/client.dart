@@ -3,7 +3,7 @@ import 'dart:io' show WebSocket;
 import 'dart:async' show Timer;
 import 'dart:math';
 
-import 'package:sync_layer/sync/message.dart';
+import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/sync/sync_imple.dart';
 
 void main() {
@@ -12,11 +12,11 @@ void main() {
     final syn = SyncLayerImpl(localNode);
 
     syn.db.createTable('todo');
-    // syn.onSync = (rows, tables) {
+    // syn.onChange = (rows, tables) {
     //   rows.forEach((row) => print(row.prettyJson()));
     // };
 
-    syn.onSend = (List<SyncMessage> messages) {
+    syn.onSend = (List<Atom> messages) {
       final str = json.encode({'msg': messages});
       ws.add(str);
     };
@@ -39,7 +39,7 @@ void main() {
 
       var done = false;
       // update local state and send to server
-      Timer.periodic(Duration(milliseconds: 1), (t) {
+      Timer.periodic(Duration(milliseconds: 1000), (t) {
         done = !done;
         syn.sendMessages([
           syn.createMsg('todo', todoId, 'done', done),

@@ -1,24 +1,23 @@
 import 'dart:convert';
 
-import 'package:sync_layer/sync/message.dart';
+import 'package:sync_layer/crdts/atom.dart';
 
 class Row {
   String id;
-  // history just for fast lookup!
-  List<SyncMessage> history;
   // the actual object data
-  Map<String, dynamic> obj;
+  final Map<String, dynamic> obj;
+  // history just for fast lookup!
+  final List<Atom> history;
 
-  /// History, youngest message first!
   Row(this.id)
       : history = [],
         obj = {};
 
   // only add messages!!!
-  void add(SyncMessage msg) {
+  void add(Atom msg) {
     obj[msg.column] = msg.value;
     history.add(msg);
-    history.sort();
+    history.sort(); // ASC
   }
 
   String prettyJson() {
@@ -27,7 +26,7 @@ class Row {
   }
 
   /// gets the latest column sync message if exist. else null
-  SyncMessage getLastestColumnUpdate(SyncMessage msg) {
+  Atom getLastestColumnUpdate(Atom msg) {
     // search reversed
     for (var i = history.length - 1; i >= 0; i--) {
       final m = history[i];

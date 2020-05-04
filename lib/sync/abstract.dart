@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/basic/hlc.dart';
-
-import 'message.dart';
+import 'package:sync_layer/crdts/atom.dart';
 
 abstract class SyncableTable<T> {
   final int tableId;
@@ -22,8 +21,8 @@ abstract class SyncableTable<T> {
 
   /// only for synclayer
   ///
-  final _streamMessage = StreamController<SyncMessage>();
-  Stream<SyncMessage> get streamMessage => _streamMessage.stream;
+  final _streamMessage = StreamController<Atom>();
+  Stream<Atom> get streamMessage => _streamMessage.stream;
 
   /// only for synclayer
   void setDbTable(Map<String, dynamic> db_table) {
@@ -35,9 +34,9 @@ abstract class SyncableTable<T> {
   }
 
   /// Here the Strategy LWW of CRDT!
-  void applyMessage(SyncMessage msg);
+  void applyMessage(Atom msg);
 
-  void emitMessage(SyncMessage update);
+  void emitMessage(Atom update);
 }
 
 abstract class SynableObject {
@@ -47,8 +46,8 @@ abstract class SynableObject {
 
 abstract class SyncLayer {
   void registerTable<T>(SyncableTable<T> obj);
-  void addMessage(SyncMessage msg);
-  List<SyncMessage> getMessagesSince(Hlc hypelogicalClock);
+  void addMessage(Atom msg);
+  List<Atom> getMessagesSince(Hlc hypelogicalClock);
 
   Hlc compareTries(String trieJson);
   String getTrieJson();

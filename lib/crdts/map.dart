@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/cuid.dart';
-import 'package:sync_layer/sync/message.dart';
+
 import 'package:sync_layer/basic/hlc.dart';
+
+import 'atom.dart';
 
 ///
 /// A CRDT Map implements the Last Writer Wins Strategy only
@@ -43,7 +45,7 @@ class CRDTMap<K, V> {
   void operator []=(K key, V value) => set(key, value);
 
   // TODO set Multi key, values as one update
-  SyncMessage set(K key, V value) {
+  Atom set(K key, V value) {
     _kv[key] = value;
     _timestamp = Hlc.send(_timestamp);
     _kv_clocks[key] = _timestamp;
@@ -56,7 +58,7 @@ class CRDTMap<K, V> {
   V operator [](Object key) => get(key);
   V get(K key) => _kv[key];
 
-  void mergeRemote(List<SyncMessage> messages) {
+  void mergeRemote(List<Atom> messages) {
     for (final msg in messages) {
       // TODO: call Db-Hook!
 

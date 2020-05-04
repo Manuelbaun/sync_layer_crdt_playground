@@ -68,13 +68,3 @@ int MurmurHashV3(String key, [int seed = 0]) {
   var v = ByteData(8)..setInt64(0, h1);
   return v.getUint32(4);
 }
-
-// void main() {
-//   final s = Stopwatch();
-//   s.start();
-//   final hash = MurmurHashV3('2020-04-24T10:57:49.198Z-0001-97f6c8ef1e121379');
-//   s.stop();
-
-//   print(hash);
-//   print(s.elapsedMicroseconds);
-// }
