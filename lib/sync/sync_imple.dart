@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/merkle_tire_node.dart';
-import 'package:sync_layer/db/db.dart';
+import 'package:sync_layer/db/index.dart';
 
 import 'clock.dart';
 import 'message.dart';
