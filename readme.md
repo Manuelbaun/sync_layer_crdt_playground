@@ -1,4 +1,9 @@
+## inspiration
+
+https://github.com/cachapa/crdt
 http://archagon.net/blog/2018/03/24/data-laced-with-history/
+https://www.dotconferences.com/2019/12/james-long-crdts-for-mortals
+https://cse.buffalo.edu/tech-reports/2014-04.pdf
 
 ## Specs
 
