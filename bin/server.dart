@@ -10,6 +10,11 @@ void main() {
 
     final syn = SyncLayerImpl('Server');
     syn.db.createTable('todo');
+    // syn.onSync = (rows, tables) {
+    //   // rows.forEach((row) => print(row.prettyJson()));
+    //   tables.forEach(print);
+    //   rows.forEach(print);
+    // };
 
     server.listen((HttpRequest request) {
       WebSocketTransformer.upgrade(request).then((WebSocket ws) {
@@ -18,24 +23,29 @@ void main() {
         ws.listen(
           (data) {
             final jsonMsg = json.decode(data);
+
+            final merkle = jsonMsg['merkle'];
+
             if (jsonMsg['msg'] != null) {
               syn.onIncomingJsonMsg(jsonMsg['msg']);
             }
 
             // compare merkle trie and send diffs
-            if (jsonMsg['merkle'] != null) {
-              final Map merkleMap = json.decode(jsonMsg['merkle']);
+            if (merkle != null) {
+              print('Merkle tree requests diff');
+              final Map merkleMap = json.decode(merkle);
               final messages = syn.getDiffMessagesFromIncomingMerkleTrie(merkleMap);
               if (messages.isNotEmpty) {
-                messages.forEach(print);
-                final send = json.encode({'msg': messages});
+                final send = json.encode({'merkle-merge': true, 'msg': messages, 'length': messages.length});
                 ws.add(send);
               }
             }
 
             // broadcast to all others
             for (final _ws in wsSet) {
-              if (_ws != ws && _ws.readyState == WebSocket.open) _ws.add(data);
+              if (_ws != ws && _ws.readyState == WebSocket.open) {
+                _ws.add(data);
+              }
             }
           },
           onDone: () => print('[+]Done :)'),

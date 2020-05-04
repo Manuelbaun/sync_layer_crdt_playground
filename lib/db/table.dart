@@ -10,4 +10,19 @@ class Table {
     rows[id] ??= Row(id);
     return rows[id];
   }
+
+  @override
+  String toString() {
+    return '$name[s]: ${rows.length}';
+  }
+
+  @override
+  Map toMap() {
+    final entries = {};
+    for (final entry in rows.entries) {
+      entries[entry.key] = entry.value.obj;
+    }
+
+    return {'table': name, 'entries': entries};
+  }
 }

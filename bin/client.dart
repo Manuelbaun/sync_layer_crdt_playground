@@ -12,12 +12,12 @@ void main() {
     final syn = SyncLayerImpl(localNode);
 
     syn.db.createTable('todo');
-    syn.onSync = (rows) => rows.forEach((row) => print(row.prettyJson()));
+    // syn.onSync = (rows, tables) {
+    //   rows.forEach((row) => print(row.prettyJson()));
+    // };
 
     syn.onSend = (List<SyncMessage> messages) {
-      final data = {'msg': messages, 'merkle': syn.clock.merkle.toJson()};
-      final str = json.encode(data);
-      print('==> Send: ${str.length}');
+      final str = json.encode({'msg': messages});
       ws.add(str);
     };
 
@@ -25,29 +25,43 @@ void main() {
     if (ws?.readyState == WebSocket.open) {
       // as soon as websocket is connected and ready for use, we can start talking to other end
 
+      // First send local merkle tree and get diffs back
+      final str = json.encode({'merkle': syn.clock.merkle.toJson()});
+      ws.add(str);
+
+      // create first object TODO
+      final todoId = localNode;
       syn.sendMessages([
-        syn.createMsg('todo', '123-' + localNode, 'title', 'My First todo'),
-        syn.createMsg('todo', '123-' + localNode, 'done', false),
+        syn.createMsg('todo', todoId, 'title', 'My todo of $localNode'),
+        syn.createMsg('todo', todoId, 'lastUpdate', DateTime.now().toIso8601String()),
+        syn.createMsg('todo', todoId, 'done', false),
       ]);
 
-      Timer(Duration(seconds: 5), () {
+      var done = false;
+      // update local state and send to server
+      Timer.periodic(Duration(milliseconds: 1), (t) {
+        done = !done;
         syn.sendMessages([
-          syn.createMsg('todo', '123-' + localNode, 'done', true),
+          syn.createMsg('todo', todoId, 'done', done),
+          syn.createMsg('todo', todoId, 'lastUpdate', DateTime.now().toIso8601String())
         ]);
       });
 
       ws.listen(
         (data) {
-          print('<== Recv : ${(data as String).length}');
+          // print('<== Recv : ${(data as String).length}');
 
           final jsonMsg = json.decode(data);
+          final merkleMerge = jsonMsg['merkle-merge'];
+          final messages = jsonMsg['msg'];
 
-          if (jsonMsg['msg'] != null) {
-            syn.onIncomingJsonMsg(jsonMsg['msg']);
+          if (merkleMerge != null) {
+            final msgLength = jsonMsg['length'];
+            print('receive messages from Merkle diffing: $msgLength');
           }
 
-          if (jsonMsg['merkle'] != null) {
-            // print(jsonMsg['merkle']);
+          if (messages != null) {
+            syn.onIncomingJsonMsg(messages);
           }
         },
         onDone: () => print('[+]Done :)'),

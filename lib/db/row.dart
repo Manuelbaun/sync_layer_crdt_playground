@@ -35,4 +35,9 @@ class Row {
     }
     return null;
   }
+
+  @override
+  String toString() {
+    return 'Row(id: $id : history-length: ${history.length})';
+  }
 }

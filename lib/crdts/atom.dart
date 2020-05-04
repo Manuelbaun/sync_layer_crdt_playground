@@ -19,7 +19,7 @@ class Atom<T> {
   String toString() => '$id:$value';
 
   /// Returns the Atom with the "higher" ID
-  static Atom max(Atom a, Atom b) {
-    return Id.greater(a.id, b.id) ? a : b;
-  }
+  // static Atom max(Atom a, Atom b) {
+  //   return Id.greater(a.id, b.id) ? a : b;
+  // }
 }

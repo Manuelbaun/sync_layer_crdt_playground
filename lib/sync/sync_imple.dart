@@ -6,7 +6,7 @@ import 'package:sync_layer/db/index.dart';
 import 'clock.dart';
 import 'message.dart';
 
-typedef ChangedRows = void Function(List<Row> rows);
+typedef ChangedRows = void Function(Set<Row> rows, Set<Table> tabels);
 
 class SyncLayerImpl {
   final DB db = DB();
@@ -21,13 +21,14 @@ class SyncLayerImpl {
 
   /// apply assumes, messages are not present in the db!
   void applyMessages(List<SyncMessage> messages) {
-    final changeSet = <Row>{};
+    final changedRows = <Row>{};
+    final changedTables = <Table>{};
 
     for (final msg in messages) {
       if (!db.messageExistInLocalSet(msg)) {
         // test if table exits
         final table = db.getTable(msg.table);
-
+        changedTables.add(table);
         if (table != null) {
           // if row does not exist, new row will be added
           final row = table.getRow(msg.row);
@@ -36,7 +37,7 @@ class SyncLayerImpl {
           // Add value to row
           if (obj == null || obj.ts < msg.ts) {
             row.add(msg);
-            changeSet.add(row);
+            changedRows.add(row);
           }
 
           /// stores message in db
@@ -60,7 +61,7 @@ class SyncLayerImpl {
       } // else skip that message
     }
 
-    if (onSync != null) onSync(changeSet.toList());
+    if (onSync != null) onSync(changedRows, changedTables);
   }
 
   void receivingMessages(List<SyncMessage> messages) {

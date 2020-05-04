@@ -49,7 +49,7 @@ class CRDTMap<K, V> {
     _kv_clocks[key] = _timestamp;
 
     // TODO: call Db-Hook!
-    return SyncMessage(objId, hlc, {_kv[key]: value});
+    // return SyncMessage(objId, hlc, {_kv[key]: value});
   }
 
   /// get value by key. Same property as the underlaying map
@@ -62,7 +62,7 @@ class CRDTMap<K, V> {
 
       /// only merge if Atom of remote > then local
 
-      for (final kv in msg.values.entries) {
+      for (final kv in msg.value.entries) {
         final key = kv.column;
         final value = kv.value;
 
