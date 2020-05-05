@@ -145,23 +145,29 @@ class Hlc implements Comparable<Hlc> {
     return Hlc(millisNew, counterNew, local.node);
   }
 
-  String toJson() => toString();
+  String toJson() => toString2();
 
   @override
-  String toString() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
+  String toString() {
+    return '{ts: ${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}, '
+        'c: ${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}, '
+        'node: $node}';
+  }
+
+  String toString2() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
       '-'
       '${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
       '-$node';
 
-  String toString2() => '${millis}-${counter.toRadixString(16)}-$node';
-  String toString3() => '${logicalTime}-$node';
-  String toString4() => '${logicalTime.toRadixString(36)}-$node';
+  // String toString() => '${millis}-${counter.toRadixString(16)}-$node';
+  // String toString3() => '${logicalTime}-$node';
+  // String toString4() => '${logicalTime.toRadixString(36)}-$node';
 
   @override
-  int get hashCode => MurmurHashV3(toString());
-  int get hashCode2 => MurmurHashV3(toString2());
-  int get hashCode3 => MurmurHashV3(toString3());
-  int get hashCode4 => MurmurHashV3(toString4());
+  int get hashCode => MurmurHashV3(toString2());
+  // int get hashCode2 => MurmurHashV3(toString2());
+  // int get hashCode3 => MurmurHashV3(toString3());
+  // int get hashCode4 => MurmurHashV3(toString4());
 
   @override
   bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;

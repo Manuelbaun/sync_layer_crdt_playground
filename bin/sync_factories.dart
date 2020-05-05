@@ -26,7 +26,7 @@ class Todo {
   @override
   String toString() {
     final rowData = _row.toString();
-    return 'Todo($rowData , lastUpdated: ${_row.lastUpdated})';
+    return 'Todo($rowData , hlc: ${_row.lastUpdated})';
   }
 }
 
@@ -66,7 +66,7 @@ class Assignee {
 
   @override
   String toString() {
-    return 'Assignee(${row.obj}: lastUpdated:${row.lastUpdated})';
+    return 'Assignee(${row.obj}: hlc:${row.lastUpdated})';
   }
 }
 
@@ -162,22 +162,24 @@ void main() {
   todo2.assignee.department = 'Firebase';
 
   print(todo11);
-  // syn.db.getTable('todo').rows.values.forEach(print);
-  // syn1.db.getTable('todo').rows.values.forEach(print);
-  // syn2.db.getTable('todo').rows.values.forEach(print);
+  syn.db.getTable('todo').rows.values.forEach(print);
+  syn1.db.getTable('todo').rows.values.forEach(print);
+  syn2.db.getTable('todo').rows.values.forEach(print);
 
-  // Timer.periodic(Duration(milliseconds: 2000), (t) {
-  //   final todo = tab1.create('Next Todo ${t.tick}');
-  //   print(todo);
+  Timer.periodic(Duration(milliseconds: 2000), (t) {
+    final todo = tab1.create('Next Todo ${t.tick}');
+    print(todo);
 
-  //   final to = tab11.read(todo._row.id);
-  //   final to2 = tab21.read(todo._row.id);
+    final to = tab11.read(todo._row.id);
+    final to2 = tab21.read(todo._row.id);
 
-  //   Timer(Duration(milliseconds: 100), () {
-  //     to.status = true;
-  //     print(todo);
-  //     print(to);
-  //     print(to2);
-  //   });
-  // });
+    Timer(Duration(milliseconds: 100), () {
+      to.status = true;
+      to.assignee = tabAss.create('Firehouse', 'Peter', 'Pan');
+
+      print(todo);
+      print(to);
+      print(to2);
+    });
+  });
 }
