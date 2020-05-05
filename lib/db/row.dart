@@ -28,6 +28,13 @@ class Row {
     objHlc[msg.key] = msg.ts;
   }
 
+  int getLatestUpdate() {
+    final max = objHlc.values.reduce((a, b) => a > b ? a : b);
+    return max.millis;
+  }
+
+  DateTime get lastUpdated => DateTime.fromMillisecondsSinceEpoch(getLatestUpdate());
+
   dynamic operator [](key) => obj[key];
 
   operator []=(key, value) {
