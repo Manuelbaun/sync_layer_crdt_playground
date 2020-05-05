@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:sync_layer/basic/cuid.dart';
-
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/index.dart';
 
 import 'atom.dart';
 
@@ -10,100 +8,75 @@ import 'atom.dart';
 /// A CRDT Map implements the Last Writer Wins Strategy only
 /// This map can be used to represent a Row in a database table
 ///
+/// This is a general CRDT Map and can be standalone
+///
 class CRDTMap<K, V> {
   final String objId;
 
+  // stores the value
+  final Map<K, V> _obj = <K, V>{};
+  // stores the Hlc for each Key
+  final Map<K, Hlc> _objHlc = <K, Hlc>{};
+
+  final history = <Atom>[];
+  final historySet = <int>{};
+
   // the highes of all _clocks!!
   Hlc _timestamp;
-
-  // stores the value
-  Map<K, V> _kv;
-
-  // maybe can be made different
-  // stores the Hlc for each Key
-  Map<K, Hlc> _kv_clocks;
-
-  // getters
-  // int get owner => _owner;
   Hlc get hlc => _timestamp;
-  Map<K, V> get map => _kv;
 
-  CRDTMap([String objId]) : objId = objId ?? newCuid() {
-    // TODO: get latest hlc from somewhere!!!
-    // todo objId,
-    _kv = <K, V>{};
-    _kv_clocks = <K, Hlc>{};
-  }
+  CRDTMap([String objId]) : objId = objId ?? newCuid();
 
   factory CRDTMap.fromMap(Map<String, V> map) {
-    return CRDTMap(map['objId'] as String)
-      .._kv = (map['kv'] as Map<K, V>)
-      .._kv_clocks = (map['kv_clocks'] as Map<K, Hlc>);
+    final obj = (map['obj'] as Map);
+    final objHlc = (map['objHlc'] as Map);
+
+    return CRDTMap(map['objId'] as String).._obj.addAll(obj).._objHlc.addAll(objHlc);
   }
 
   /// This funtion just overrides the map value
   void operator []=(K key, V value) => set(key, value);
 
-  // TODO set Multi key, values as one update
   Atom set(K key, V value) {
-    _kv[key] = value;
+    // Todo: form Atom
     _timestamp = Hlc.send(_timestamp);
-    _kv_clocks[key] = _timestamp;
-
-    // TODO: call Db-Hook!
-    // return SyncMessage(objId, hlc, {_kv[key]: value});
+    Atom<K, V>(_timestamp, null, objId, key, value);
+    _obj[key] = value;
+    _objHlc[key] = _timestamp;
   }
 
   /// get value by key. Same property as the underlaying map
   V operator [](Object key) => get(key);
-  V get(K key) => _kv[key];
+  V get(K key) => _obj[key];
 
   void mergeRemote(List<Atom> messages) {
     for (final msg in messages) {
-      // TODO: call Db-Hook!
+      if (!historySet.contains(msg.hashCode)) {
+        historySet.add(msg.hashCode);
+        history.add(msg);
 
-      /// only merge if Atom of remote > then local
+        /// only merge if Atom of remote > then local
+        _timestamp = Hlc.recv(_timestamp, msg.ts);
 
-      for (final kv in msg.value.entries) {
-        final key = kv.column;
-        final value = kv.value;
+        final key = msg.key as K;
+        final value = msg.value;
 
         // if localtime is smaller..
-        if (_kv_clocks[key] < msg.ts) {
-          _kv[key] = value;
-          _kv_clocks[key] = msg.ts;
-        } else if (_kv[key] == null)
-        // if no local entry exist
-        {
-          _kv[key] = value;
-          _kv_clocks[key] = msg.ts;
-        } else {
-          //TODO: else ignore incoming update?
-          print('...ignore incoming remote messages: ${msg.ts}');
-        }
+        if (_objHlc[key] < msg.ts) {
+          _obj[key] = value;
+          _objHlc[key] = msg.ts;
+        } else if (_obj[key] == null) {
+          // if no local entry exist
+          _obj[key] = value;
+          _objHlc[key] = msg.ts;
+        } else if (_objHlc[key] == msg.ts) {
+          // TODO: sort by nodeid
+
+        } // else ignore
       }
     }
-  }
 
-  bool superset(CRDTMap m) {
-    return false;
-    // if (_kv.length < m.map.length) return false;
-
-    // for (final remoteEntry in m.map.entries) {
-    //   final local = _kv[remoteEntry.key];
-    //   if (local == null) {
-    //     return false;
-    //   } else if (remoteEntry.value.id > local.id) {
-    //     return false;
-    //   }
-    // }
-
-    // return true;
-  }
-
-  bool validate() {
-    // think about a validation
-    return false;
+    history.sort();
   }
 
   @override
@@ -120,7 +93,7 @@ class CRDTMap<K, V> {
   int get hashCode {
     var hashcode = 0;
 
-    for (final entry in _kv.entries) {
+    for (final entry in _obj.entries) {
       hashcode ^= (entry.key.hashCode) ^ entry.value.hashCode;
     }
 
@@ -129,7 +102,11 @@ class CRDTMap<K, V> {
 
   @override
   String toString() {
-    final obj = {'id': objId, 'ts': hlc, 'kv': _kv};
+    final obj = {
+      'id': objId,
+      'obj': _obj,
+      'objHlc': _objHlc,
+    };
     return json.encode(obj);
   }
 }

@@ -2,22 +2,30 @@ import 'dart:convert';
 
 import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/crdts/clock.dart';
 import 'package:sync_layer/db/index.dart';
-
-import 'clock.dart';
 
 typedef ChangedRows = void Function(Set<Row> rows, Set<Table> tabels);
 
 class SyncLayerImpl {
-  final DB db = DB();
-  final Clock clock;
+  DB _db;
+  DB get db => _db;
+
   final String nodeId;
 
   ChangedRows onChange;
   Function onSend;
   Function onReceived;
 
-  SyncLayerImpl(this.nodeId) : clock = Clock(nodeId);
+  // Time Related
+  final Clock clock;
+  final MerkleTrie trie;
+
+  SyncLayerImpl(this.nodeId, [MerkleTrie trie])
+      : clock = Clock(nodeId),
+        trie = trie ?? MerkleTrie() {
+    _db = DB(this);
+  }
 
   /// apply assumes, messages are not present in the db!
   void applyMessages(List<Atom> messages) {
@@ -25,32 +33,33 @@ class SyncLayerImpl {
     final changedTables = <Table>{};
 
     for (final msg in messages) {
-      if (!db.messageExistInLocalSet(msg)) {
+      if (!_db.messageExistInLocalSet(msg)) {
         // test if table exits
-        final table = db.getTable(msg.table);
+        final table = _db.getTable(msg.classType);
         if (table != null) {
           changedTables.add(table);
+
           // if row does not exist, new row will be added
-          final row = table.getRow(msg.row);
-          final obj = row.getLastestColumnUpdate(msg);
+          final row = table.getRow(msg.id);
+          final hlc = row.getColumnHlc(msg);
 
           // Add value to row
-          if (obj == null || obj.ts < msg.ts) {
-            row.add(msg);
+          if (hlc == null || hlc < msg.ts) {
+            row.setColumnValueBySyncLayer(msg);
             changedRows.add(row);
           }
 
           /// stores message in db
-          if (obj == null || obj.ts != msg.ts) {
-            db.addToAllMessage(msg);
+          if (hlc == null || hlc != msg.ts) {
+            _db.addToAllMessage(msg);
             // addes messages to trie
-            clock.merkle.build([msg.ts]);
+            trie.build([msg.ts]);
           } else {
             /// is it possible for two messages from different note to have the same ts?
-            if (obj.ts.node != msg.ts.node) {
+            if (hlc.node != msg.ts.node) {
               // what should happen now?
-              print('Two Timestamps have the exact same logicaltime on two different nodes! $obj - $msg');
-              // Todo: Throw error
+              // TODO: sort by node?
+              print('Two Timestamps have the exact same logicaltime on two different nodes! $hlc - $msg');
             }
           }
         } else {
@@ -61,7 +70,11 @@ class SyncLayerImpl {
       } // else skip that message
     }
 
-    if (onChange != null) onChange(changedRows, changedTables);
+    if (onChange != null) {
+      if (changedRows.isNotEmpty || changedTables.isNotEmpty) {
+        onChange(changedRows, changedTables);
+      }
+    }
   }
 
   void receivingMessages(List<Atom> messages) {
@@ -81,7 +94,7 @@ class SyncLayerImpl {
   void synchronize(List<Atom> messages, [int since]) async {
     if (since != null && since != 0) {
       var ts = clock.getHlc(since, 0, nodeId);
-      messages = db.getMessagesSince(ts.logicalTime);
+      messages = _db.getMessagesSince(ts.logicalTime);
     }
 
     /// send via network!
@@ -90,8 +103,8 @@ class SyncLayerImpl {
     }
   }
 
-  Atom createMsg(String table, String row, String column, dynamic value) {
-    return Atom(clock.getForSend(), table, row, column, value);
+  Atom createAtom(String classType, String id, String column, dynamic value) {
+    return Atom(clock.getForSend(), classType, id, column, value);
   }
 
   void onIncomingJsonMsg(List<dynamic> msgs) {
@@ -104,14 +117,14 @@ class SyncLayerImpl {
 
   List<Atom> getDiffMessagesFromIncomingMerkleTrie(Map merkleMap) {
     final clientMerkle = MerkleTrie.fromMap(merkleMap, 36);
-    final tsString = clock.merkle.diff(clientMerkle);
+    final tsString = trie.diff(clientMerkle);
 
     if (tsString != null) {
       // minutes to ms
       final ts = int.parse(tsString, radix: 36) * 60000;
       // minutes to logicalTime
 
-      final messagestoSend = db.getMessagesSince(ts << 16);
+      final messagestoSend = _db.getMessagesSince(ts << 16);
       return messagestoSend;
     }
     return [];

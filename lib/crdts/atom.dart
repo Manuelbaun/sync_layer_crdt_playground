@@ -1,18 +1,33 @@
 import 'dart:convert';
 import 'package:sync_layer/basic/hlc.dart';
 
-class Atom implements Comparable<Atom> {
+class KeyValue<K, V> {
+  final K key;
+  final V value;
+  KeyValue(this.key, this.value);
+}
+
+/// TODO: could probably be optimized
+class Atom<K, V> implements Comparable<Atom> {
   final Hlc ts;
-  final String table; // 32 Bit
-  final String row; // cuid id!
-  final String column;
-  final dynamic value;
+
+  /// In Context  of a Db, it's the **[Table]** id
+  final String classType;
+
+  /// in Context of  a Db, its the **[Row]** id could be cuid id or any other
+  final String id;
+
+  /// In context ob a Db it is the **[column]**
+  final K key;
+
+  /// In context of a Db its the **[value]** of the column
+  final V value;
 
   Atom(
     this.ts,
-    this.table,
-    this.row,
-    this.column,
+    this.classType,
+    this.id,
+    this.key,
     this.value,
   );
 
@@ -24,16 +39,16 @@ class Atom implements Comparable<Atom> {
 
   Atom copyWith({
     Hlc ts,
-    String tableId,
-    String rowId,
-    String column,
-    dynamic value,
+    String classType,
+    String id,
+    K key,
+    V value,
   }) {
-    return Atom(
+    return Atom<K, V>(
       ts ?? this.ts,
-      tableId ?? table,
-      rowId ?? row,
-      column ?? this.column,
+      classType ?? this.classType,
+      id ?? this.id,
+      key ?? this.key,
       value ?? this.value,
     );
   }
@@ -41,9 +56,9 @@ class Atom implements Comparable<Atom> {
   Map<String, dynamic> toMap() {
     return {
       'ts': ts.toString(),
-      'tableId': table,
-      'rowId': row,
-      'column': column,
+      'class': classType,
+      'id': id,
+      'key': key,
       'value': value,
     };
   }
@@ -53,31 +68,30 @@ class Atom implements Comparable<Atom> {
 
     return Atom(
       Hlc.parse(map['ts']),
-      map['tableId'],
-      map['rowId'],
-      map['column'],
+      map['class'],
+      map['id'],
+      map['key'],
       map['value'],
     );
   }
 
   String toJson() => json.encode(toMap());
-
   static Atom fromJson(String source) => fromMap(json.decode(source));
 
   @override
   String toString() {
-    return 'SyncMessage(ts: $ts, tableId: $table, rowId: $row, column: $column, value: $value)';
+    return 'SyncMessage(ts: $ts, class: $classType, id: $id, key: $key, value: $value)';
   }
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is Atom && o.ts == ts && o.table == table && o.row == row && o.column == column && o.value == value;
+    return o is Atom && o.ts == ts && o.classType == classType && o.id == id && o.key == key && o.value == value;
   }
 
   @override
   int get hashCode {
-    return ts.hashCode ^ table.hashCode ^ row.hashCode ^ column.hashCode ^ value.hashCode;
+    return ts.hashCode ^ classType.hashCode ^ id.hashCode ^ key.hashCode ^ value.hashCode;
   }
 }

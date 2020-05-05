@@ -1,23 +1,38 @@
 import 'dart:convert';
 
+import 'package:sync_layer/basic/hlc.dart';
 import 'package:sync_layer/crdts/atom.dart';
 
+import 'table.dart';
+
 class Row {
+  /// Row id
   String id;
-  // the actual object data
-  final Map<String, dynamic> obj;
-  // history just for fast lookup!
-  final List<Atom> history;
 
-  Row(this.id)
-      : history = [],
-        obj = {};
+  /// Ref to the Table
+  Table table;
 
-  // only add messages!!!
-  void add(Atom msg) {
-    obj[msg.column] = msg.value;
-    history.add(msg);
-    history.sort(); // ASC
+  /// the actual object data
+  final Map<String, dynamic> obj = {};
+  final Map<String, Hlc> objHlc = {};
+
+  Row(this.id, this.table)
+      : assert(id != null && id.isNotEmpty, 'Row Id needs a valid ID!'),
+        assert(table != null, 'Table prop cant be null');
+
+  /// gets the latest column sync message if exist. else null
+  Hlc getColumnHlc(Atom msg) => objHlc[msg.key];
+
+  void setColumnValueBySyncLayer(Atom msg) {
+    obj[msg.key] = msg.value;
+    objHlc[msg.key] = msg.ts;
+  }
+
+  dynamic operator [](key) => obj[key];
+
+  operator []=(key, value) {
+    final a = table.syn.createAtom(table.name, id, key, value);
+    table.syn.applyMessages([a]);
   }
 
   String prettyJson() {
@@ -25,18 +40,17 @@ class Row {
     return encoder.convert({'_id': id, ...obj});
   }
 
-  /// gets the latest column sync message if exist. else null
-  Atom getLastestColumnUpdate(Atom msg) {
-    // search reversed
-    for (var i = history.length - 1; i >= 0; i--) {
-      final m = history[i];
-      if (m.column == msg.column) return m;
-    }
-    return null;
-  }
+  @override
+  String toString() => 'id: $id, $obj';
 
   @override
-  String toString() {
-    return 'Row(id: $id : history-length: ${history.length})';
+  int get hashCode {
+    var hashcode = 0;
+
+    for (final entry in obj.entries) {
+      hashcode ^= (entry.key.hashCode) ^ entry.value.hashCode;
+    }
+
+    return hashcode;
   }
 }

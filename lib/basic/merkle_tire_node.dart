@@ -167,6 +167,10 @@ class MerkleTrie {
     var encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(root.toMap());
   }
+
+  Map<String, dynamic> toMap() {
+    return root.toMap();
+  }
 }
 
 class KeysLR {
