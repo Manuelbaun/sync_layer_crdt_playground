@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message AtomBin {
+  int64 ts = 1;
+  int32 node = 2;
+  string id = 3;
+  int32 type = 4;
+  int32 key = 5;
+
+  oneof values {
+    int32 n = 6;
+    int64 n64 = 7;
+    string s = 8;
+  }
+}
