@@ -49,27 +49,27 @@ class CRDTMap<K, V> {
   V operator [](Object key) => get(key);
   V get(K key) => _obj[key];
 
-  void mergeRemote(List<Atom> messages) {
-    for (final msg in messages) {
-      if (!historySet.contains(msg.hashCode)) {
-        historySet.add(msg.hashCode);
-        history.add(msg);
+  void mergeRemote(List<Atom> atoms) {
+    for (final atom in atoms) {
+      if (!historySet.contains(atom.hashCode)) {
+        historySet.add(atom.hashCode);
+        history.add(atom);
 
         /// only merge if Atom of remote > then local
-        _timestamp = Hlc.recv(_timestamp, msg.ts);
+        _timestamp = Hlc.recv(_timestamp, atom.ts);
 
-        final key = msg.key as K;
-        final value = msg.value;
+        final key = atom.key as K;
+        final value = atom.value;
 
         // if localtime is smaller..
-        if (_objHlc[key] < msg.ts) {
+        if (_objHlc[key] < atom.ts) {
           _obj[key] = value;
-          _objHlc[key] = msg.ts;
+          _objHlc[key] = atom.ts;
         } else if (_obj[key] == null) {
           // if no local entry exist
           _obj[key] = value;
-          _objHlc[key] = msg.ts;
-        } else if (_objHlc[key] == msg.ts) {
+          _objHlc[key] = atom.ts;
+        } else if (_objHlc[key] == atom.ts) {
           // TODO: sort by nodeid
 
         } // else ignore

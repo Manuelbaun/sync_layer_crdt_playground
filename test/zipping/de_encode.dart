@@ -9,11 +9,11 @@ import 'package:sync_layer/utils/measure.dart';
 import 'package:faker/faker.dart';
 
 void main() {
-  List send = [];
-  List recv = [];
   final rand = Random();
+  final sendAtoms = <AtomBinary>[];
+  final recvAtoms = <AtomBinary>[];
 
-  List<String> bytes = [];
+  final bytes = <String>[];
   for (var i = 0; i < 1000; i++) {
     final ts = Hlc(faker.date.dateTime(minYear: 2000, maxYear: 2020).millisecondsSinceEpoch);
     final node = rand.nextInt(328498234);
@@ -22,16 +22,17 @@ void main() {
     final value = faker.lorem.words(30).join(' ');
 
     final a = AtomBinary(ts.logicalTime, node, type, newCuid(), key, value);
-    send.add(a);
+    sendAtoms.add(a);
   }
-  var msg;
+
   var compressed;
+  var msg;
   measureExecution("compress data", () {
-    for (var msg in send) {
-      final b = msg.toByte();
-      final ss = String.fromCharCodes(b);
-      bytes.add(ss);
+    for (var atom in sendAtoms) {
+      final b = atom.toByte();
+      bytes.add(String.fromCharCodes(b));
     }
+
     msg = bytes.join(';\0');
     compressed = lzma.encode(msg.codeUnits);
   });
@@ -46,7 +47,7 @@ void main() {
     for (var msg in strr) {
       var b = Uint8List.fromList(msg.codeUnits);
       final a = AtomBinary.from(b);
-      recv.add(a);
+      recvAtoms.add(a);
     }
   });
 
@@ -55,9 +56,9 @@ void main() {
   print(compressed.length / msg.length);
   print(decompressed.length);
 
-  for (var i = 0; i < send.length; i++) {
-    final a = send[i];
-    final b = recv[i];
+  for (var i = 0; i < sendAtoms.length; i++) {
+    final a = sendAtoms[i];
+    final b = recvAtoms[i];
 
     // print(a == b);
   }
@@ -65,41 +66,3 @@ void main() {
   // send.forEach(print);
   // recv.forEach(print);
 }
-
-// final ts = DateTime(2000).millisecondsSinceEpoch;
-// final id = newCuid();
-// final value = 'Hello world';
-// final nodeID = 12345667;
-// final type = 1;
-// final key = 1;
-
-// void measureAtomBinar1() {
-//   print('-------------------');
-//   print('measureAtomBinar1');
-//   AtomBinary atom;
-//   AtomBinary atomCopy;
-//   Uint8List buff;
-
-//   final val = value;
-//   measureExecution('To Atom', () {
-//     atom = AtomBinary(ts, nodeID, type, id, key, val);
-//   });
-
-//   measureExecution('toBytes', () {
-//     buff = atom.toByte();
-//   });
-
-//   measureExecution('from bytes', () {
-//     atomCopy = AtomBinary.from(buff);
-//   });
-
-//   print(atom);
-//   print(atomCopy);
-//   print(buff.length);
-
-//   measureExecution('Complete', () {
-//     atom = AtomBinary(ts, nodeID, type, id, key, val);
-//     buff = atom.toByte();
-//     atomCopy = AtomBinary.from(buff);
-//   });
-// }

@@ -34,7 +34,7 @@ abstract class SyncableTable<T> {
   }
 
   /// Here the Strategy LWW of CRDT!
-  void applyMessage(Atom msg);
+  void applyMessage(Atom atom);
 
   void emitMessage(Atom update);
 }
@@ -46,8 +46,8 @@ abstract class SynableObject {
 
 abstract class SyncLayer {
   void registerTable<T>(SyncableTable<T> obj);
-  void addMessage(Atom msg);
-  List<Atom> getMessagesSince(Hlc hypelogicalClock);
+  void addMessage(Atom atom);
+  List<Atom> getAtomsSince(Hlc hypelogicalClock);
 
   Hlc compareTries(String trieJson);
   String getTrieJson();

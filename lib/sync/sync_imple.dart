@@ -100,10 +100,10 @@ class SyncLayerImpl {
           /// stores message in db
           if (hlc == null || hlc != atom.ts) {
             _db.addToAllMessage(atom);
-            // addes messages to trie
+            // addes Atoms to trie
             trie.build([atom.ts]);
           } else {
-            /// is it possible for two messages from different note to have the same ts?
+            /// is it possible for two atoms from different note to have the same ts?
             if (hlc.node != atom.ts.node) {
               // what should happen now?
               // TODO: sort by node?
@@ -144,9 +144,9 @@ class SyncLayerImpl {
   }
 
   ///
-  void applyAndSendAtoms(List<Atom> messages) {
-    _applyAtoms(messages);
-    synchronize(messages);
+  void applyAndSendAtoms(List<Atom> atoms) {
+    _applyAtoms(atoms);
+    synchronize(atoms);
   }
 
   /// [since] in millisecond
@@ -155,7 +155,7 @@ class SyncLayerImpl {
   void synchronize(List<Atom> atoms, [int since]) async {
     if (since != null && since != 0) {
       var ts = clock.getHlc(since, 0, nodeId);
-      atoms = _db.getMessagesSince(ts.logicalTime);
+      atoms = _db.getAtomsSince(ts.logicalTime);
     }
 
     if (atoms.isNotEmpty && _updatesStreamCrtl.hasListener) {
@@ -176,11 +176,11 @@ class SyncLayerImpl {
 
   Uint8List computeDiffsToState(Uint8List state) {
     Map remoteMerkle = deserialize(state).cast<int, dynamic>();
-    final atoms = getDiffMessagesFromIncomingMerkleTrie(remoteMerkle);
+    final atoms = getDiffAtomsFromIncomingMerkleTrie(remoteMerkle);
     return _atomsToBuff(atoms);
   }
 
-  List<Atom> getDiffMessagesFromIncomingMerkleTrie(Map<int, dynamic> remoteMerkle) {
+  List<Atom> getDiffAtomsFromIncomingMerkleTrie(Map<int, dynamic> remoteMerkle) {
     final remote = MerkleTrie.fromMap(remoteMerkle, 36);
     final tsString = trie.diff(remote);
 
@@ -188,9 +188,7 @@ class SyncLayerImpl {
       // minutes to ms
       final ts = int.parse(tsString, radix: 36) * 60000;
       // minutes to logicalTime
-
-      final messagestoSend = _db.getMessagesSince(ts << 16);
-      return messagestoSend;
+      return _db.getAtomsSince(ts << 16);
     }
     return [];
   }
@@ -223,24 +221,24 @@ class SyncLayerImpl {
 
 //     obj.setDbTable(table);
 
-//     obj.streamMessage.listen((msg) {});
+//     obj.streamMessage.listen((atom) {});
 //   } else {
 //     throw AssertionError('Table with id: ${obj.tableId} already registere#');
 //   }
 // }
 
 // @override
-// void addMessage(SyncMessage msg) {
-//   if (!_allMessages.containsKey(msg)) {
-//     _allMessages[msg.id] = msg.msg;
-//     _trieRoot.build([Hlc.fromLogicalTime(msg.id.ts)]);
+// void addMessage(SyncMessage atom) {
+//   if (!_allAtoms.containsKey(atom)) {
+//     _allAtoms[atom.id] = atom.atom;
+//     _trieRoot.build([Hlc.fromLogicalTime(atom.id.ts)]);
 
-//     _tableMapper[msg.msg.table].applyMessage(msg);
+//     _tableMapper[atom.atom.table].applyMessage(atom);
 //   }
 // }
 
 // @override
-// List<SyncMessage> getMessagesSince(int hypelogicalClock) {
+// List<SyncMessage> getAtomsSince(int hypelogicalClock) {
 //   throw AssertionError('Please implement me!');
 // }
 

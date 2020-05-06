@@ -24,11 +24,11 @@ class Row {
         assert(table != null, 'Table prop cant be null');
 
   /// gets the latest column sync message if exist. else null
-  Hlc getColumnHlc(Atom msg) => objHlc[msg.key];
+  Hlc getColumnHlc(Atom atom) => objHlc[atom.key];
 
-  void setColumnValueBySyncLayer(Atom msg) {
-    obj[msg.key] = msg.value;
-    objHlc[msg.key] = msg.ts;
+  void setColumnValueBySyncLayer(Atom atom) {
+    obj[atom.key] = atom.value;
+    objHlc[atom.key] = atom.ts;
   }
 
   Hlc get lastUpdated => objHlc.values.reduce((a, b) => a > b ? a : b);

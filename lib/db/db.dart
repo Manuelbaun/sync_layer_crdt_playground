@@ -2,21 +2,21 @@ import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/db/table.dart';
 
 class DB {
-  /// contains all received messages
+  /// contains the "database tables"
   final Map<String, Table> _db = {};
 
   /// for quick access and sync between client
-  /// _allMessages is sorted [DESC]!!
-  final List<Atom> _allMessages = [];
-  List<Atom> get allMessages => _allMessages;
+  /// _allAtoms is sorted [DESC]!!
+  final List<Atom> _allAtoms = [];
+  List<Atom> get allAtoms => _allAtoms;
 
-  // remembers if messages already exits
-  final Set<int> _allMessagesHashcodes = {};
+  // remembers if atom already exits
+  final Set<int> _allAtomsHashcodes = {};
 
-  void addToAllMessage(Atom msg) {
-    _allMessages.add(msg);
-    _allMessagesHashcodes.add(msg.hashCode);
-    _allMessages.sort((a, b) => b.ts.logicalTime - a.ts.logicalTime); // DESC
+  void addToAllMessage(Atom atom) {
+    _allAtoms.add(atom);
+    _allAtomsHashcodes.add(atom.hashCode);
+    _allAtoms.sort((a, b) => b.ts.logicalTime - a.ts.logicalTime); // DESC
   }
 
   Table getTable(String table) => _db[table.toLowerCase()];
@@ -28,11 +28,11 @@ class DB {
     return _db[table.name];
   }
 
-  bool messageExistInLocalSet(Atom msg) => _allMessagesHashcodes.contains(msg.hashCode);
+  bool messageExistInLocalSet(Atom atom) => _allAtomsHashcodes.contains(atom.hashCode);
 
-  List<Atom> getMessagesSince(int logicalTime) {
-    final index = _allMessages.indexWhere((msg) => msg.ts.logicalTime < logicalTime);
-    final endIndex = index < 0 ? _allMessages.length : index;
-    return _allMessages.sublist(0, endIndex);
+  List<Atom> getAtomsSince(int logicalTime) {
+    final index = _allAtoms.indexWhere((atom) => atom.ts.logicalTime < logicalTime);
+    final endIndex = index < 0 ? _allAtoms.length : index;
+    return _allAtoms.sublist(0, endIndex);
   }
 }

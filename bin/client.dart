@@ -34,7 +34,7 @@ void main() {
   // node.syn.atomStream.listen((atom) {
   //   print('..........');
   //   print(atom);
-  //   print(node.db.allMessages.length);
+  //   print(node.db.allAtoms.length);
   // });
 
   // node.syn.onChanges.listen((changeSet) {
