@@ -26,13 +26,15 @@ void main() {
     print(todo);
   }
 
-  node.syn.onChanges.listen((changeSet) {
-    for (var change in changeSet) {
-      // todo: quick and dirty
-      final todo = node.todo.read(change.rowId);
-      print(todo);
-    }
-  });
+  node.syn.atomStream.listen(print);
+
+  // node.syn.onChanges.listen((changeSet) {
+  //   for (var change in changeSet) {
+  //     // todo: quick and dirty
+  //     final todo = node.todo.read(change.rowId);
+  //     print(todo);
+  //   }
+  // });
 
   Timer.periodic(Duration(seconds: 3), (t) {
     node.todo.create('call Saul ${t.tick}')..status = true;
@@ -55,14 +57,14 @@ void main() {
 
       // send all updates to the server ASAP
       node.syn.onUpdates.listen((data) {
-        print('Send data to server: ${data.length}');
+        // print('Send data to server: ${data.length}');
         ws.add(data);
       });
 
       ws.listen(
         (rawData) {
           if (rawData is Uint8List) {
-            print('Get data from server ${rawData.length}');
+            // print('Get data from server ${rawData.length}');
             final type = rawData[0];
             final data = rawData.sublist(1);
 
@@ -74,7 +76,7 @@ void main() {
               node.applyUpdate(data);
             }
           } else {
-            print("unknowing data");
+            print('unknowing data');
           }
         },
         onDone: () => print('[+]Done :)'),

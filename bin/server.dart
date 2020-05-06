@@ -10,13 +10,15 @@ void main() {
     final wsSet = <WebSocket>{};
     final node = NodeORM('server');
 
-    node.syn.onChanges.listen((changeSet) {
-      // todo: quick and dirty
-      for (var change in changeSet) {
-        final todo = node.todo.read(change.rowId);
-        print(todo);
-      }
-    });
+    node.syn.atomStream.listen(print);
+
+    // node.syn.onChanges.listen((changeSet) {
+    //   // todo: quick and dirty
+    //   for (var change in changeSet) {
+    //     final todo = node.todo.read(change.rowId);
+    //     print(todo);
+    //   }
+    // });
 
     server.listen((HttpRequest request) {
       WebSocketTransformer.upgrade(request).then((WebSocket ws) {
@@ -28,7 +30,6 @@ void main() {
             final data = rawData.sublist(1);
 
             if (type == MessageType.UPDATE.index) {
-              print('update: ${rawData.length}');
               node.applyUpdate(data);
 
               // broadcast to all others
@@ -41,11 +42,8 @@ void main() {
 
             // compare merkle trie and send diffs
             if (type == MessageType.STATE.index) {
-              print("state: ${rawData.length}");
-              // send localstate
-              ws.add(node.getState());
-              // send all diffs
-              ws.add(node.getDiff(data));
+              ws.add(node.getState()); // send localstate
+              ws.add(node.getDiff(data)); // send all diffs
             }
           },
           onDone: () => print('[+]Done :)'),

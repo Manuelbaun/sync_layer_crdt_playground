@@ -32,5 +32,6 @@ class NodeORM {
   /// when [state] (merkle trie) as Uint8List is supplied
   Uint8List getDiff(Uint8List state) => syn.computeDiffsToState(state);
 
+  /// Returns the state of then of the sync layer
   Uint8List getState() => syn.getState();
 }

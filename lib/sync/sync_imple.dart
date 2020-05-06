@@ -42,6 +42,9 @@ class SyncLayerImpl {
   final String nodeId;
 
   final _changeStreamCrtl = StreamController<Set<DataSetChange>>();
+  final _atomsStreamController = StreamController<List<Atom>>();
+
+  Stream<List<Atom>> get atomStream => _atomsStreamController.stream;
 
   /// [onChanges] should only be called, when there are some changes
   /// either locally or remote happend to the data
@@ -76,7 +79,7 @@ class SyncLayerImpl {
     for (final atom in atoms) {
       if (!_db.messageExistInLocalSet(atom)) {
         // test if table exits
-        final table = _db.getTable(atom.classType);
+        final table = _db.getTable(atom.type);
 
         if (table != null) {
           // if row does not exist, new row will be added
@@ -112,6 +115,10 @@ class SyncLayerImpl {
 
     if (changes.isNotEmpty) {
       _changeStreamCrtl.add(changes);
+    }
+
+    if (atoms.isNotEmpty) {
+      _atomsStreamController.add(atoms);
     }
   }
 
@@ -179,13 +186,20 @@ class SyncLayerImpl {
 
   // TODO: do something better
   Uint8List _atomsToBuff(List<Atom> atoms) {
-    final update = atoms.map((a) => a.toMap()).toList();
-    return Uint8List.fromList([MessageType.UPDATE.index, ...serialize(update)]);
+    final updateBytes = atoms.map((a) => a.toBytes()).toList();
+
+    // final update = atoms.map((a) => a.toMap()).toList();
+
+    // final buff = serialize(update);
+    final buff = serialize(updateBytes);
+
+    return Uint8List.fromList([MessageType.UPDATE.index, ...buff]);
   }
 
   List<Atom> _buffToAtoms(Uint8List buff) {
-    List atomsMap = deserialize(buff);
-    return atomsMap.map((m) => Atom.fromMap(m.cast<String, dynamic>())).toList();
+    List atomsBuff = deserialize(buff);
+    final atoms = atomsBuff.map((b) => Atom.fromBytes(b)).toList();
+    return atoms;
   }
 }
 

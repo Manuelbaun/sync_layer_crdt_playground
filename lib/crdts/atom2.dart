@@ -10,49 +10,49 @@ class KeyValue<K, V> {
 }
 
 /// TODO: could probably be optimized
-class Atom<K, V> implements Comparable<Atom> {
+class Atom2<K, V> implements Comparable<Atom2> {
   final Hlc ts;
   String get node => ts.node;
 
   /// In Context  of a Db, it's the **[Table]** id
-  final String type;
+  final int type;
 
   /// in Context of  a Db, its the **[Row]** id could be cuid id or any other
   final String id;
 
   /// In context ob a Db it is the **[column]**
-  final K key;
+  final int key;
 
   /// In context of a Db its the **[value]** of the column
   final V value;
 
-  Atom(
+  Atom2({
     this.ts,
     this.type,
     this.id,
     this.key,
     this.value,
-  );
+  });
 
   @override
-  int compareTo(Atom other) {
+  int compareTo(Atom2 other) {
     // return other.ts.logicalTime - ts.logicalTime; // DESC
     return ts.logicalTime - other.ts.logicalTime; //ASC
   }
 
-  Atom copyWith({
+  Atom2 copyWith({
     Hlc ts,
     String type,
     String id,
     K key,
     V value,
   }) {
-    return Atom<K, V>(
-      ts ?? this.ts,
-      type ?? this.type,
-      id ?? this.id,
-      key ?? this.key,
-      value ?? this.value,
+    return Atom2<K, V>(
+      ts: ts ?? this.ts,
+      type: type ?? this.type,
+      id: id ?? this.id,
+      key: key ?? this.key,
+      value: value ?? this.value,
     );
   }
 
@@ -66,15 +66,15 @@ class Atom<K, V> implements Comparable<Atom> {
     };
   }
 
-  static Atom fromMap(Map<String, dynamic> map) {
+  static Atom2 fromMap(Map<String, dynamic> map) {
     if (map == null) return null;
 
-    return Atom(
-      Hlc.parse(map['ts']),
-      map['type'],
-      map['id'],
-      map['key'],
-      map['value'],
+    return Atom2(
+      ts: Hlc.parse(map['ts']),
+      type: map['type'],
+      id: map['id'],
+      key: map['key'],
+      value: map['value'],
     );
   }
 
@@ -83,19 +83,20 @@ class Atom<K, V> implements Comparable<Atom> {
     return serialize(list);
   }
 
-  factory Atom.fromBytes(Uint8List buff) {
+  factory Atom2.fromBytes(Uint8List buff) {
     final list = deserialize(buff);
-    return Atom(
-      Hlc.fromLogicalTime(list[0], list[1]),
-      list[2],
-      list[3],
-      list[4],
-      list[5],
+
+    return Atom2(
+      ts: Hlc.fromLogicalTime(list[0], list[1]),
+      type: list[2],
+      id: list[3],
+      key: list[4],
+      value: list[5],
     );
   }
 
   String toJson() => json.encode(toMap());
-  static Atom fromJson(String source) => fromMap(json.decode(source));
+  static Atom2 fromJson(String source) => fromMap(json.decode(source));
 
   @override
   String toString() {
@@ -106,7 +107,7 @@ class Atom<K, V> implements Comparable<Atom> {
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is Atom && o.ts == ts && o.type == type && o.id == id && o.key == key && o.value == value;
+    return o is Atom2 && o.ts == ts && o.type == type && o.id == id && o.key == key && o.value == value;
   }
 
   @override

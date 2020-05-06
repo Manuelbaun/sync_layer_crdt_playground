@@ -7,6 +7,8 @@ import 'package:sync_layer/basic/cuid.dart';
 
 import 'package:sync_layer/basic/hlc.dart';
 import 'package:sync_layer/crdts/atom.binar.dart';
+import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/crdts/atom2.dart';
 
 import 'package:sync_layer/utils/measure.dart';
 
@@ -197,8 +199,41 @@ void measureAtomBinar2() {
   });
 }
 
+void measureAtomAtom() {
+  print('-------------------');
+  print('measureAtomAtom');
+  Atom2 atom;
+  Atom2 atomCopy;
+  Uint8List buff;
+
+  var hlc = Hlc.fromLogicalTime(ts, nodeID.toString());
+  measureExecution('To Atom', () {
+    atom = Atom2(ts: hlc, type: type, id: id, key: key, value: value);
+  });
+
+  measureExecution('toBytes', () {
+    buff = atom.toBytes();
+  });
+
+  measureExecution('from bytes', () {
+    atomCopy = Atom2.fromBytes(buff);
+  });
+
+  print(atom);
+  print(atomCopy);
+  print(buff.length);
+
+  hlc = Hlc.fromLogicalTime(ts, nodeID.toString());
+  measureExecution('Complete', () {
+    atom = Atom2(ts: hlc, type: type, id: id, key: key, value: value);
+    buff = atom.toBytes();
+    atomCopy = Atom2.fromBytes(buff);
+  });
+}
+
 void main() {
   measureProto();
   measureAtomBinar1();
   measureAtomBinar2();
+  measureAtomAtom();
 }
