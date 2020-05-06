@@ -54,8 +54,8 @@ class SyncLayerImpl {
   final _updatesStreamCrtl = StreamController<Uint8List>();
 
   /// On updates should only be triggered, when the method
-  /// [sendMessages] or when [synchronize] gets called and atoms are not empty!
-  /// :: [sendMessages] calls [synchronize]
+  /// [applyAndSendAtoms] or when [synchronize] gets called and atoms are not empty!
+  /// :: [applyAndSendAtoms] calls [synchronize]
   Stream<Uint8List> get onUpdates => _updatesStreamCrtl.stream;
 
   // Time Related
@@ -75,6 +75,7 @@ class SyncLayerImpl {
   /// db.applyAtom ?
   void _applyAtoms(List<Atom> atoms) {
     final changes = <DataSetChange>{};
+    final mapTableID = <Table, Set<String>>{};
 
     for (final atom in atoms) {
       if (!_db.messageExistInLocalSet(atom)) {
@@ -82,8 +83,12 @@ class SyncLayerImpl {
         final table = _db.getTable(atom.type);
 
         if (table != null) {
+          mapTableID[table] ??= <String>{};
           // if row does not exist, new row will be added
           final row = table.getRow(atom.id);
+
+          mapTableID[table].add(row.id);
+
           final hlc = row.getColumnHlc(atom);
 
           // Add value to row
@@ -113,11 +118,17 @@ class SyncLayerImpl {
       } // else skip that message
     }
 
-    if (changes.isNotEmpty) {
+    // update Table
+    for (var e in mapTableID.entries) {
+      e.key.triggerIdUpdate(e.value);
+    }
+
+    if (changes.isNotEmpty && _changeStreamCrtl.hasListener) {
       _changeStreamCrtl.add(changes);
     }
 
-    if (atoms.isNotEmpty) {
+    if (atoms.isNotEmpty && _atomsStreamController.hasListener) {
+      print('send atoms ${atoms.length}');
       _atomsStreamController.add(atoms);
     }
   }
@@ -132,7 +143,8 @@ class SyncLayerImpl {
     _applyAtoms(atoms);
   }
 
-  void sendMessages(List<Atom> messages) {
+  ///
+  void applyAndSendAtoms(List<Atom> messages) {
     _applyAtoms(messages);
     synchronize(messages);
   }
@@ -140,22 +152,26 @@ class SyncLayerImpl {
   /// [since] in millisecond
   /// This functions sends the atoms, either since or the provided
   /// via the stream controller...
-  ///
   void synchronize(List<Atom> atoms, [int since]) async {
     if (since != null && since != 0) {
       var ts = clock.getHlc(since, 0, nodeId);
       atoms = _db.getMessagesSince(ts.logicalTime);
     }
 
-    if (atoms.isNotEmpty) {
+    if (atoms.isNotEmpty && _updatesStreamCrtl.hasListener) {
       final buff = _atomsToBuff(atoms);
       // send for example via network!
       _updatesStreamCrtl.add(buff);
     }
   }
 
-  Atom createAtom(String classType, String id, String column, dynamic value) {
-    return Atom(clock.getForSend(), classType, id, column, value);
+  Atom createAtom(String type, String id, String key, dynamic value) {
+    return Atom(clock.getForSend(), type, id, key, value);
+  }
+
+  void applyChange(String type, String id, dynamic key, dynamic value) {
+    final a = Atom(clock.getForSend(), type, id, key, value);
+    applyAndSendAtoms([a]);
   }
 
   Uint8List computeDiffsToState(Uint8List state) {
@@ -187,34 +203,15 @@ class SyncLayerImpl {
   // TODO: do something better
   Uint8List _atomsToBuff(List<Atom> atoms) {
     final updateBytes = atoms.map((a) => a.toBytes()).toList();
-
-    // final update = atoms.map((a) => a.toMap()).toList();
-
-    // final buff = serialize(update);
     final buff = serialize(updateBytes);
-
     return Uint8List.fromList([MessageType.UPDATE.index, ...buff]);
   }
 
   List<Atom> _buffToAtoms(Uint8List buff) {
     List atomsBuff = deserialize(buff);
-    final atoms = atomsBuff.map((b) => Atom.fromBytes(b)).toList();
-    return atoms;
+    return atomsBuff.map((b) => Atom.fromBytes(b)).toList();
   }
 }
-
-// void onIncomingJsonMsg(List<dynamic> msgs) {
-//   final messages = msgs.map((map) {
-//     return Atom.fromMap(json.decode(map));
-//   }).toList();
-
-//   receivingMessages(messages);
-// }
-
-// void onUpdate(String table, String row, String column, dynamic value) {
-//   final msg = Atom(clock.getForSend(), table, row, column, value);
-//   applyMessages([msg]);
-// }
 
 // @override
 // void registerTable<T>(SyncableTable<T> obj) {

@@ -20,13 +20,22 @@ void main() {
   print('Client on $name');
 
   // init first todo
-  node.todo.create('call Saul')..status = true;
+  node.todo.create('call Saul', status: true);
 
-  for (var todo in node.todo.items.values) {
-    print(todo);
-  }
+  node.todo.updatedEntryStream.listen((todos) {
+    // print("length ${todos.length}");
+    todos.forEach(print);
+  });
 
-  node.syn.atomStream.listen(print);
+  // for (var todo in node.todo.items.values) {
+  //   print(todo);
+  // }
+
+  // node.syn.atomStream.listen((atom) {
+  //   print('..........');
+  //   print(atom);
+  //   print(node.db.allMessages.length);
+  // });
 
   // node.syn.onChanges.listen((changeSet) {
   //   for (var change in changeSet) {
@@ -37,13 +46,12 @@ void main() {
   // });
 
   Timer.periodic(Duration(seconds: 3), (t) {
-    node.todo.create('call Saul ${t.tick}')..status = true;
-  });
+    final todo = node.todo.create('call Saul ${t.tick}');
 
-  // sync
-  // final state = localNode.getState();
-  // final diff = localNode.getDiff(state);
-  // localNode.applyUpdate(diff);
+    Timer(Duration(seconds: 1), () {
+      todo.status = true;
+    });
+  });
 
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
     /// send via network!
@@ -57,7 +65,7 @@ void main() {
 
       // send all updates to the server ASAP
       node.syn.onUpdates.listen((data) {
-        // print('Send data to server: ${data.length}');
+        print('Send data to server: ${data.length}');
         ws.add(data);
       });
 

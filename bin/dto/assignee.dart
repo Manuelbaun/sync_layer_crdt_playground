@@ -5,10 +5,14 @@ class Assignee {
   String get id => row.id;
 
   Assignee(this.row, {String department, String firstname, String lastname}) : assert(row != null) {
-    if (department != null) this.department ??= department;
-    if (firstname != null) this.firstname ??= firstname;
-    if (lastname != null) this.lastname ??= lastname;
+    transaction(() {
+      if (department != null) this.department ??= department;
+      if (firstname != null) this.firstname ??= firstname;
+      if (lastname != null) this.lastname ??= lastname;
+    });
   }
+
+  Function get transaction => row.transaction;
 
   String get department => row['department'];
   set department(String value) => row['department'] = value;

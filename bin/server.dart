@@ -10,7 +10,11 @@ void main() {
     final wsSet = <WebSocket>{};
     final node = NodeORM('server');
 
-    node.syn.atomStream.listen(print);
+    node.todo.updatedEntryStream.listen((todos) {
+      todos.forEach(print);
+    });
+
+    // node.syn.atomStream.listen(print);
 
     // node.syn.onChanges.listen((changeSet) {
     //   // todo: quick and dirty

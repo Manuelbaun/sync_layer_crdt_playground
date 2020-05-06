@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/db/db.dart';
 import 'package:sync_layer/sync/sync_imple.dart';
 

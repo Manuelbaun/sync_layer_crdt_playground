@@ -1,16 +1,23 @@
+import 'dart:async';
+
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/db/row.dart';
 import 'package:sync_layer/sync/sync_imple.dart';
 
-class Table {
+class Table<T> {
   final String name;
   final SyncLayerImpl syn;
   Map<String, Row> rows;
+  Map<String, T> entries = {}; // the real elements
 
-  // the real elements
-  Map<String, dynamic> items = {};
+  final updatedEntryController = StreamController<List<T>>();
+  Stream<List<T>> get updatedEntryStream => updatedEntryController.stream;
 
   Table(this.name, this.syn) : rows = {};
+
+  void triggerIdUpdate(Set<String> ids) {
+    throw AssertionError('please override me');
+  }
 
   /// reads row or creates new row if not existed before!
   Row getRow([String id]) {

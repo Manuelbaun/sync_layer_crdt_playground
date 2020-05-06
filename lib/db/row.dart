@@ -16,6 +16,9 @@ class Row {
   final Map<String, dynamic> obj = {};
   final Map<String, Hlc> objHlc = {};
 
+  final _transaction = <Atom>[];
+  bool trans = false;
+
   Row(this.id, this.table)
       : assert(id != null && id.isNotEmpty, 'Row Id needs a valid ID!'),
         assert(table != null, 'Table prop cant be null');
@@ -32,9 +35,23 @@ class Row {
 
   dynamic operator [](key) => obj[key];
 
+  void transaction(Function transaction) {
+    trans = true;
+
+    transaction();
+    table.syn.applyAndSendAtoms([..._transaction]);
+    _transaction.clear();
+
+    trans = false;
+  }
+
   operator []=(key, value) {
     final a = table.syn.createAtom(table.name, id, key, value);
-    table.syn.sendMessages([a]);
+    if (trans) {
+      _transaction.add(a);
+    } else {
+      table.syn.applyAndSendAtoms([a]);
+    }
   }
 
   String prettyJson() {

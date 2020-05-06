@@ -7,9 +7,13 @@ class Todo {
   String get id => row.id;
 
   Todo(this.row, {String title, bool status}) : assert(row != null) {
-    if (title != null) this.title ??= title;
-    if (status != null) this.status ??= status;
+    transaction(() {
+      if (title != null) this.title ??= title;
+      if (status != null) this.status ??= status;
+    });
   }
+
+  Function get transaction => row.transaction;
 
   String get title => row['title'];
   set title(String v) => row['title'] = v;
