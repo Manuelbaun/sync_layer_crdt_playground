@@ -8,6 +8,7 @@ import 'package:sync_layer/utils/measure.dart';
 
 class Todo {
   final Row _row;
+  String get id => _row.id;
 
   Todo(this._row, {String title, bool status}) : assert(_row != null) {
     this.title ??= title;
@@ -47,26 +48,27 @@ class TodoTable extends Table {
 }
 
 class Assignee {
-  final Row row;
+  final Row _row;
+  String get id => _row.id;
 
-  Assignee(this.row, {String department, String firstname, String lastname}) : assert(row != null) {
-    this.department = department;
-    this.firstname = firstname;
-    this.lastname = lastname;
+  Assignee(this._row, {String department, String firstname, String lastname}) : assert(_row != null) {
+    if (department != null) this.department ??= department;
+    if (firstname != null) this.firstname ??= firstname;
+    if (lastname != null) this.lastname ??= lastname;
   }
 
-  String get department => row['department'];
-  set department(String value) => row['department'] = value;
+  String get department => _row['department'];
+  set department(String value) => _row['department'] = value;
 
-  String get firstname => row['firstname'];
-  set firstname(String value) => row['firstname'] = value;
+  String get firstname => _row['firstname'];
+  set firstname(String value) => _row['firstname'] = value;
 
-  String get lastname => row['lastname'];
-  set lastname(String value) => row['lastname'] = value;
+  String get lastname => _row['lastname'];
+  set lastname(String value) => _row['lastname'] = value;
 
   @override
   String toString() {
-    return 'Assignee(${row.obj}: hlc:${row.lastUpdated})';
+    return 'Assignee(${_row.obj}: hlc:${_row.lastUpdated})';
   }
 }
 
@@ -104,7 +106,6 @@ void main() {
 
   /// send via network!
   syn.onChange = (rows, tables) {
-    // print('change on ${syn.nodeId}');
     measureExecution('Sync 1 mit 0', () {
       syn1.applyMessages(syn.getDiffMessagesFromIncomingMerkleTrie(syn1.trie.toMap()));
     });
@@ -136,14 +137,14 @@ void main() {
   final todo2 = tab1.create('My second todo');
 
   final tab21 = syn2.db.getTable('todo') as TodoTable;
-  final todo21 = tab21.read(todo1._row.id);
+  final todo21 = tab21.read(todo1.id);
   todo21.status = true;
 
   final tab11 = syn1.db.getTable('todo') as TodoTable;
   final tabAss = syn1.db.getTable('assingee') as AssigneeTable;
   final a1 = tabAss.create('House', 'Manu', 'Bun');
 
-  final todo11 = tab11.read(todo2._row.id);
+  final todo11 = tab11.read(todo2.id);
   todo11.assignee = a1;
 
   todo11.status = true;
@@ -170,8 +171,8 @@ void main() {
     final todo = tab1.create('Next Todo ${t.tick}');
     print(todo);
 
-    final to = tab11.read(todo._row.id);
-    final to2 = tab21.read(todo._row.id);
+    final to = tab11.read(todo.id);
+    final to2 = tab21.read(todo.id);
 
     Timer(Duration(milliseconds: 100), () {
       to.status = true;
