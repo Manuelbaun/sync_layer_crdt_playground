@@ -9,6 +9,7 @@ dependencies:
   messagepack: ^0.1.1
   meta: ^1.1.8
   logging: ^0.11.4
+  protoc_plugin: ^19.0.1
 
 dev_dependencies:
   pedantic: ^1.8.0
