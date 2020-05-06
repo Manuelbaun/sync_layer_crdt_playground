@@ -1,3 +1,4 @@
+import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/db/row.dart';
 import 'package:sync_layer/sync/sync_imple.dart';
 
@@ -6,12 +7,16 @@ class Table {
   final SyncLayerImpl syn;
   Map<String, Row> rows;
 
+  // the real elements
+  Map<String, dynamic> items = {};
+
   Table(this.name, this.syn) : rows = {};
 
-  /// created new row if not exits
-  Row getRow(String id) {
-    rows[id] ??= Row(id, this);
-    return rows[id];
+  /// reads row or creates new row if not existed before!
+  Row getRow([String id]) {
+    final _id = id ?? newCuid();
+    rows[_id] ??= Row(_id, this);
+    return rows[_id];
   }
 
   @override

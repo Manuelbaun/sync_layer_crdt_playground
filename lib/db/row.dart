@@ -34,7 +34,7 @@ class Row {
 
   operator []=(key, value) {
     final a = table.syn.createAtom(table.name, id, key, value);
-    table.syn.applyMessages([a]);
+    table.syn.sendMessages([a]);
   }
 
   String prettyJson() {

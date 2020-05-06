@@ -144,7 +144,7 @@ void measureAtomBinar1() {
   AtomBinary atomCopy;
   Uint8List buff;
 
-  final val = {};
+  final val = value;
   measureExecution('To Atom', () {
     atom = AtomBinary(ts, nodeID, type, id, key, val);
   });

@@ -38,9 +38,9 @@ class MerkleTrie {
     return ms;
   }
 
-  factory MerkleTrie.fromMap(Map<String, dynamic> map, [int radix = 36]) {
+  factory MerkleTrie.fromMap(Map<int, dynamic> map, [int radix = 36]) {
     var root = MerkleNode(true, radix);
-    root = root.fromMap(map, radix);
+    root = MerkleNode.fromMap(map, radix);
 
     final tree = MerkleTrie(radix, root);
     return tree;
@@ -157,18 +157,17 @@ class MerkleTrie {
     return rlKeys;
   }
 
-  ///
-  ///
-  String toJson() {
-    return json.encode(root.toMap());
-  }
+  // TODO: fix map<int, dynamic> does not work as json!!
+  // String toJson() {
+  //   return json.encode(root.toMap());
+  // }
 
-  String toJsonPretty() {
-    var encoder = JsonEncoder.withIndent('  ');
-    return encoder.convert(root.toMap());
-  }
+  // String toJsonPretty() {
+  //   var encoder = JsonEncoder.withIndent('  ');
+  //   return encoder.convert(root.toMap());
+  // }
 
-  Map<String, dynamic> toMap() {
+  Map<int, dynamic> toMap() {
     return root.toMap();
   }
 }

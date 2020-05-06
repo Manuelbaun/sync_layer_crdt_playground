@@ -145,16 +145,16 @@ class Hlc implements Comparable<Hlc> {
     return Hlc(millisNew, counterNew, local.node);
   }
 
-  String toJson() => toString2();
+  String toJson() => toString();
 
-  @override
-  String toString() {
+  String toString2() {
     return '{ts: ${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}, '
         'c: ${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}, '
         'node: $node}';
   }
 
-  String toString2() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
+  @override
+  String toString() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
       '-'
       '${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
       '-$node';
@@ -164,7 +164,7 @@ class Hlc implements Comparable<Hlc> {
   // String toString4() => '${logicalTime.toRadixString(36)}-$node';
 
   @override
-  int get hashCode => MurmurHashV3(toString2());
+  int get hashCode => MurmurHashV3(toString());
   // int get hashCode2 => MurmurHashV3(toString2());
   // int get hashCode3 => MurmurHashV3(toString3());
   // int get hashCode4 => MurmurHashV3(toString4());

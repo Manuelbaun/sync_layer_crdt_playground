@@ -1,75 +1,80 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io' show WebSocket;
-import 'dart:async' show Timer;
-import 'dart:math';
+import 'dart:typed_data';
 
-import 'package:sync_layer/crdts/atom.dart';
+import 'package:faker/faker.dart';
 import 'package:sync_layer/sync/sync_imple.dart';
 
+import 'nodeOrm.dart';
 
+// zip and upzip is network stuff!
+// final d2 = lzma.encode(diff21);
+// final enD1 = lzma.decode(d1);
 
-
-
+void main2() {}
 
 void main() {
+  final name = faker.person.firstName();
+  final node = NodeORM(name);
+
+  print('Client on $name');
+
+  // init first todo
+  node.todo.create('call Saul')..status = true;
+
+  for (var todo in node.todo.items.values) {
+    print(todo);
+  }
+
+  node.syn.onChanges.listen((changeSet) {
+    for (var change in changeSet) {
+      // todo: quick and dirty
+      final todo = node.todo.read(change.rowId);
+      print(todo);
+    }
+  });
+
+  Timer.periodic(Duration(seconds: 3), (t) {
+    node.todo.create('call Saul ${t.tick}')..status = true;
+  });
+
+  // sync
+  // final state = localNode.getState();
+  // final diff = localNode.getDiff(state);
+  // localNode.applyUpdate(diff);
+
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
-
-    var localNode = Random().nextInt(1000).toString();
-    final syn = SyncLayerImpl(localNode);
-
-    syn.db.createTable('Todo');
-    syn.db.createTable('Assignee');
-
-    syn.onChange = (rows, tables) {
-      rows.forEach((row) => print(row.prettyJson()));
-    };
-
     /// send via network!
-    syn.onSend = (List<Atom> messages) {
-      ws.add(json.encode({'msg': messages}));
-    };
 
     // our websocket server runs on ws://localhost:8000
     if (ws?.readyState == WebSocket.open) {
       // as soon as websocket is connected and ready for use, we can start talking to other end
 
       // First send local merkle tree and get diffs back
-      final str = json.encode({'merkle': syn.trie.toJson()});
-      ws.add(str);
+      ws.add(node.getState());
 
-      // create first object TODO
-      final todoId = localNode;
-      syn.sendMessages([
-        syn.createAtom('todo', todoId, 'title', 'My todo of $localNode'),
-        syn.createAtom('todo', todoId, 'lastUpdate', DateTime.now().toIso8601String()),
-        syn.createAtom('todo', todoId, 'done', false),
-      ]);
-
-      var done = false;
-      // update local state and send to server
-      Timer.periodic(Duration(milliseconds: 1000), (t) {
-        done = !done;
-        syn.sendMessages([
-          syn.createAtom('todo', todoId, 'done', done),
-          syn.createAtom('todo', todoId, 'lastUpdate', DateTime.now().toIso8601String())
-        ]);
+      // send all updates to the server ASAP
+      node.syn.onUpdates.listen((data) {
+        print('Send data to server: ${data.length}');
+        ws.add(data);
       });
 
       ws.listen(
-        (data) {
-          // print('<== Recv : ${(data as String).length}');
+        (rawData) {
+          if (rawData is Uint8List) {
+            print('Get data from server ${rawData.length}');
+            final type = rawData[0];
+            final data = rawData.sublist(1);
 
-          final jsonMsg = json.decode(data);
-          final merkleMerge = jsonMsg['merkle-merge'];
-          final messages = jsonMsg['msg'];
-
-          if (merkleMerge != null) {
-            final msgLength = jsonMsg['length'];
-            print('receive messages from Merkle diffing: $msgLength');
-          }
-
-          if (messages != null) {
-            syn.onIncomingJsonMsg(messages);
+            // if localnode receives a state! response with diff atoms
+            if (type == MessageType.STATE.index) {
+              ws.add(node.getDiff(data));
+            } else if (type == MessageType.UPDATE.index) {
+              // if localnode recieves an update, apply
+              node.applyUpdate(data);
+            }
+          } else {
+            print("unknowing data");
           }
         },
         onDone: () => print('[+]Done :)'),

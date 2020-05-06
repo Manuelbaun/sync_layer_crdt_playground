@@ -3,15 +3,13 @@ import 'dart:typed_data';
 
 import 'package:messagepack/messagepack.dart';
 
-enum Types { STRING, UINT32, UINT64, FLOAT32, FLOAT64, BOOL }
-
-class AtomBinary {
+class AtomBinary<K, V> {
   int ts;
   int node;
   String id;
   int classType;
-  int key;
-  dynamic value;
+  K key;
+  V value;
 
   AtomBinary(
     this.ts,
@@ -28,8 +26,9 @@ class AtomBinary {
       ..packInt(ts)
       ..packInt(node)
       ..packInt(classType)
-      ..packString(id)
-      ..packInt(key);
+      ..packString(id);
+
+    packDyamicType(p, key);
 
     packDyamicType(p, value);
 
@@ -39,13 +38,6 @@ class AtomBinary {
   factory AtomBinary.from(Uint8List bytes) {
     final u = Unpacker(bytes);
     final l = u.unpackList();
-
-    // final logTime = u.unpackInt();
-    // final nodeId = u.unpackInt();
-    // final classType = u.unpackInt();
-    // final id = u.unpackString();
-    // final key = u.unpackInt();
-    // final value = u.unpackString();
 
     final logTime = l[0];
     final nodeId = l[1];

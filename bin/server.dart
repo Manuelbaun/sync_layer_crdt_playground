@@ -1,47 +1,51 @@
-import 'dart:convert';
 import 'dart:io' show HttpServer, HttpRequest, WebSocket, WebSocketTransformer;
-
+import 'dart:typed_data';
 import 'package:sync_layer/sync/sync_imple.dart';
+
+import 'nodeOrm.dart';
 
 void main() {
   HttpServer.bind('localhost', 8000).then((HttpServer server) {
     print('[+]WebSocket listening at -- ws://localhost:8000/');
     final wsSet = <WebSocket>{};
+    final node = NodeORM('server');
 
-    final syn = SyncLayerImpl('Server');
-    syn.db.createTable('todo');
-
+    node.syn.onChanges.listen((changeSet) {
+      // todo: quick and dirty
+      for (var change in changeSet) {
+        final todo = node.todo.read(change.rowId);
+        print(todo);
+      }
+    });
 
     server.listen((HttpRequest request) {
       WebSocketTransformer.upgrade(request).then((WebSocket ws) {
         wsSet.add(ws);
 
         ws.listen(
-          (data) {
-            final jsonMsg = json.decode(data);
+          (rawData) {
+            final type = (rawData as Uint8List)[0];
+            final data = rawData.sublist(1);
 
-            final merkle = jsonMsg['merkle'];
+            if (type == MessageType.UPDATE.index) {
+              print('update: ${rawData.length}');
+              node.applyUpdate(data);
 
-            if (jsonMsg['msg'] != null) {
-              syn.onIncomingJsonMsg(jsonMsg['msg']);
+              // broadcast to all others
+              for (final _ws in wsSet) {
+                if (_ws != ws && _ws.readyState == WebSocket.open) {
+                  _ws.add(rawData);
+                }
+              }
             }
 
             // compare merkle trie and send diffs
-            if (merkle != null) {
-              print('Merkle tree requests diff');
-              final Map merkleMap = json.decode(merkle);
-              final messages = syn.getDiffMessagesFromIncomingMerkleTrie(merkleMap);
-              if (messages.isNotEmpty) {
-                final send = json.encode({'merkle-merge': true, 'msg': messages, 'length': messages.length});
-                ws.add(send);
-              }
-            }
-
-            // broadcast to all others
-            for (final _ws in wsSet) {
-              if (_ws != ws && _ws.readyState == WebSocket.open) {
-                _ws.add(data);
-              }
+            if (type == MessageType.STATE.index) {
+              print("state: ${rawData.length}");
+              // send localstate
+              ws.add(node.getState());
+              // send all diffs
+              ws.add(node.getDiff(data));
             }
           },
           onDone: () => print('[+]Done :)'),
