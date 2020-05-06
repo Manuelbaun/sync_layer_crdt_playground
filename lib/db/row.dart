@@ -7,10 +7,10 @@ import 'table.dart';
 
 class Row {
   /// Row id
-  String id;
+  final String id;
 
   /// Ref to the Table
-  Table table;
+  final Table table;
 
   /// the actual object data
   final Map<String, dynamic> obj = {};
@@ -28,9 +28,7 @@ class Row {
     objHlc[msg.key] = msg.ts;
   }
 
-  Hlc get lastUpdated {
-    return objHlc.values.reduce((a, b) => a > b ? a : b);
-  }
+  Hlc get lastUpdated => objHlc.values.reduce((a, b) => a > b ? a : b);
 
   dynamic operator [](key) => obj[key];
 
