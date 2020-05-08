@@ -1,11 +1,14 @@
 // copied by: https://github.com/levicook/cuid
 // levicook@gmail.com
 
-import 'dart:io' as io;
+// import 'dart:io' as io;
 import 'dart:math';
 
 final String _prefix = 'c';
 final int _base = 36; // size of the alphabet
+final _secureRandom = Random();
+// final _secureRandom = Random.secure();
+const max = 0xFFFFFFFF;
 
 String _timeBlock() {
   final now = DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -23,17 +26,19 @@ String _counterBlock() {
 final String _fingerprint = _pidFingerprint() + _hostFingerprint();
 
 String _pidFingerprint() {
-  return _pad(io.pid.toRadixString(_base), 2);
+  final pid = _secureRandom.nextInt(max);
+  return _pad(pid.toRadixString(_base), 2);
+  // return _pad(io.pid.toRadixString(_base), 2);
 }
 
 String _hostFingerprint() {
-  final hostId = io.Platform.localHostname.runes.reduce((acc, r) => acc + r);
+  // final hostId = io.Platform.localHostname.runes.reduce((acc, r) => acc + r);
+  final hostId = _secureRandom.nextInt(max);
   return _pad(hostId.toRadixString(_base), 2);
 }
 
-final _secureRandom = Random.secure();
 String _secureRandomBlock() {
-  const max = 1 << 32;
+  // const max = 1 << 32;
   return _pad(_secureRandom.nextInt(max).toRadixString(_base), 4);
 }
 

@@ -56,6 +56,7 @@ void main() {
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
     /// send via network!
 
+    print(ws.readyState);
     // our websocket server runs on ws://localhost:8000
     if (ws?.readyState == WebSocket.open) {
       // as soon as websocket is connected and ready for use, we can start talking to other end

@@ -65,6 +65,9 @@ int MurmurHashV3(String key, [int seed = 0]) {
   h1 ^= h1 >> 16;
 
   // this is needed to use only murmurhash for 32 bit.
-  var v = ByteData(8)..setInt64(0, h1);
-  return v.getUint32(4);
+  // var v = ByteData(8)..setUint64(0, h1);
+  // var v2 = v.getUint32(4);
+  var res = h1 & 0xFFFFFFFFFFFFFFFF;
+
+  return res;
 }

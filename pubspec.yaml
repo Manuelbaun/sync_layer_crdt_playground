@@ -1,5 +1,5 @@
 name: sync_layer
-description: A sample command-line application.
+description: A sync layer implementation based on crdt concepts and Hyper logical clock
 version: 0.0.1
 
 environment:
@@ -10,6 +10,7 @@ dependencies:
   msgpack_dart: ^0.0.7
   meta: ^1.1.8
   logging: ^0.11.4
+  web_socket_channel: ^1.1.0
 
 dev_dependencies:
   protoc_plugin: ^19.0.1

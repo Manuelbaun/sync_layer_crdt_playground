@@ -4,32 +4,37 @@ import 'package:sync_layer/sync/sync_imple.dart';
 
 import 'nodeOrm.dart';
 
-void main() {
-  HttpServer.bind('localhost', 8000).then((HttpServer server) {
-    print('[+]WebSocket listening at -- ws://localhost:8000/');
-    final wsSet = <WebSocket>{};
-    final node = NodeORM('server');
+void main() async {
+  final server = await HttpServer.bind('0.0.0.0', 8000);
 
-    node.todo.updatedEntryStream.listen((todos) {
-      todos.forEach(print);
-    });
+  print("listen to 0.0.0.0:8000");
+  final wsSet = <WebSocket>{};
+  final node = NodeORM('server');
 
-    // node.syn.atomStream.listen(print);
+  node.todo.updatedEntryStream.listen((todos) {
+    todos.forEach(print);
+  });
 
-    // node.syn.onChanges.listen((changeSet) {
-    //   // todo: quick and dirty
-    //   for (var change in changeSet) {
-    //     final todo = node.todo.read(change.rowId);
-    //     print(todo);
-    //   }
-    // });
+  // node.syn.atomStream.listen(print);
 
-    server.listen((HttpRequest request) {
-      WebSocketTransformer.upgrade(request).then((WebSocket ws) {
-        wsSet.add(ws);
+  // node.syn.onChanges.listen((changeSet) {
+  //   // todo: quick and dirty
+  //   for (var change in changeSet) {
+  //     final todo = node.todo.read(change.rowId);
+  //     print(todo);
+  //   }
+  // });
 
-        ws.listen(
-          (rawData) {
+  server.listen((HttpRequest request) {
+    WebSocketTransformer.upgrade(request).then((WebSocket ws) {
+      wsSet.add(ws);
+
+      print(ws);
+
+      ws.listen(
+        (rawData) {
+          // print(rawData);
+          if (rawData is Uint8List) {
             final type = (rawData as Uint8List)[0];
             final data = rawData.sublist(1);
 
@@ -38,6 +43,8 @@ void main() {
 
               // broadcast to all others
               for (final _ws in wsSet) {
+                print('${_ws.hashCode} - ${ws.hashCode}');
+
                 if (_ws != ws && _ws.readyState == WebSocket.open) {
                   _ws.add(rawData);
                 }
@@ -49,12 +56,14 @@ void main() {
               ws.add(node.getState()); // send localstate
               ws.add(node.getDiff(data)); // send all diffs
             }
-          },
-          onDone: () => print('[+]Done :)'),
-          onError: (err) => print('[!]Error -- ${err.toString()}'),
-          cancelOnError: true,
-        );
-      }, onError: (err) => print('[!]Error -- ${err.toString()}'));
+          } else {
+            print('not the protocol');
+          }
+        },
+        onDone: () => print('[+]Done :)'),
+        onError: (err) => print('[!]Error -- ${err.toString()}'),
+        cancelOnError: true,
+      );
     }, onError: (err) => print('[!]Error -- ${err.toString()}'));
   }, onError: (err) => print('[!]Error -- ${err.toString()}'));
 }
