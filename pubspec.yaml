@@ -6,7 +6,6 @@ environment:
   sdk: ">=2.7.1 <3.0.0"
 
 dependencies:
-  messagepack: ^0.1.1
   msgpack_dart: ^0.0.7
   meta: ^1.1.8
   logging: ^0.11.4

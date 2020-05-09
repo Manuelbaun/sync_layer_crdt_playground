@@ -147,27 +147,19 @@ class Hlc implements Comparable<Hlc> {
 
   String toJson() => toString();
 
-  String toString2() {
-    return '{ts: ${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}, '
-        'c: ${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}, '
-        'node: $node}';
-  }
+  // String toString2() {
+  //   return '{ts: ${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}, '
+  //       'c: ${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}, '
+  //       'node: $node}';
+  // }
 
   @override
   String toString() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
-      '-'
-      '${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
+      '-${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
       '-$node';
-
-  // String toString() => '${millis}-${counter.toRadixString(16)}-$node';
-  // String toString3() => '${logicalTime}-$node';
-  // String toString4() => '${logicalTime.toRadixString(36)}-$node';
 
   @override
   int get hashCode => MurmurHashV3(toString());
-  // int get hashCode2 => MurmurHashV3(toString2());
-  // int get hashCode3 => MurmurHashV3(toString3());
-  // int get hashCode4 => MurmurHashV3(toString4());
 
   @override
   bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
@@ -182,6 +174,27 @@ class Hlc implements Comparable<Hlc> {
 
   @override
   int compareTo(Hlc other) => logicalTime.compareTo(other.logicalTime);
+
+  ///
+  /// returns [true] if l < r
+  /// This function also compares the node lexographically if node of l < node of r
+  /// Todo: think about, what if the hlc are identical
+  static bool compareWithNodes(Hlc l, Hlc r) {
+    if (l < r) return true;
+
+    if (l == r) {
+      // compare nodes
+      final lNode = l.node.codeUnits;
+      final rNode = r.node.codeUnits;
+
+      for (var i = 0; i < lNode.length; i++) {
+        if (lNode[i] < rNode[i]) return true;
+        if (lNode[i] > rNode[i]) return false;
+      }
+    }
+
+    return false;
+  }
 }
 
 class ClockDriftException implements Exception {

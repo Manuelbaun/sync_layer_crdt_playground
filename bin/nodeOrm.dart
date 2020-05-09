@@ -23,11 +23,11 @@ class NodeORM {
   }
 
   ///
-  /// Takes buff as Uint8List of [Atoms] and applies it to local state
+  /// Takes buff as Uint8List of [ATOMS] and applies it to local state
   void applyUpdate(Uint8List buff) => syn.receivingUpdates(buff);
 
   ///
-  /// Returns the different [Atoms] as Uint8List
+  /// Returns the different [ATOMS] as Uint8List
   /// when [state] (merkle trie) as Uint8List is supplied
   Uint8List getDiff(Uint8List state) => syn.computeDiffsToState(state);
 

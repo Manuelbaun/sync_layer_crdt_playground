@@ -9,7 +9,8 @@ class KeyValue<K, V> {
   KeyValue(this.key, this.value);
 }
 
-/// TODO: could probably be optimized
+
+
 class Atom<K, V> implements Comparable<Atom> {
   final Hlc ts;
   String get node => ts.node;

@@ -165,8 +165,13 @@ class SyncLayerImpl {
     }
   }
 
-  Atom createAtom(String type, String id, String key, dynamic value) {
-    return Atom(clock.getForSend(), type, id, key, value);
+  /// creates atom and applies [directly],
+  /// else if [directly] is false, it creates and returns without [applyAndSend]
+  /// usefull to create multiple atom.
+  Atom createAtom(String type, String id, String key, dynamic value, {bool directly = true}) {
+    final a = Atom(clock.getForSend(), type, id, key, value);
+    if (directly) applyAndSendAtoms([a]);
+    return a;
   }
 
   void applyChange(String type, String id, dynamic key, dynamic value) {
