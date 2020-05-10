@@ -20,7 +20,10 @@
       "name": "Client",
       "program": "example/main.dart",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "args": [
+        "DEBUG"
+      ]
     },
   ],
   "compounds": [

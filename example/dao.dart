@@ -5,6 +5,11 @@ class Todo2 extends SyncableObjectImpl {
 
   String get title => super['title'];
   set title(String v) => super['title'] = v;
+
+  @override
+  String toString() {
+    return 'Todo($id, $title, $lastUpdated)';
+  }
 }
 
 class Assignee extends SyncableObjectImpl {

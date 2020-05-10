@@ -13,7 +13,9 @@ class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
 
-  final String nodeId;
+  @override
+  String nodeId;
+
   final Clock clock;
   final MerkleTrie trie;
 
@@ -68,6 +70,8 @@ class SyncLayerImpl implements SyncLayer {
   /// Work with Atoms
   ///
   void _applyAtoms(List<Atom> atoms) {
+    final changedContainer = <SyncableObjectContainer>{};
+
     for (final atom in atoms) {
       if (!atomCache.exist(atom)) {
         // test if table exits
@@ -81,9 +85,11 @@ class SyncLayerImpl implements SyncLayer {
           // based on the result..
           if (res > 0) {
             if (res == 2) {
-              // do not trigger, because those are older values
-            } else {
               // todo trigger! container /object update
+              container.setUpdatedObject(obj);
+              changedContainer.add(container);
+            } else {
+              // do not trigger, because those are older values
             }
 
             atomCache.add(atom);
@@ -95,6 +101,11 @@ class SyncLayerImpl implements SyncLayer {
           print('Table does not exist');
         }
       } // else skip that message
+    }
+
+    // Tigger the changed happend in synclayer
+    for (final con in changedContainer) {
+      con.triggerUpdateChange();
     }
   }
 

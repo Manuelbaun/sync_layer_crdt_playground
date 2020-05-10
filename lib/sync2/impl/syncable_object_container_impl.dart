@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sync_layer/sync2/abstract/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
@@ -5,6 +7,24 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   final SyncLayer syn;
   final Map<String, T> _objects = {}; // the real elements
   final SynableObjectFactory<T> _objectFactory;
+
+  final _controller = StreamController<Set<T>>.broadcast();
+
+  final _updatedObjects = <T>{};
+
+  @override
+  Stream<Set<T>> get changeStream => _controller.stream;
+
+  @override
+  void setUpdatedObject(T obj) {
+    _updatedObjects.add(obj);
+  }
+
+  @override
+  void triggerUpdateChange() {
+    _controller.add({..._updatedObjects});
+    _updatedObjects.clear();
+  }
 
   @override
   String get typeId => _typeId;

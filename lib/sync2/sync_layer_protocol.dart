@@ -9,13 +9,22 @@ import 'package:sync_layer/sync2/abstract/sync_layer.dart';
 
 import 'package:logger/logger.dart';
 
-var logger = Logger(printer: PrettyPrinter());
+var logger = Logger(
+    printer: PrettyPrinter(
+        methodCount: 1, // number of method calls to be displayed
+        errorMethodCount: 8, // number of method calls if stacktrace is provided
+        lineLength: 120, // width of the output
+        colors: true, // Colorful log messages
+        printEmojis: true, // Print an emoji for each log message
+        printTime: false // Should each log print contain a timestamp
+        ));
 
 enum MessageEnum {
   STATE,
   STATE_REQUEST,
   STATE_RESPONSE,
   ATOMS,
+  NODE_NAME,
 }
 
 class EnDecoder {
@@ -44,11 +53,12 @@ class EnDecoder {
 class SyncLayerProtocol {
   final SyncLayer syn;
   final websockets = <WebSocket>{};
-  final wsRequests = <String, WebSocket>{};
+  final websocketsNames = <WebSocket, String>{};
 
   StreamSubscription atomSub;
   SyncLayerProtocol(this.syn) {
     // setup broadcast
+
     atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
   }
 
@@ -66,18 +76,23 @@ class SyncLayerProtocol {
     );
 
     // Start sync process => send local State
-    final stateData = EnDecoder.encodeState(syn.getState());
-    ws.add(stateData);
+
+    ws.add(Uint8List.fromList([MessageEnum.NODE_NAME.index, ...syn.nodeId.codeUnits]));
+    ws.add(EnDecoder.encodeState(syn.getState()));
   }
 
   void unregisterConnection(WebSocket ws) {
     logger.d('Unregister Connection');
     websockets.remove(ws);
+    websocketsNames.remove(ws);
   }
 
   void broadCastAtoms(List<Atom> atoms) {
     logger.d('broadCast Atoms');
+    print('>>>>>>>>>>>>>>>> broadcast');
+    print(atoms);
     final data = EnDecoder.encodeAtoms(atoms);
+
     for (final ws in websockets) {
       ws.add(data);
     }
@@ -85,7 +100,10 @@ class SyncLayerProtocol {
 
   void relayMessage(Uint8List data, WebSocket ws) {
     for (final _ws in websockets) {
-      if (_ws != ws) ws.add(data);
+      if (_ws != ws) {
+        print('Relay DATA: ${websocketsNames[ws]} >>> ${websocketsNames[_ws]}');
+        _ws.add(data);
+      }
     }
   }
 
@@ -97,10 +115,12 @@ class SyncLayerProtocol {
       // if atoms
       if (msgType == MessageEnum.ATOMS.index) {
         logger.d(MessageEnum.ATOMS);
-        relayMessage(rawData, ws);
 
         final atoms = EnDecoder.decodeAtoms(data);
+        print('<<<<<<<<<<<<<<<<<<<');
+        print(atoms);
         syn.receiveAtoms(atoms);
+        relayMessage(rawData, ws);
       } else
 
       /// if it is just an state reponse, add receiving atoms to SyncLayer
@@ -119,6 +139,7 @@ class SyncLayerProtocol {
 
         // syn.receiveState(state);
         final atoms = syn.getAtomsByReceivingState(state);
+
         ws.add(EnDecoder.encodeAtoms(atoms, MessageEnum.STATE_RESPONSE));
       } else
 
@@ -128,7 +149,14 @@ class SyncLayerProtocol {
 
         final stateData = EnDecoder.encodeState(syn.getState());
         ws.add(stateData);
-      } else {
+      } else
+      // give name of node
+      if (msgType == MessageEnum.NODE_NAME.index) {
+        websocketsNames[ws] = String.fromCharCodes(rawData.sublist(1));
+      }
+
+      //
+      else {
         logger.e('UNKOWN type $msgType');
       }
     } else {

@@ -13,6 +13,10 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
 
   String generateID();
 
+  Stream<Set<T>> get changeStream;
+  void setUpdatedObject(T obj);
+  void triggerUpdateChange();
+
   ///
   /// CRUD Ops
   /// Public API

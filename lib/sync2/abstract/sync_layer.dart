@@ -8,6 +8,8 @@ import 'syncable_container.dart';
 
 /// This is the abstract [SyncLayer].
 abstract class SyncLayer {
+  String nodeId;
+
   SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>(String typeId);
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
       String typeId, SynableObjectFactory<T> objectFactory);
