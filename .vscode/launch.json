@@ -9,6 +9,27 @@
       "program": "${file}",
       "request": "launch",
       "type": "dart"
+    },
+    {
+      "name": "Server",
+      "program": "example/server.dart",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "Client",
+      "program": "example/main.dart",
+      "request": "launch",
+      "type": "dart"
+    },
+  ],
+  "compounds": [
+    {
+      "name": "Client/Server",
+      "configurations": [
+        "Server",
+        "Client"
+      ],
     }
   ]
 }

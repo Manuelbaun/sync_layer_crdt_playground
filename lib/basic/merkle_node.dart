@@ -9,58 +9,6 @@ class MerkleNode {
     if (subchild) children = List(radix);
   }
 
-  // factory MerkleNode.fromMap(Map<String, dynamic> map, int radix) {
-  //   final node = MerkleNode(true, radix);
-
-  //   for (var ent in map.entries) {
-  //     final key = ent.key;
-  //     var value = ent.value;
-
-  //     if (key != '#') {
-  //       var pos = int.parse(key, radix: radix);
-
-  //       if (value is Map) {
-  //         // value =
-  //         node.children[pos] = MerkleNode.fromMap(value.cast<String, dynamic>(), radix);
-  //       } else if (value is num) {
-  //         // the end of the tree
-  //         node.children[pos] = MerkleNode(false, radix);
-  //         node.children[pos].hash = value;
-  //       }
-  //     } else {
-  //       node.hash = map['#'] as int;
-  //     }
-  //   }
-
-  //   return node;
-  // }
-
-  // Map<String, dynamic> toMap() {
-  //   var map = <String, dynamic>{};
-  //   if (children != null) {
-  //     for (var i = 0; i < children.length; i++) {
-  //       if (children[i] != null) {
-  //         final key = i.toRadixString(children.length);
-
-  //         final res = children[i].toMap();
-
-  //         // workaround, so the toJson() is map
-  //         map[key] = res['_'] ?? res;
-  //         // if (res['_'] == null) {
-  //         //   map[key] = res;
-  //         // } else {
-  //         //   map[key] = res['_'];
-  //         // }
-  //       }
-  //     }
-  //   } else {
-  //     return {'_': hash};
-  //   }
-
-  //   map['#'] = hash;
-  //   return map;
-  // }
-
   Map<int, dynamic> toMap() {
     var map = <int, dynamic>{};
     if (children != null) {
@@ -79,7 +27,7 @@ class MerkleNode {
     return map;
   }
 
-  factory MerkleNode.fromMap(Map<int, dynamic> map, int radix) {
+  factory MerkleNode.fromMap(Map<int, dynamic> map, [int radix = 36]) {
     final node = MerkleNode(true, radix);
 
     for (var i in map.keys) {

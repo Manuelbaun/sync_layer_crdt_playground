@@ -15,16 +15,6 @@ void main() async {
     todos.forEach(print);
   });
 
-  // node.syn.atomStream.listen(print);
-
-  // node.syn.onChanges.listen((changeSet) {
-  //   // todo: quick and dirty
-  //   for (var change in changeSet) {
-  //     final todo = node.todo.read(change.rowId);
-  //     print(todo);
-  //   }
-  // });
-
   server.listen((HttpRequest request) {
     WebSocketTransformer.upgrade(request).then((WebSocket ws) {
       wsSet.add(ws);
@@ -35,7 +25,7 @@ void main() async {
         (rawData) {
           // print(rawData);
           if (rawData is Uint8List) {
-            final type = (rawData as Uint8List)[0];
+            final type = rawData[0];
             final data = rawData.sublist(1);
 
             if (type == MessageType.UPDATE.index) {

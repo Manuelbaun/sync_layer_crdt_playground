@@ -46,7 +46,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   @override
   T read(String id) {
     final t = _objects[id];
-    if (t.tompstone != false) return t;
+    if (t != null && t.tompstone != false) return t;
     return null;
   }
 
@@ -54,7 +54,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   // gets called from the sync object
   @override
   void update(String objectId, String fieldId, dynamic value) {
-    syn.createAtom(typeId, objectId, fieldId, value);
+    final a = syn.createAtom(typeId, objectId, fieldId, value);
+    syn.applyAtoms([a]);
   }
 
   ///

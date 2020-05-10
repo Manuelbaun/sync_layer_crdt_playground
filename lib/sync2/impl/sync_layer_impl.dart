@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
@@ -5,38 +7,28 @@ import 'package:sync_layer/crdts/clock.dart';
 import 'package:sync_layer/sync2/abstract/index.dart';
 import 'package:sync_layer/sync2/errors/index.dart';
 import 'package:sync_layer/sync2/impl/syncable_object_container_impl.dart';
-
-import '../sync_layer_atom_cache.dart';
-import '../sync_layer_protocol.dart';
+import 'package:sync_layer/sync2/sync_layer_atom_cache.dart';
 
 class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
-  final SyncLayerProtocol protocol;
 
   final String nodeId;
   final Clock clock;
   final MerkleTrie trie;
 
-  SyncLayerImpl(this.nodeId, this.protocol, [MerkleTrie trie])
-      : clock = Clock(nodeId),
-        trie = trie ?? MerkleTrie() {
-    //setup listeners
-    protocol.incomingNetworkStream.listen(_incomingStream);
-  }
+  // only for sending Atoms => Network, not internally!
+  final _atomStreamController = StreamController<List<Atom>>.broadcast();
 
-  void _incomingStream(MessageType msg) {
-    switch (msg.type) {
-      case MessageEnum.ATOMS:
-        _receiveAtoms(msg.values);
-        break;
-      case MessageEnum.STATE:
-        _receiveState(msg.values);
-        break;
-      default:
-        print("unknown type");
-    }
-  }
+  @override
+  Stream<List<Atom>> get atomStream => _atomStreamController.stream;
+
+  @override
+  MerkleTrie getState() => trie;
+
+  SyncLayerImpl(this.nodeId, [MerkleTrie trie])
+      : clock = Clock(nodeId),
+        trie = trie ?? MerkleTrie();
 
   /// accessors and utils
 
@@ -74,7 +66,7 @@ class SyncLayerImpl implements SyncLayer {
   String generateID() => newCuid();
 
   /// Work with Atoms
-
+  ///
   void _applyAtoms(List<Atom> atoms) {
     for (final atom in atoms) {
       if (!atomCache.exist(atom)) {
@@ -83,13 +75,15 @@ class SyncLayerImpl implements SyncLayer {
 
         if (container != null) {
           // if row does not exist, new row will be added
-          final obj = container.read(atom.id);
+          final obj = container.getEntry(atom.id);
           final res = obj.applyAtom(atom);
 
           // based on the result..
           if (res > 0) {
             if (res == 2) {
-              // todo trigger!
+              // do not trigger, because those are older values
+            } else {
+              // todo trigger! container /object update
             }
 
             atomCache.add(atom);
@@ -99,8 +93,6 @@ class SyncLayerImpl implements SyncLayer {
           }
         } else {
           print('Table does not exist');
-          // Todo: Throw error
-
         }
       } // else skip that message
     }
@@ -111,26 +103,40 @@ class SyncLayerImpl implements SyncLayer {
     return Atom(clock.getForSend(), typeId, objectId, fieldId, value);
   }
 
+  /// [applyAtoms] should only be called from the local application.
+  /// So do changes by adding apply Atoms,
+  /// use Transaction to apply first, which then applies all made changes and
+  /// sends via network
   @override
   void applyAtoms(List<Atom> atoms) {
-    _applyAtoms(atoms);
-    _sendAtoms(atoms);
+    if (transactionActive) {
+      transationList.addAll(atoms);
+    } else {
+      // could be changed?
+      _applyAtoms(atoms);
+      _atomStreamController.add(atoms);
+    }
   }
 
   // Optimizers
   final transationList = <Atom>[];
-
+  bool transactionActive = false;
   @override
   void transaction(Function func) {
-    // so something
+    transactionActive = true;
     func();
-    // revert something
     // send transationList
+    transactionActive = false;
+    applyAtoms([...transationList]);
+    transationList.clear();
   }
 
   /// Network communication
+  ///
+
   /// update local clock and apply atoms
-  void _receiveAtoms(List<Atom> atoms) {
+  @override
+  void receiveAtoms(List<Atom> atoms) {
     for (var atom in atoms) {
       clock.fromReveive(atom.ts);
     }
@@ -138,26 +144,23 @@ class SyncLayerImpl implements SyncLayer {
     _applyAtoms(atoms);
   }
 
-  /// send via network
-  void _sendAtoms(List<Atom> atoms, [int sinceInMilliseconds]) async {
-    var _atoms = atoms ?? [];
-
-    if (sinceInMilliseconds != null && sinceInMilliseconds != 0) {
-      var ts = clock.getHlc(sinceInMilliseconds, 0, nodeId);
-      _atoms = atomCache.getSince(ts.logicalTime);
+  List<Atom> getAtomsSinceMs(int ms) {
+    if (ms != null && ms != 0) {
+      var ts = clock.getHlc(ms, 0, nodeId);
+      return atomCache.getSince(ts.logicalTime);
     }
-
-    if (_atoms.isNotEmpty) {
-      protocol.sendAtoms(_atoms);
-    }
+    return [];
   }
 
+  /// These are workarounds
   /// get ts diff and send it back to requestee
-  void _receiveState(Map<int, dynamic> remoteState) {
-    final remoteTrie = MerkleTrie.fromMap(remoteState);
-
-    final tsKey = trie.diff(remoteTrie);
-    final ms = clock.tsKeyToMillisecond(tsKey);
-    _sendAtoms(null, ms);
+  @override
+  List<Atom> getAtomsByReceivingState(MerkleTrie remoteState) {
+    final tsKey = trie.diff(remoteState);
+    if (tsKey != null) {
+      final ms = clock.tsKeyToMillisecond(tsKey);
+      return getAtomsSinceMs(ms);
+    }
+    return [];
   }
 }

@@ -8,7 +8,7 @@ environment:
 dependencies:
   msgpack_dart: ^0.0.7
   meta: ^1.1.8
-  logging: ^0.11.4
+  logger: ^0.9.1
   web_socket_channel: ^1.1.0
 
 dev_dependencies:
