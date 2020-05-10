@@ -2,14 +2,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/sync2/abstract/index.dart';
 
 class KeyValue<K, V> {
   final K key;
   final V value;
   KeyValue(this.key, this.value);
 }
-
-
 
 class Atom<K, V> implements Comparable<Atom> {
   final Hlc ts;
@@ -81,11 +80,13 @@ class Atom<K, V> implements Comparable<Atom> {
 
   Uint8List toBytes() {
     final list = [ts.logicalTime, ts.node, type, id, key, value];
+
     return serialize(list);
   }
 
   factory Atom.fromBytes(Uint8List buff) {
     final list = deserialize(buff);
+
     return Atom(
       Hlc.fromLogicalTime(list[0], list[1]),
       list[2],

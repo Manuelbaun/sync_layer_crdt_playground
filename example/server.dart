@@ -12,36 +12,17 @@ void main() async {
   print('listen to 0.0.0.0:8000');
 
   final syn = SyncLayerImpl('server');
-  final daoTodo = syn.registerObjectType<Todo2>('todos', (c) => Todo2(c));
+  final daoTodo = syn.registerObjectType<Todo2>('todos', (c, id) => Todo2(c, id: id));
+  final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
+
+  daoTodo.changeStream.listen((objs) => objs.forEach(print));
+  daoAss.changeStream.listen((objs) => objs.forEach(print));
+
   final protocol = SyncLayerProtocol(syn);
 
   server.listen((HttpRequest request) {
     WebSocketTransformer.upgrade(request).then((WebSocket ws) {
       protocol.registerConnection(ws);
-      // wsSet.add(ws);
-
-      // ws.listen(
-      //   (rawData) {
-      //     if (rawData is Uint8List) {
-      //       protocol.receiveBuffer(rawData, ws);
-
-      //       if (rawData[0] == MessageEnum.ATOMS.index) {
-      //         // broadcast to all others
-      //         for (final _ws in wsSet) {
-      //           if (_ws != ws && _ws.readyState == WebSocket.open) {
-      //             print('${_ws.hashCode} - ${ws.hashCode}');
-      //             _ws.add(rawData);
-      //           }
-      //         }
-      //       }
-      //     } else {
-      //       print('not the protocol');
-      //     }
-      //   },
-      //   onDone: () => print('[+]Done :)'),
-      //   onError: (err) => print('[!]Error -- ${err.toString()}'),
-      //   cancelOnError: true,
-      // );
     }, onError: (err) => print('[!]Error -- ${err.toString()}'));
   }, onError: (err) => print('[!]Error -- ${err.toString()}'));
 }

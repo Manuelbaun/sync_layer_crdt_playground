@@ -1,11 +1,14 @@
 import 'package:sync_layer/basic/hlc.dart';
 import 'package:sync_layer/crdts/atom.dart';
 
+import 'syncable_object_container.dart';
+
 abstract class SyncableObject {
   String get id;
 
   /// Marks if the object is deleted!
   bool tompstone;
+  SyncableObjectContainer get container;
 
   /// Returns the timestamp for that field
   Hlc getCurrentTsOfField(String field);

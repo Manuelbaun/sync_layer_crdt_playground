@@ -89,8 +89,6 @@ class SyncLayerProtocol {
 
   void broadCastAtoms(List<Atom> atoms) {
     logger.d('broadCast Atoms');
-    print('>>>>>>>>>>>>>>>> broadcast');
-    print(atoms);
     final data = EnDecoder.encodeAtoms(atoms);
 
     for (final ws in websockets) {
@@ -101,7 +99,6 @@ class SyncLayerProtocol {
   void relayMessage(Uint8List data, WebSocket ws) {
     for (final _ws in websockets) {
       if (_ws != ws) {
-        print('Relay DATA: ${websocketsNames[ws]} >>> ${websocketsNames[_ws]}');
         _ws.add(data);
       }
     }
@@ -117,8 +114,6 @@ class SyncLayerProtocol {
         logger.d(MessageEnum.ATOMS);
 
         final atoms = EnDecoder.decodeAtoms(data);
-        print('<<<<<<<<<<<<<<<<<<<');
-        print(atoms);
         syn.receiveAtoms(atoms);
         relayMessage(rawData, ws);
       } else
@@ -136,10 +131,7 @@ class SyncLayerProtocol {
       if (msgType == MessageEnum.STATE.index) {
         logger.d(MessageEnum.STATE);
         final state = EnDecoder.decodeState(data);
-
-        // syn.receiveState(state);
         final atoms = syn.getAtomsByReceivingState(state);
-
         ws.add(EnDecoder.encodeAtoms(atoms, MessageEnum.STATE_RESPONSE));
       } else
 

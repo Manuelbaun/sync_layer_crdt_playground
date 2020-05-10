@@ -1,9 +1,15 @@
+import 'package:sync_layer/sync2/abstract/sync_layer.dart';
+
 import 'syncable_object.dart';
 
-typedef SynableObjectFactory<T> = T Function(SyncableObjectContainer container);
+typedef SynableObjectFactory<T> = T Function(SyncableObjectContainer container, String id);
 
 abstract class SyncableObjectContainer<T extends SyncableObject> {
   String get typeId;
+
+  /// TODO: Refactor this and use a util injector or something else
+  /// some sort of look up
+  SyncLayer get syn;
 
   /// **This is internal API**
   ///
@@ -23,7 +29,7 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
   ///
 
   /// creates new object
-  T create();
+  T create(String id);
 
   /// returns null if not exist or deleted
   T read(String id);

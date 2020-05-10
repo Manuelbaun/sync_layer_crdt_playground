@@ -19,11 +19,11 @@ void main(List<String> arguments) {
   final protocol = SyncLayerProtocol(syn);
 
   // create first container by type
-  final daoTodo = syn.registerObjectType<Todo2>('todos', (c) => Todo2(c));
+  final daoTodo = syn.registerObjectType<Todo2>('todos', (c, id) => Todo2(c, id: id));
+  final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 
-  // daoTodo.changeStream.listen((objs) {
-  //   objs.forEach(print);
-  // });
+  daoTodo.changeStream.listen((objs) => objs.forEach(print));
+  daoAss.changeStream.listen((objs) => objs.forEach(print));
 
   /// Setup connection
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
@@ -37,8 +37,22 @@ void main(List<String> arguments) {
   }, onError: (err) => print('[!]Error -- ${err.toString()}'));
 
   // apply changes
+  daoTodo.update('cka1jh04v000csa3aufnz114h', 'title', 'init Title');
+
   Timer.periodic(Duration(seconds: 2), (tt) {
-    final t = daoTodo.create();
-    t.title = 'hallo ${tt.tick}';
+    final t = daoTodo.getEntry('cka1jh04v000csa3aufnz114h');
+    if (t != null) {
+      t.title = 'hallo $nodeID ${tt.tick}';
+    }
+
+    if (t.assignee == null) {
+      t.assignee = daoAss.create(null);
+      t.assignee.firstName = 'Hans';
+      t.assignee.lastName = 'Peter';
+      t.assignee.age = 25;
+      
+      // circular ref!
+      t.assignee.todo = t;
+    }
   });
 }

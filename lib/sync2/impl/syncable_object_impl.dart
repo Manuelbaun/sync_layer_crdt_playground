@@ -9,6 +9,8 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Ref to the Table
   final SyncableObjectContainer _container;
+  @override
+  SyncableObjectContainer get container => _container;
 
   /// Marks if the object is deleted!
   @override
@@ -19,6 +21,7 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// the actual object data
   final Map<String, dynamic> _obj = {};
+  final Map<String, SyncableObject> _synableObjects = {};
   final Map<String, Hlc> _objHlc = {};
 
   // somewhat redundet
@@ -77,14 +80,43 @@ class SyncableObjectImpl implements SyncableObject {
   void _setField(Atom atom) {
     _obj[atom.key] = atom.value;
     _objHlc[atom.key] = atom.ts;
+
+    if (atom.value is Map) {
+      final m = atom.value as Map;
+
+      if (m['_typeId'] != null && m['_id'] != null) {
+        _synableObjects[atom.key] = _lookUpSynableObject(m['_typeId'], m['_id']);
+      }
+    }
   }
 
   @override
-  dynamic operator [](key) => _obj[key];
+  dynamic operator [](key) {
+    return _synableObjects[key] ?? _obj[key];
+  }
 
   /// should create shortcut to update the field directly???
   @override
   operator []=(field, value) {
-    _container.update(_id, field, value);
+    container.update(_id, field, _syncableObjToTypeAndID(value));
+  }
+
+  dynamic _syncableObjToTypeAndID(dynamic value) {
+    if (value is SyncableObject) {
+      return {'_typeId': value.container.typeId, '_id': value.id};
+    }
+    return value;
+  }
+
+  SyncableObject _lookUpSynableObject(typeId, id) {
+    final con = _container.syn.getObjectContainer(typeId);
+    return con.getEntry(id);
   }
 }
+
+// var val;
+// if (list[5] is Map) {
+//   final m = list[5] as Map;
+
+//   if (m['typeId'] != null && m['id'] != null) {}
+// }

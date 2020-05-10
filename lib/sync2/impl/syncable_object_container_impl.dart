@@ -46,7 +46,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   /// else it creates a new Entry
   @override
   T getEntry(String id) {
-    return read(id) ?? create();
+    return read(id) ?? create(id);
   }
 
   ///
@@ -56,8 +56,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
   /// creates new object
   @override
-  T create() {
-    final t = _objectFactory(this);
+  T create(String id) {
+    final t = _objectFactory(this, id);
     _objects[t.id] = t;
     return t;
   }

@@ -4,7 +4,7 @@ import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 
 import 'syncable_object.dart';
-import 'syncable_container.dart';
+import 'syncable_object_container.dart';
 
 /// This is the abstract [SyncLayer].
 abstract class SyncLayer {
