@@ -2,15 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/hlc.dart';
-import 'package:sync_layer/sync2/abstract/index.dart';
 
-class KeyValue<K, V> {
-  final K key;
-  final V value;
-  KeyValue(this.key, this.value);
-}
-
-class Atom<K, V> implements Comparable<Atom> {
+class Atom implements Comparable<Atom> {
   final Hlc ts;
   String get node => ts.node;
 
@@ -21,10 +14,10 @@ class Atom<K, V> implements Comparable<Atom> {
   final String id;
 
   /// In context ob a Db it is the **[column]**
-  final K key;
+  final dynamic key;
 
   /// In context of a Db its the **[value]** of the column
-  final V value;
+  final dynamic value;
 
   Atom(
     this.ts,
@@ -44,10 +37,10 @@ class Atom<K, V> implements Comparable<Atom> {
     Hlc ts,
     String type,
     String id,
-    K key,
-    V value,
+    dynamic key,
+    dynamic value,
   }) {
-    return Atom<K, V>(
+    return Atom(
       ts ?? this.ts,
       type ?? this.type,
       id ?? this.id,

@@ -40,9 +40,9 @@ class CRDTMap<K, V> {
   Atom set(K key, V value) {
     // Todo: form Atom
     _timestamp = Hlc.send(_timestamp);
-    Atom<K, V>(_timestamp, null, objId, key, value);
     _obj[key] = value;
     _objHlc[key] = _timestamp;
+    return Atom(_timestamp, null, objId, key, value);
   }
 
   /// get value by key. Same property as the underlaying map
