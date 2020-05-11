@@ -7,10 +7,6 @@ import 'package:sync_layer/sync2/sync_layer_protocol.dart';
 
 import 'dao.dart';
 
-void printObj(o) {
-  print('Object changed: $o');
-}
-
 /// --------------------------------------------------------------
 /// --------------------------------------------------------------
 /// --------------------------------------------------------------
@@ -27,11 +23,10 @@ void main(List<String> arguments) {
   final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 
   daoTodo.changeStream.listen((objs) {
-    objs.forEach(printObj);
-    print(daoTodo.length);
+    objs.forEach(print);
   });
 
-  daoAss.changeStream.listen((objs) => objs.forEach(printObj));
+  daoAss.changeStream.listen((objs) => objs.forEach(print));
 
   /// Setup connection
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
@@ -67,7 +62,7 @@ void main(List<String> arguments) {
           // circular ref!
         }
       });
-      
+
       Timer(Duration(seconds: 2), () {
         daoTodo.delete('cka1jh04v000csa3aufnz114h');
         // finish program

@@ -17,6 +17,7 @@ void main() async {
     objs.forEach(print);
     print(daoTodo.length);
   });
+
   daoAss.changeStream.listen((objs) => objs.forEach(print));
 
   final protocol = SyncLayerProtocol(syn);

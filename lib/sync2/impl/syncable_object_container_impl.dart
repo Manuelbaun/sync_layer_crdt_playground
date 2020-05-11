@@ -61,12 +61,10 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
     if (obj == null) {
       // creates new object with provided ID
       obj = _objectFactory(this, id);
-      logger.i('CREATE: $obj');
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
-      // newO = _objectFactory(this, null);
-      logger.e('problem with recreate of $typeId - $id');
+      logger.e('Cannot recreate by the same id $typeId - $id. Will return same old object');
       return obj;
     } else
 

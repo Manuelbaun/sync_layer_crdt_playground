@@ -13,7 +13,7 @@ class Todo2 extends SyncableObjectImpl {
   String toString() {
     if (tombstone) return 'Todo($id, deleted: $tombstone)';
 
-    return 'Todo($id, $title, $assignee, $lastUpdated)';
+    return 'Todo($id, $title : $lastUpdated)';
   }
 }
 
@@ -34,6 +34,6 @@ class Assignee extends SyncableObjectImpl {
 
   @override
   String toString() {
-    return 'Assignee($id, $firstName, $lastName, $age ${todo?.id}: $lastUpdated)';
+    return 'Assignee($id, $firstName, $lastName, $age : $lastUpdated)';
   }
 }

@@ -144,10 +144,7 @@ class SyncableObjectImpl implements SyncableObject {
   SyncableObject _lookUpSynableObject(String typeId, String id) {
     final con = _container.syn.getObjectContainer(typeId);
     var obj = con.read(id);
-    if (obj == null) {
-      obj ??= con.create(id);
-      print('create syncable object by lookup');
-    }
+    obj ??= con.create(id);
     return obj;
   }
 }
