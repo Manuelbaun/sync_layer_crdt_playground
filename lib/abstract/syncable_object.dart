@@ -3,7 +3,7 @@ import 'package:sync_layer/crdts/atom.dart';
 
 import 'syncable_object_container.dart';
 
-abstract class SyncableObject {
+abstract class SyncableObject extends Comparable<SyncableObject> {
   String get id;
 
   /// Marks if the object is deleted!

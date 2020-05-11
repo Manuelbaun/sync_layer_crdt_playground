@@ -147,4 +147,18 @@ class SyncableObjectImpl implements SyncableObject {
     obj ??= con.create(id);
     return obj;
   }
+
+  /// lexographical sort by ID
+  @override
+  int compareTo(SyncableObject other) {
+    for (var i = 0; i < id.length; i++) {
+      final lc = id.codeUnitAt(i);
+      final oc = other.id.codeUnitAt(i);
+
+      if (lc > oc) return 1;
+      if (lc < oc) return -1;
+    }
+
+    return 0;
+  }
 }

@@ -16,6 +16,8 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
   void setUpdatedObject(T obj);
   void triggerUpdateChange();
 
+  List<T> allObjects();
+
   /// CRUD Ops Public API
 
   /// creates new object if id is null it created a new cuid

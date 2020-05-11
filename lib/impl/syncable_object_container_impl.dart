@@ -24,6 +24,15 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   Stream<Set<T>> get changeStream => _controller.stream;
 
   @override
+  List<T> allObjects() {
+    List<T> o = _objects.values.where((o) => o.tombstone == false).toList();
+    if (o.isNotEmpty) {
+      o.sort();
+    }
+    return o;
+  }
+
+  @override
   void setUpdatedObject(T obj) {
     _updatedObjects.add(obj);
   }

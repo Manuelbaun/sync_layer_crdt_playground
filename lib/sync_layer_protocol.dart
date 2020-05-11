@@ -74,8 +74,17 @@ class SyncLayerProtocol {
 
   void unregisterConnection(WebSocket ws) {
     log.d('Unregister Connection');
+    ws.close();
     websockets.remove(ws);
     websocketsNames.remove(ws);
+  }
+
+  void disconnectFromAll() {
+    websockets.forEach((ws) {
+      ws.close();
+    });
+
+    websockets.clear();
   }
 
   void broadCastAtoms(List<Atom> atoms) {
