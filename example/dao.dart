@@ -1,10 +1,13 @@
 import 'package:sync_layer/index.dart';
 
-class Todo2 extends SyncableObjectImpl {
-  Todo2(SyncableObjectContainerImpl<Todo2> con, {String id, String title}) : super(id, con);
+class Todo extends SyncableObjectImpl {
+  Todo(SyncableObjectContainerImpl<Todo> con, {String id, String title}) : super(id, con);
 
   String get title => super['title'];
   set title(String v) => super['title'] = v;
+
+  bool get status => super['status'];
+  set status(bool v) => super['status'] = v;
 
   Assignee get assignee => super['assignee'];
   set assignee(Assignee v) => super['assignee'] = v;
@@ -29,8 +32,8 @@ class Assignee extends SyncableObjectImpl {
   int get age => super['age'];
   set age(int v) => super['age'] = v;
 
-  Todo2 get todo => super['todos'];
-  set todo(Todo2 v) => super['todos'] = v;
+  Todo get todo => super['todos'];
+  set todo(Todo v) => super['todos'] = v;
 
   @override
   String toString() {
