@@ -12,9 +12,9 @@ class SyncableObjectImpl implements SyncableObject {
   final String _id;
 
   /// Ref to the Table
-  final SyncableObjectContainer _container;
   @override
   SyncableObjectContainer get container => _container;
+  final SyncableObjectContainer _container;
 
   /// Marks if the object is deleted!
   @override
@@ -23,10 +23,13 @@ class SyncableObjectImpl implements SyncableObject {
   @override
   set tompstone(bool v) => this[_TOMBSTONE] = v;
 
-  /// the actual object data
+  /// Stores the key /values of the fields, specify by the user.
+  /// in case of a synable object, it stores the type and id
   final Map<String, dynamic> _obj = {};
-  final Map<String, SyncableObject> _synableObjects = {};
   final Map<String, Hlc> _objHlc = {};
+
+  /// Stores the reference to the syncable Object
+  final Map<String, SyncableObject> _syncableObjects = {};
 
   // somewhat redundet
   final List<Atom> history = [];
@@ -46,19 +49,19 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Returns the timestamp for that field
   @override
-  Hlc getCurrentTsOfField(String field) => _objHlc[field];
+  Hlc getCurrentHLCOfField(String field) => _objHlc[field];
 
+  // TODO: could be set with [applyAtoms]
   @override
   Hlc get lastUpdated => _objHlc.values.reduce((a, b) => a > b ? a : b);
 
-  /// applies atom:
-  /// * if successfull => returns [2]
-  /// * if atom is older then current value => returns [1] :
-  /// * else => returns [-1]
-  ///
+  /// applies atom and returns
+  /// * returns [ 2] : if apply successfull
+  /// * returns [ 1] : if atom is older then current value
+  /// * returns [-1] : else
   @override
   int applyAtom(Atom atom) {
-    final currentTs = getCurrentTsOfField(atom.key);
+    final currentTs = getCurrentHLCOfField(atom.key);
 
     // if field was not set or the local time happend before [hb] to new Atom
     if (currentTs == null || Hlc.compareWithNodes(currentTs, atom.ts)) {
@@ -67,7 +70,7 @@ class SyncableObjectImpl implements SyncableObject {
       return 2;
     }
 
-    /// if atoms.ts < currentTs => true
+    // if atoms.ts < currentTs => true
     if (Hlc.compareWithNodes(atom.ts, currentTs)) {
       _updateHistory(atom);
       return 1;
@@ -76,6 +79,9 @@ class SyncableObjectImpl implements SyncableObject {
     return -1;
   }
 
+  /// adds internally to the history log!
+  /// TODO: what can be done with this...
+  /// DB lookups?
   void _updateHistory(Atom atom) {
     history.add(atom);
     history.sort((a, b) => b.ts.logicalTime - a.ts.logicalTime);
@@ -87,25 +93,41 @@ class SyncableObjectImpl implements SyncableObject {
 
     if (atom.value is Map) {
       final m = atom.value as Map;
-      final type = m[_TYPEID];
-      final objId = m[_OBJID];
+
+      final String type = m[_TYPEID];
+      final String objId = m[_OBJID];
+
+      // if it is a synable object look it up and store it in the [_syncableObjects]
       if (type != null && objId != null) {
-        _synableObjects[atom.key] = _lookUpSynableObject(type, objId);
+        _syncableObjects[atom.key] = _lookUpSynableObject(type, objId);
       }
     }
   }
 
+  /// looks up first if something is in synable object else in the
+  /// regular object by this key
   @override
   dynamic operator [](key) {
-    return _synableObjects[key] ?? _obj[key];
+    return _syncableObjects[key] ?? _obj[key];
   }
 
-  /// should create shortcut to update the field directly???
+  /// sets the values
   @override
-  operator []=(field, value) {
-    container.update(_id, field, _syncableObjToTypeAndID(value));
+  operator []=(field, value) => _sendToSyncLayer(field, value);
+
+  /// once a field gets set, this will send the update action via
+  /// [container.update]. This will create an Atom and sends it back to
+  /// apply to the [_obj] through the synclayer
+  ///
+  /// THINK: maybe a short cut could be created?
+  void _sendToSyncLayer(String field, value) {
+    final val = _syncableObjToTypeAndID(value);
+    _container.update(_id, field, val);
   }
 
+  /// this function checks wheter value is a syncable object or not.
+  /// If so, store the reference as type id and object id
+  /// else pass the value through
   dynamic _syncableObjToTypeAndID(dynamic value) {
     if (value is SyncableObject) {
       return {_TYPEID: value.container.typeId, _OBJID: value.id};
@@ -113,15 +135,9 @@ class SyncableObjectImpl implements SyncableObject {
     return value;
   }
 
-  SyncableObject _lookUpSynableObject(typeId, id) {
+  /// looks up the syncable object by the container given by the typeId
+  SyncableObject _lookUpSynableObject(String typeId, String id) {
     final con = _container.syn.getObjectContainer(typeId);
     return con.getEntry(id);
   }
 }
-
-// var val;
-// if (list[5] is Map) {
-//   final m = list[5] as Map;
-
-//   if (m['typeId'] != null && m['id'] != null) {}
-// }

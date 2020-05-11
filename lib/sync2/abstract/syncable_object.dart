@@ -11,7 +11,7 @@ abstract class SyncableObject {
   SyncableObjectContainer get container;
 
   /// Returns the timestamp for that field
-  Hlc getCurrentTsOfField(String field);
+  Hlc getCurrentHLCOfField(String field);
   Hlc get lastUpdated;
 
   /// applies atom:

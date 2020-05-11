@@ -4,13 +4,13 @@ import 'package:sync_layer/sync2/abstract/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final String _typeId;
-  final SyncLayer syn;
   final Map<String, T> _objects = {}; // the real elements
   final SynableObjectFactory<T> _objectFactory;
-
   final _controller = StreamController<Set<T>>.broadcast();
-
   final _updatedObjects = <T>{};
+
+  @override
+  final SyncLayer syn;
 
   @override
   Stream<Set<T>> get changeStream => _controller.stream;
