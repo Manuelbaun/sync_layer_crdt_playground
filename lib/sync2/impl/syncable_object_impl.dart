@@ -2,6 +2,10 @@ import 'package:sync_layer/basic/hlc.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/sync2/abstract/index.dart';
 
+const String _TOMBSTONE = '_tombstone';
+const String _TYPEID = '_typeId';
+const String _OBJID = '_objid';
+
 class SyncableObjectImpl implements SyncableObject {
   @override
   String get id => _id;
@@ -14,10 +18,10 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Marks if the object is deleted!
   @override
-  bool get tompstone => this['tompstone'];
+  bool get tompstone => this[_TOMBSTONE];
 
   @override
-  set tompstone(bool v) => this['tomestone'] = v;
+  set tompstone(bool v) => this[_TOMBSTONE] = v;
 
   /// the actual object data
   final Map<String, dynamic> _obj = {};
@@ -83,9 +87,10 @@ class SyncableObjectImpl implements SyncableObject {
 
     if (atom.value is Map) {
       final m = atom.value as Map;
-
-      if (m['_typeId'] != null && m['_id'] != null) {
-        _synableObjects[atom.key] = _lookUpSynableObject(m['_typeId'], m['_id']);
+      final type = m[_TYPEID];
+      final objId = m[_OBJID];
+      if (type != null && objId != null) {
+        _synableObjects[atom.key] = _lookUpSynableObject(type, objId);
       }
     }
   }
@@ -103,7 +108,7 @@ class SyncableObjectImpl implements SyncableObject {
 
   dynamic _syncableObjToTypeAndID(dynamic value) {
     if (value is SyncableObject) {
-      return {'_typeId': value.container.typeId, '_id': value.id};
+      return {_TYPEID: value.container.typeId, _OBJID: value.id};
     }
     return value;
   }

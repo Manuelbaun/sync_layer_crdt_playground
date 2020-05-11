@@ -27,11 +27,11 @@ class Assignee extends SyncableObjectImpl {
   int get age => super['age'];
   set age(int v) => super['age'] = v;
 
-  List<Todo2> get todos => super['todos'];
-  set todo(List<Todo2> v) => super['todos'] = v;
+  Todo2 get todo => super['todos'];
+  set todo(Todo2 v) => super['todos'] = v;
 
   @override
   String toString() {
-    return 'Assignee($id, $firstName, $lastName, $age ${todos?.length}: $lastUpdated)';
+    return 'Assignee($id, $firstName, $lastName, $age ${todo?.id}: $lastUpdated)';
   }
 }
