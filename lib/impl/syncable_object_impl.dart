@@ -1,6 +1,6 @@
 import 'package:sync_layer/basic/hlc.dart';
 import 'package:sync_layer/crdts/atom.dart';
-import 'package:sync_layer/sync2/abstract/index.dart';
+import 'package:sync_layer/abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone';
 const String _TYPEID = '_typeId';

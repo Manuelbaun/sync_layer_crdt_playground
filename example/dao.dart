@@ -1,4 +1,4 @@
-import 'package:sync_layer/sync2/impl/index.dart';
+import 'package:sync_layer/index.dart';
 
 class Todo2 extends SyncableObjectImpl {
   Todo2(SyncableObjectContainerImpl<Todo2> con, {String id, String title}) : super(id, con);

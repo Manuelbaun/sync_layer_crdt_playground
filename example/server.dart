@@ -1,8 +1,7 @@
 import 'dart:io' show HttpServer, HttpRequest, WebSocket, WebSocketTransformer;
 
-import 'package:sync_layer/sync2/impl/index.dart';
-import 'package:sync_layer/sync2/sync_layer_protocol.dart';
 import 'dao.dart';
+import 'package:sync_layer/index.dart';
 
 void main() async {
   final server = await HttpServer.bind('0.0.0.0', 8000);

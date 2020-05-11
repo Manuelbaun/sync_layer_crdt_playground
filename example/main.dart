@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:sync_layer/sync2/impl/index.dart';
-import 'package:sync_layer/sync2/sync_layer_protocol.dart';
+import 'package:sync_layer/index.dart';
 
 import 'dao.dart';
 

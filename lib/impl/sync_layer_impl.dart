@@ -4,12 +4,11 @@ import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/crdts/clock.dart';
-import 'package:sync_layer/sync2/abstract/index.dart';
-import 'package:sync_layer/sync2/errors/index.dart';
-import 'package:sync_layer/sync2/impl/syncable_object_container_impl.dart';
-import 'package:sync_layer/sync2/sync_layer_atom_cache.dart';
-
-import '../sync_layer_protocol.dart';
+import 'package:sync_layer/abstract/index.dart';
+import 'package:sync_layer/errors/index.dart';
+import 'package:sync_layer/impl/syncable_object_container_impl.dart';
+import 'package:sync_layer/logger.dart';
+import 'package:sync_layer/sync_layer_atom_cache.dart';
 
 class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
@@ -82,7 +81,7 @@ class SyncLayerImpl implements SyncLayer {
         if (container != null) {
           // if row does not exist, new row will be added
           var obj = container.read(atom.id);
-          logger.i('Type: ${atom.type}- ${atom.id}');
+          log.i('Type: ${atom.type}- ${atom.id}');
           obj ??= container.create(atom.id);
 
           final res = obj.applyAtom(atom);
@@ -100,10 +99,10 @@ class SyncLayerImpl implements SyncLayer {
             atomCache.add(atom);
             trie.build([atom.ts]);
           } else {
-            logger.e('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
+            log.e('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
           }
         } else {
-          logger.e('Table does not exist');
+          log.e('Table does not exist');
         }
       } // else skip that message
     }

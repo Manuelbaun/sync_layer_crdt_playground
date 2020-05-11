@@ -5,19 +5,8 @@ import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
-import 'package:sync_layer/sync2/abstract/sync_layer.dart';
-
-import 'package:logger/logger.dart';
-
-var logger = Logger(
-    printer: PrettyPrinter(
-        methodCount: 1, // number of method calls to be displayed
-        errorMethodCount: 8, // number of method calls if stacktrace is provided
-        lineLength: 120, // width of the output
-        colors: true, // Colorful log messages
-        printEmojis: true, // Print an emoji for each log message
-        printTime: false // Should each log print contain a timestamp
-        ));
+import 'package:sync_layer/abstract/sync_layer.dart';
+import 'package:sync_layer/logger.dart';
 
 enum MessageEnum {
   STATE,
@@ -72,7 +61,7 @@ class SyncLayerProtocol {
       onDone: () => unregisterConnection(ws),
       onError: (err) {
         unregisterConnection(ws);
-        logger.e('[!]Error -- ${err.toString()}');
+        log.e('[!]Error -- ${err.toString()}');
       },
       cancelOnError: true,
     );
@@ -84,13 +73,13 @@ class SyncLayerProtocol {
   }
 
   void unregisterConnection(WebSocket ws) {
-    logger.d('Unregister Connection');
+    log.d('Unregister Connection');
     websockets.remove(ws);
     websocketsNames.remove(ws);
   }
 
   void broadCastAtoms(List<Atom> atoms) {
-    logger.d('broadCast Atoms');
+    log.d('broadCast Atoms');
     final data = EnDecoder.encodeAtoms(atoms);
 
     for (final ws in websockets) {
@@ -113,7 +102,7 @@ class SyncLayerProtocol {
 
       // if atoms
       if (msgType == MessageEnum.ATOMS.index) {
-        logger.d(MessageEnum.ATOMS);
+        log.d(MessageEnum.ATOMS);
 
         final atoms = EnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
@@ -123,7 +112,7 @@ class SyncLayerProtocol {
       /// if it is just an state reponse, add receiving atoms to SyncLayer
       /// but do not relay to all other connections..
       if (msgType == MessageEnum.STATE_RESPONSE.index) {
-        logger.d(MessageEnum.STATE_RESPONSE);
+        log.d(MessageEnum.STATE_RESPONSE);
 
         final atoms = EnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
@@ -131,7 +120,7 @@ class SyncLayerProtocol {
 
       // if a state incoming is send => send back the diffs
       if (msgType == MessageEnum.STATE.index) {
-        logger.d(MessageEnum.STATE);
+        log.d(MessageEnum.STATE);
         final state = EnDecoder.decodeState(data);
         final atoms = syn.getAtomsByReceivingState(state);
         ws.add(EnDecoder.encodeAtoms(atoms, MessageEnum.STATE_RESPONSE));
@@ -139,7 +128,7 @@ class SyncLayerProtocol {
 
       // is a state request is issued
       if (msgType == MessageEnum.STATE_REQUEST.index) {
-        logger.d(MessageEnum.STATE_REQUEST);
+        log.d(MessageEnum.STATE_REQUEST);
 
         final stateData = EnDecoder.encodeState(syn.getState());
         ws.add(stateData);
@@ -151,10 +140,10 @@ class SyncLayerProtocol {
 
       //
       else {
-        logger.e('UNKOWN type $msgType');
+        log.e('UNKOWN type $msgType');
       }
     } else {
-      logger.e('incorrect type');
+      log.e('incorrect type');
     }
   }
 }

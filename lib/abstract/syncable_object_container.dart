@@ -1,5 +1,4 @@
-import 'package:sync_layer/sync2/abstract/sync_layer.dart';
-
+import 'sync_layer.dart';
 import 'syncable_object.dart';
 
 typedef SynableObjectFactory<T> = T Function(SyncableObjectContainer container, String id);
