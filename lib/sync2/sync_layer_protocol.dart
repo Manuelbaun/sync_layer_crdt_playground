@@ -57,9 +57,11 @@ class SyncLayerProtocol {
 
   StreamSubscription atomSub;
   SyncLayerProtocol(this.syn) {
-    // setup broadcast
-
     atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
+  }
+
+  void dispose() async {
+    await atomSub.cancel();
   }
 
   void registerConnection(WebSocket ws) {

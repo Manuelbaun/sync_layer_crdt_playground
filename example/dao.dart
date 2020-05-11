@@ -11,6 +11,8 @@ class Todo2 extends SyncableObjectImpl {
 
   @override
   String toString() {
+    if (tombstone) return 'Todo($id, deleted: $tombstone)';
+
     return 'Todo($id, $title, $assignee, $lastUpdated)';
   }
 }

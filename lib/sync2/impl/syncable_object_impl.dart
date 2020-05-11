@@ -18,10 +18,10 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Marks if the object is deleted!
   @override
-  bool get tompstone => this[_TOMBSTONE];
+  bool get tombstone => this[_TOMBSTONE];
 
   @override
-  set tompstone(bool v) => this[_TOMBSTONE] = v;
+  set tombstone(bool v) => this[_TOMBSTONE] = v;
 
   /// Stores the key /values of the fields, specify by the user.
   /// in case of a synable object, it stores the type and id
@@ -43,7 +43,9 @@ class SyncableObjectImpl implements SyncableObject {
       : assert(container != null, 'Table prop cant be null'),
         _container = container,
         _id = id ?? container.generateID() {
-    /// TODO: create Tompstone field!
+    // define and set tombstone to false;
+    _obj[_TOMBSTONE] = false;
+
     /// without HLC => default false or 0
   }
 
@@ -53,7 +55,10 @@ class SyncableObjectImpl implements SyncableObject {
 
   // TODO: could be set with [applyAtoms]
   @override
-  Hlc get lastUpdated => _objHlc.values.reduce((a, b) => a > b ? a : b);
+  Hlc get lastUpdated {
+    if (_objHlc.isNotEmpty) return _objHlc.values?.reduce((a, b) => a > b ? a : b);
+    return null;
+  }
 
   /// applies atom and returns
   /// * returns [ 2] : if apply successfull
@@ -138,6 +143,11 @@ class SyncableObjectImpl implements SyncableObject {
   /// looks up the syncable object by the container given by the typeId
   SyncableObject _lookUpSynableObject(String typeId, String id) {
     final con = _container.syn.getObjectContainer(typeId);
-    return con.getEntry(id);
+    var obj = con.read(id);
+    if (obj == null) {
+      obj ??= con.create(id);
+      print('create syncable object by lookup');
+    }
+    return obj;
   }
 }

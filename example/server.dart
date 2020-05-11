@@ -1,9 +1,7 @@
 import 'dart:io' show HttpServer, HttpRequest, WebSocket, WebSocketTransformer;
-import 'dart:typed_data';
 
 import 'package:sync_layer/sync2/impl/index.dart';
 import 'package:sync_layer/sync2/sync_layer_protocol.dart';
-
 import 'dao.dart';
 
 void main() async {
@@ -15,7 +13,10 @@ void main() async {
   final daoTodo = syn.registerObjectType<Todo2>('todos', (c, id) => Todo2(c, id: id));
   final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 
-  daoTodo.changeStream.listen((objs) => objs.forEach(print));
+  daoTodo.changeStream.listen((objs) {
+    objs.forEach(print);
+    print(daoTodo.length);
+  });
   daoAss.changeStream.listen((objs) => objs.forEach(print));
 
   final protocol = SyncLayerProtocol(syn);

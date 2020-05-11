@@ -7,7 +7,7 @@ abstract class SyncableObject {
   String get id;
 
   /// Marks if the object is deleted!
-  bool tompstone;
+  bool tombstone;
   SyncableObjectContainer get container;
 
   /// Returns the timestamp for that field

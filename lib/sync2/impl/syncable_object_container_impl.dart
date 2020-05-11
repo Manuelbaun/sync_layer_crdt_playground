@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/sync2/abstract/index.dart';
+import 'package:sync_layer/sync2/sync_layer_protocol.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final String _typeId;
@@ -8,6 +9,13 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   final SynableObjectFactory<T> _objectFactory;
   final _controller = StreamController<Set<T>>.broadcast();
   final _updatedObjects = <T>{};
+
+  /// this returns the length of the container **with** delted Objects!
+  /// TODO: filter out tombstoned objects
+  @override
+  int get length {
+    return _objects.length;
+  }
 
   @override
   final SyncLayer syn;
@@ -40,15 +48,6 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   @override
   String generateID() => syn.generateID();
 
-  /// **This is internal API**
-  ///
-  /// returns Entry of Type T if present in the entry Map
-  /// else it creates a new Entry
-  @override
-  T getEntry(String id) {
-    return read(id) ?? create(id);
-  }
-
   ///
   /// CRUD Ops
   /// Public API
@@ -56,17 +55,45 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
   /// creates new object
   @override
-  T create(String id) {
-    final t = _objectFactory(this, id);
-    _objects[t.id] = t;
-    return t;
+  T create([String id]) {
+    var obj = _get(id);
+
+    if (obj == null) {
+      // creates new object with provided ID
+      obj = _objectFactory(this, id);
+      logger.i('CREATE: $obj');
+      return _set(obj);
+    } else if (obj.tombstone == true) {
+      /// Creates new ID for previous deleted object!
+      // newO = _objectFactory(this, null);
+      logger.e('problem with recreate of $typeId - $id');
+      return obj;
+    } else
+
+    // if object exist, and is not deleted! => cant create
+    if (obj != null && !obj.tombstone) {
+      throw AssertionError('Cant create Object because ID "$id" already exist');
+    }
+
+    throw AssertionError('This should never happen: Some missing cases when create Object is called. Debug me!');
+  }
+
+  SyncableObject _set(SyncableObject obj) {
+    _objects[obj.id] = obj;
+    return _objects[obj.id];
+  }
+
+  SyncableObject _get(String id) {
+    return _objects[id];
   }
 
   /// returns null if not exist or deleted
   @override
   T read(String id) {
-    final t = _objects[id];
-    if (t != null && t.tompstone != false) return t;
+    final o = _get(id);
+    // if not deleted
+    if (o != null && o.tombstone == false) return o;
+    // if deleted
     return null;
   }
 
@@ -83,7 +110,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   bool delete(String id) {
     final t = read(id);
     if (t != null) {
-      t.tompstone = true;
+      t.tombstone = true;
       return true;
     }
     return false;

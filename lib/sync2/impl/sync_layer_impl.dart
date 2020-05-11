@@ -9,6 +9,8 @@ import 'package:sync_layer/sync2/errors/index.dart';
 import 'package:sync_layer/sync2/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/sync2/sync_layer_atom_cache.dart';
 
+import '../sync_layer_protocol.dart';
+
 class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
@@ -79,7 +81,10 @@ class SyncLayerImpl implements SyncLayer {
 
         if (container != null) {
           // if row does not exist, new row will be added
-          final obj = container.getEntry(atom.id);
+          var obj = container.read(atom.id);
+          logger.i('Type: ${atom.type}- ${atom.id}');
+          obj ??= container.create(atom.id);
+
           final res = obj.applyAtom(atom);
 
           // based on the result..
@@ -95,10 +100,10 @@ class SyncLayerImpl implements SyncLayer {
             atomCache.add(atom);
             trie.build([atom.ts]);
           } else {
-            print('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
+            logger.e('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
           }
         } else {
-          print('Table does not exist');
+          logger.e('Table does not exist');
         }
       } // else skip that message
     }

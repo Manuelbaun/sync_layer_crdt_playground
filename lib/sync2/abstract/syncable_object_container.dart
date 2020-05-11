@@ -6,36 +6,26 @@ typedef SynableObjectFactory<T> = T Function(SyncableObjectContainer container, 
 
 abstract class SyncableObjectContainer<T extends SyncableObject> {
   String get typeId;
+  int get length;
 
   /// TODO: Refactor this and use a util injector or something else
   /// some sort of look up
   SyncLayer get syn;
 
-  /// **This is internal API**
-  ///
-  /// returns Entry of Type T if present in the entry Map
-  /// else it creates a new Entry
-  T getEntry(String id);
-
   String generateID();
-
   Stream<Set<T>> get changeStream;
   void setUpdatedObject(T obj);
   void triggerUpdateChange();
 
-  ///
-  /// CRUD Ops
-  /// Public API
-  ///
+  /// CRUD Ops Public API
 
-  /// creates new object
-  T create(String id);
+  /// creates new object if id is null it created a new cuid
+  T create([String id]);
 
   /// returns null if not exist or deleted
   T read(String id);
 
-  /// updates an object ???
-  // gets called from the sync object
+  /// updates an object field with value by id
   void update(String objectId, String fieldId, dynamic value);
 
   ///
