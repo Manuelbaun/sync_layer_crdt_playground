@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
-import 'package:sync_layer/basic/timestamp/hybrid_logical_clock.dart';
+import 'package:sync_layer/timestamp/index.dart';
 
 class Atom implements Comparable<Atom> {
-  final Hlc ts;
-  int get site => ts.site;
+  final Hlc hlc;
+  int get site => hlc.site;
 
   /// In Context  of a Db, it's the **[Table]** id
   final String type;
@@ -20,7 +20,7 @@ class Atom implements Comparable<Atom> {
   final dynamic value;
 
   Atom(
-    this.ts,
+    this.hlc,
     this.type,
     this.id,
     this.key,
@@ -30,18 +30,18 @@ class Atom implements Comparable<Atom> {
   @override
   int compareTo(Atom other) {
     // return other.ts.logicalTime - ts.logicalTime; // DESC
-    return ts.logicalTime - other.ts.logicalTime; //ASC
+    return hlc.logicalTime - other.hlc.logicalTime; //ASC
   }
 
   Atom copyWith({
-    Hlc ts,
+    Hlc hlc,
     String type,
     String id,
     dynamic key,
     dynamic value,
   }) {
     return Atom(
-      ts ?? this.ts,
+      hlc ?? this.hlc,
       type ?? this.type,
       id ?? this.id,
       key ?? this.key,
@@ -51,7 +51,7 @@ class Atom implements Comparable<Atom> {
 
   Map<String, dynamic> toMap() {
     return {
-      'ts': ts.toString(),
+      'ts': hlc.toString(),
       'type': type,
       'id': id,
       'key': key,
@@ -72,7 +72,7 @@ class Atom implements Comparable<Atom> {
   }
 
   Uint8List toBytes() {
-    final list = [ts.logicalTime, ts.site, type, id, key, value];
+    final list = [hlc.logicalTime, hlc.site, type, id, key, value];
 
     return serialize(list);
   }
@@ -94,18 +94,18 @@ class Atom implements Comparable<Atom> {
 
   @override
   String toString() {
-    return 'Atom(ts: $ts, type: $type, id: $id, key: $key, value: $value)';
+    return 'Atom(ts: ${hlc.toRON()}, type: $type, id: $id, key: $key, value: $value)';
   }
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is Atom && o.ts == ts && o.type == type && o.id == id && o.key == key && o.value == value;
+    return o is Atom && o.hlc == hlc && o.type == type && o.id == id && o.key == key && o.value == value;
   }
 
   @override
   int get hashCode {
-    return ts.hashCode ^ type.hashCode ^ id.hashCode ^ key.hashCode ^ value.hashCode;
+    return hlc.hashCode ^ type.hashCode ^ id.hashCode ^ key.hashCode ^ value.hashCode;
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
-
+import 'package:sync_layer/timestamp/index.dart';
 import 'atom.dart';
 
 ///
@@ -56,20 +56,20 @@ class CRDTMap<K, V> {
         history.add(atom);
 
         /// only merge if Atom of remote > then local
-        _timestamp = Hlc.recv(_timestamp, atom.ts);
+        _timestamp = Hlc.recv(_timestamp, atom.hlc);
 
         final key = atom.key as K;
         final value = atom.value;
 
         // if localtime is smaller..
-        if (_objHlc[key] < atom.ts) {
+        if (_objHlc[key] < atom.hlc) {
           _obj[key] = value;
-          _objHlc[key] = atom.ts;
+          _objHlc[key] = atom.hlc;
         } else if (_obj[key] == null) {
           // if no local entry exist
           _obj[key] = value;
-          _objHlc[key] = atom.ts;
-        } else if (_objHlc[key] == atom.ts) {
+          _objHlc[key] = atom.hlc;
+        } else if (_objHlc[key] == atom.hlc) {
           // TODO: sort by nodeid
 
         } // else ignore

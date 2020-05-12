@@ -8,7 +8,7 @@ final String _prefix = 'c';
 final int _base = 36; // size of the alphabet
 final _secureRandom = Random();
 // final _secureRandom = Random.secure();
-const max = 0xFFFFFFFF;
+const MAX = 0xFFFFFFFF;
 
 String _timeBlock() {
   final now = DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -26,20 +26,20 @@ String _counterBlock() {
 final String _fingerprint = _pidFingerprint() + _hostFingerprint();
 
 String _pidFingerprint() {
-  final pid = _secureRandom.nextInt(max);
+  final pid = _secureRandom.nextInt(MAX);
   return _pad(pid.toRadixString(_base), 2);
   // return _pad(io.pid.toRadixString(_base), 2);
 }
 
 String _hostFingerprint() {
   // final hostId = io.Platform.localHostname.runes.reduce((acc, r) => acc + r);
-  final hostId = _secureRandom.nextInt(max);
+  final hostId = _secureRandom.nextInt(MAX);
   return _pad(hostId.toRadixString(_base), 2);
 }
 
 String _secureRandomBlock() {
   // const max = 1 << 32;
-  return _pad(_secureRandom.nextInt(max).toRadixString(_base), 4);
+  return _pad(_secureRandom.nextInt(MAX).toRadixString(_base), 4);
 }
 
 String _pad(String s, int l) {

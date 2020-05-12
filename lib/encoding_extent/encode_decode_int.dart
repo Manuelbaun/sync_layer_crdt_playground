@@ -29,13 +29,14 @@ Uint8List encodeTrimmedInt(int number, [int size_]) {
 }
 
 // BigEndien
-int decodeTrimmedInt(Uint8List raw, [int lenght]) {
+/// `row` should be [Uint8List]
+int decodeTrimmedInt(List<int> raw, [int lenght]) {
   // Not handling negative numbers. Decide how you want to do that.
 
   var result = 0;
 
   for (var b in raw) {
-    result = result << 8 | b;
+    result = result << 8 | (b ?? 0);
   }
 
   if (lenght != null) {

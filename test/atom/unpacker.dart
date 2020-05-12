@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
-
-import 'package:sync_layer/basic/cuid.dart';
+import 'package:sync_layer/timestamp/index.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 

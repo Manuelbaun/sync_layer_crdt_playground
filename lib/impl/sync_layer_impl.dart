@@ -97,7 +97,7 @@ class SyncLayerImpl implements SyncLayer {
             }
 
             atomCache.add(atom);
-            trie.build([atom.ts]);
+            trie.build([atom.hlc]);
           } else {
             log.e('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
           }
@@ -153,7 +153,7 @@ class SyncLayerImpl implements SyncLayer {
   @override
   void receiveAtoms(List<Atom> atoms) {
     for (var atom in atoms) {
-      clock.fromReveive(atom.ts);
+      clock.fromReveive(atom.hlc);
     }
 
     _applyAtoms(atoms);

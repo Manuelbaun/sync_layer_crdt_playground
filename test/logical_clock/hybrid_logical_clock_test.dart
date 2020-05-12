@@ -1,4 +1,4 @@
-import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/timestamp/index.dart';
 import 'package:test/test.dart';
 
 var testHlc = Hlc(1579633503119, 42, 1234);
@@ -132,8 +132,6 @@ void main() {
       expect(newLocal1 < newLocal2, isTrue);
       expect(newLocal1 < newLocal3, isTrue);
       expect(newLocal2 < newLocal3, isTrue);
-      expect(newLocal2 <= newLocal3 && hlcD2 <= newLocal3, isTrue);
-      expect(newLocal1 <= newLocal2 && hlcD3 <= newLocal2, isTrue);
     });
 
     test('impossibleTs', () {

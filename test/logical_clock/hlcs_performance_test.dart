@@ -1,6 +1,7 @@
-import 'package:sync_layer/basic/timestamp/hlc.dart' as ts;
-import 'package:sync_layer/basic/timestamp/hybrid_logical_clock.dart';
+import 'package:sync_layer/timestamp/alternative/hlc.dart' as ts;
+import 'package:sync_layer/timestamp/hybrid_logical_clock.dart';
 import 'package:sync_layer/utils/measure.dart';
+import 'package:test/test.dart';
 
 final ms = DateTime(2020).millisecondsSinceEpoch;
 
@@ -61,12 +62,14 @@ void main() {
     }
   });
   var eq = false;
-  for (var i = 1; i < hlcs1.length; i++) {
-    eq = h[i] == h2[i];
 
-    if (!eq) break;
-  }
+  test('De/Serialize', () {
+    for (var i = 1; i < hlcs1.length; i++) {
+      eq = h[i] == h2[i];
 
-  print(eq);
-  // bytes.forEach((b) => print(b.length));
+      if (!eq) break;
+    }
+
+    expect(eq, isTrue);
+  });
 }

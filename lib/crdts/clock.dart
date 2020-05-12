@@ -1,4 +1,4 @@
-import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/timestamp/index.dart';
 
 class Clock {
   Hlc _localTime;

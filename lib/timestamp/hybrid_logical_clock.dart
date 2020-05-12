@@ -2,9 +2,11 @@
 
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/encoding_extent/encode_decode_int.dart';
 
-import '../murmur_hash.dart';
+import 'logial_clock.dart';
+import 'logical_time.dart';
 
 const _COUNTER_MASK = 0xFFFF;
 const _MAX_COUNTER = _COUNTER_MASK;
@@ -23,13 +25,13 @@ const RESOLUTION = 60000;
 /// and the lower 16 bits are counter values, as logical time
 ///
 
-class Hlc implements Comparable<Hlc> {
-  final int millis;
-  final int counter;
-  final int minutes;
+class Hlc extends LogicalTime {
+  int _millis;
+  int get millis => _millis;
 
-  final int logicalTime;
-  final int site;
+  final int counter;
+  int _minutes;
+  int get minutes => _minutes;
 
   String _internal;
   int _hashcode;
@@ -43,7 +45,7 @@ class Hlc implements Comparable<Hlc> {
     return full;
   }
 
-  factory Hlc.fromBytes(Uint8List buff) {
+  factory Hlc.fromBytes(List<int> buff) {
     final ml = buff[0];
     final data = buff.sublist(1);
 
@@ -53,17 +55,18 @@ class Hlc implements Comparable<Hlc> {
     return Hlc.fromLogicalTime(m, s);
   }
 
-  Hlc(int ms, this.counter, this.site)
+  Hlc([int ms, this.counter, int site])
       : assert(counter < _MAX_COUNTER),
         assert(site != null),
-        millis = (ms ?? DateTime.now().millisecondsSinceEpoch),
-        minutes = (ms / RESOLUTION).floor(),
-        logicalTime = (ms << 16) | counter {
+        super(((ms ?? DateTime.now().millisecondsSinceEpoch) << 16) | counter, site) {
+    _millis = logicalTime >> 16;
+    _minutes = (_millis / RESOLUTION).floor();
     _internal = '${logicalTime.toRadixString(16)}-${site.toRadixString(16)}';
     _hashcode = MurmurHashV3(_internal);
   }
 
   /// Convert the [minutes] to radix
+  @override
   String radixTime(int radix) => minutes.toRadixString(radix);
 
   factory Hlc.fromLogicalTime(int logicalTime, int site) {
@@ -158,21 +161,20 @@ class Hlc implements Comparable<Hlc> {
   String toString() => _internal;
 
   @override
+  String toRON() => 'S${site.toRadixString(16)}@T${logicalTime.toRadixString(16)}';
+
+  @override
   int get hashCode => _hashcode;
 
   @override
   bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
-
   bool operator <(other) => other is Hlc && logicalTime < other.logicalTime;
-
-  bool operator <=(other) => other is Hlc && logicalTime <= other.logicalTime;
-
+  // bool operator <=(other) => other is Hlc && logicalTime <= other.logicalTime;
   bool operator >(other) => other is Hlc && logicalTime > other.logicalTime;
-
-  bool operator >=(other) => other is Hlc && logicalTime >= other.logicalTime;
+  // bool operator >=(other) => other is Hlc && logicalTime >= other.logicalTime;
 
   @override
-  int compareTo(Hlc other) => logicalTime.compareTo(other.logicalTime);
+  int compareTo(LogicalClock other) => logicalTime.compareTo(other.logicalTime);
 
   /// checks logical time and site id!
   static bool isEqual(Hlc left, Hlc right) {

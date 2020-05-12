@@ -1,4 +1,4 @@
-import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/timestamp/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/index.dart';
 
@@ -69,14 +69,14 @@ class SyncableObjectImpl implements SyncableObject {
     final currentTs = getCurrentHLCOfField(atom.key);
 
     // if field was not set or the local time happend before [hb] to new Atom
-    if (currentTs == null || Hlc.compareWithNodes(currentTs, atom.ts)) {
+    if (currentTs == null || Hlc.compareWithNodes(currentTs, atom.hlc)) {
       _setField(atom);
       _updateHistory(atom);
       return 2;
     }
 
     // if atoms.ts < currentTs => true
-    if (Hlc.compareWithNodes(atom.ts, currentTs)) {
+    if (Hlc.compareWithNodes(atom.hlc, currentTs)) {
       _updateHistory(atom);
       return 1;
     }
@@ -89,12 +89,12 @@ class SyncableObjectImpl implements SyncableObject {
   /// DB lookups?
   void _updateHistory(Atom atom) {
     history.add(atom);
-    history.sort((a, b) => b.ts.logicalTime - a.ts.logicalTime);
+    history.sort((a, b) => b.hlc.logicalTime - a.hlc.logicalTime);
   }
 
   void _setField(Atom atom) {
     _obj[atom.key] = atom.value;
-    _objHlc[atom.key] = atom.ts;
+    _objHlc[atom.key] = atom.hlc;
 
     if (atom.value is Map) {
       final m = atom.value as Map;

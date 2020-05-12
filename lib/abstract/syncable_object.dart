@@ -1,5 +1,5 @@
-import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/timestamp/index.dart';
 
 import 'syncable_object_container.dart';
 
