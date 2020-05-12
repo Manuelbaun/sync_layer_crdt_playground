@@ -1,9 +1,8 @@
 // https://github.com/cachapa/crdt
 
 import 'dart:math';
-import 'dart:typed_data';
 
-import 'murmur_hash.dart';
+import 'package:sync_layer/basic/murmur_hash.dart';
 
 const _COUNTER_MASK = 0xFFFF;
 const _MAX_COUNTER = _COUNTER_MASK;
@@ -53,6 +52,12 @@ class Hlc implements Comparable<Hlc> {
     _minutes = (_millis / RESOLUTION).floor();
 
     _logicalTime = (_millis << 16) | counter;
+
+    _internal = '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
+        '-${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
+        '-$node';
+
+    _hashcode = MurmurHashV3(_internal);
   }
 
   factory Hlc.fromLogicalTime(int logicalTime, [String nodeId]) {
@@ -147,19 +152,18 @@ class Hlc implements Comparable<Hlc> {
 
   String toJson() => toString();
 
-  // String toString2() {
-  //   return '{ts: ${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}, '
-  //       'c: ${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}, '
-  //       'node: $node}';
-  // }
+  String _internal;
+  int _hashcode;
 
   @override
-  String toString() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
-      '-${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
-      '-$node';
-
+  String toString() => _internal;
+  String get site => 'S$node@T$logicalTime';
+  // String toString() => '${DateTime.fromMillisecondsSinceEpoch(_millis, isUtc: true).toIso8601String()}'
+  //     '-${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
+  //     '-$node';
   @override
-  int get hashCode => MurmurHashV3(toString());
+  int get hashCode => _hashcode;
+  // int get hashCode => MurmurHashV3(toString());
 
   @override
   bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
@@ -175,17 +179,24 @@ class Hlc implements Comparable<Hlc> {
   @override
   int compareTo(Hlc other) => logicalTime.compareTo(other.logicalTime);
 
+  static bool isEqaul(Hlc left, Hlc right) {
+    return left.logicalTime == right?.logicalTime && left.node == right?.node;
+  }
+
   ///
-  /// returns [true] if l < r
+  /// meaning : left is older than right
+  /// returns [true] if left < right
   /// This function also compares the node lexographically if node of l < node of r
   /// Todo: think about, what if the hlc are identical
-  static bool compareWithNodes(Hlc l, Hlc r) {
-    if (l < r) return true;
+  static bool compareWithNodes(Hlc left, Hlc right) {
+    /// first by timestamp
+    if (left < right) return true;
 
-    if (l == r) {
+    /// second by node id
+    if (left == right) {
       // compare nodes
-      final lNode = l.node.codeUnits;
-      final rNode = r.node.codeUnits;
+      final lNode = left.node.codeUnits;
+      final rNode = right.node.codeUnits;
 
       for (var i = 0; i < lNode.length; i++) {
         if (lNode[i] < rNode[i]) return true;

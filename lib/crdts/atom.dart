@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/timestamp/hybrid_logical_clock.dart';
 
 class Atom implements Comparable<Atom> {
   final Hlc ts;
-  String get node => ts.node;
+  int get site => ts.site;
 
   /// In Context  of a Db, it's the **[Table]** id
   final String type;
@@ -72,7 +72,7 @@ class Atom implements Comparable<Atom> {
   }
 
   Uint8List toBytes() {
-    final list = [ts.logicalTime, ts.node, type, id, key, value];
+    final list = [ts.logicalTime, ts.site, type, id, key, value];
 
     return serialize(list);
   }

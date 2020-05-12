@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:typed_data';
-import 'hlc.dart';
+import 'package:sync_layer/basic/timestamp/hybrid_logical_clock.dart';
+
 import 'merkle_node.dart';
 
 /// dart does not have int32, so when xor, it uses 64 bits, which then are representet different
@@ -24,7 +24,7 @@ class MerkleTrie {
   MergeSkip build(List<Hlc> hlcs) {
     final ms = MergeSkip();
     for (var h in hlcs) {
-      final key = h.toRadixString(radix);
+      final key = h.radixTime(radix);
 
       if (!keys.contains(h.logicalTime)) {
         _insert(root, key, h.hashCode, 0);

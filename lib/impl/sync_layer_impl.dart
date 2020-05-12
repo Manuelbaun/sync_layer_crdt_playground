@@ -15,7 +15,7 @@ class SyncLayerImpl implements SyncLayer {
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
 
   @override
-  String nodeId;
+  int site;
 
   final Clock clock;
   final MerkleTrie trie;
@@ -29,8 +29,8 @@ class SyncLayerImpl implements SyncLayer {
   @override
   MerkleTrie getState() => trie;
 
-  SyncLayerImpl(this.nodeId, [MerkleTrie trie])
-      : clock = Clock(nodeId),
+  SyncLayerImpl(this.site, [MerkleTrie trie])
+      : clock = Clock(site),
         trie = trie ?? MerkleTrie();
 
   /// accessors and utils
@@ -161,7 +161,7 @@ class SyncLayerImpl implements SyncLayer {
 
   List<Atom> getAtomsSinceMs(int ms) {
     if (ms != null && ms != 0) {
-      var ts = clock.getHlc(ms, 0, nodeId);
+      var ts = clock.getHlc(ms, 0, site);
       return atomCache.getSince(ts.logicalTime);
     }
     return [];

@@ -8,7 +8,7 @@ void main() async {
 
   print('listen to 0.0.0.0:8000');
 
-  final syn = SyncLayerImpl('server');
+  final syn = SyncLayerImpl(0);
   final daoTodo = syn.registerObjectType<Todo>('todos', (c, id) => Todo(c, id: id));
   final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 

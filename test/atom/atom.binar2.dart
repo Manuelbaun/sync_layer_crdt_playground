@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:sync_layer/basic/cuid.dart';
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/index.dart';
 
 enum Types { STRING, UINT32, UINT64, FLOAT32, FLOAT64, BOOL }
 
@@ -93,7 +93,7 @@ class AtomBinary2 {
 }
 
 void main() {
-  final ts = Hlc(DateTime(2000).millisecondsSinceEpoch).logicalTime;
+  final ts = Hlc(DateTime(2000).millisecondsSinceEpoch, 0, 1234).logicalTime;
   final id = newCuid();
   print(id);
 

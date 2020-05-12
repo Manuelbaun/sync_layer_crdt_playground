@@ -68,7 +68,7 @@ class SyncLayerProtocol {
 
     // Start sync process => send local State
 
-    ws.add(Uint8List.fromList([MessageEnum.NODE_NAME.index, ...syn.nodeId.codeUnits]));
+    ws.add(Uint8List.fromList([MessageEnum.NODE_NAME.index, syn.site]));
     ws.add(EnDecoder.encodeState(syn.getState()));
   }
 

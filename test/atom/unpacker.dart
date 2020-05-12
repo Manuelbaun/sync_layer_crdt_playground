@@ -3,13 +3,13 @@ import 'dart:typed_data';
 import 'package:fixnum/fixnum.dart';
 
 import 'package:sync_layer/basic/cuid.dart';
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 
 import 'atom.binar2.dart';
 import 'atombin/atom.pb.dart';
 
-final ts = Hlc().logicalTime;
+final ts = Hlc(null, 0, 1234).logicalTime;
 final id = newCuid();
 final value = 'Hello world';
 final nodeID = 12345667;

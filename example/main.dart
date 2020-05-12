@@ -13,7 +13,7 @@ void main(List<String> arguments) {
   print(arguments);
   // create protocol class
   final rand = Random();
-  final nodeID = arguments.isNotEmpty ? arguments.first : rand.nextInt(999999).toString();
+  final nodeID = rand.nextInt(999999);
   final syn = SyncLayerImpl(nodeID);
   final protocol = SyncLayerProtocol(syn);
 

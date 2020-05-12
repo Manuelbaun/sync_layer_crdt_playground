@@ -1,4 +1,4 @@
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/index.dart';
 

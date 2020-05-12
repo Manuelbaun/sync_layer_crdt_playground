@@ -1,14 +1,14 @@
-import 'package:sync_layer/basic/hlc.dart';
+import 'package:sync_layer/basic/index.dart';
 
 class Clock {
   Hlc _localTime;
 
-  Clock([String nodeId])
-      : assert(nodeId != null),
-        _localTime = Hlc(null, 0, nodeId);
+  Clock([int site])
+      : assert(site != null),
+        _localTime = Hlc(DateTime.now().millisecondsSinceEpoch, 0, site);
 
-  Hlc getHlc(int ms, int counter, String node) {
-    return Hlc(ms, counter, node);
+  Hlc getHlc(int ms, int counter, int site) {
+    return Hlc(ms, counter, site);
   }
 
   Hlc getForSend() {
