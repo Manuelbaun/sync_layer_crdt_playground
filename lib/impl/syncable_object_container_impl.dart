@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/logger.dart';
+import 'package:sync_layer/logger/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final String _typeId;
@@ -73,7 +73,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
-      log.e('Cannot recreate by the same id $typeId - $id. Will return same old object');
+      logger.error('Cannot recreate by the same id $typeId - $id. Will return same old object');
       return obj;
     } else
 

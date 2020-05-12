@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:sync_layer/index.dart';
+import 'package:sync_layer/logger/index.dart';
 
 import 'dao.dart';
 
@@ -10,7 +11,10 @@ import 'dao.dart';
 /// --------------------------------------------------------------
 /// --------------------------------------------------------------
 void main(List<String> arguments) {
-  print(arguments);
+  // Logger.writer = ConsolePrinter(minLevel: LogLevel.info, enableInReleaseMode: true);
+  logger.info('ajsdhfjkhaksjdflbkjasdkjh aahsdkljhahsd kj ja sdkfjhla sdfldasfhka jk sdf '
+      'aaksdjhflkajsdfkja sldkf lkjadlkj asd klasdf lkasdlkjlkasdf'
+      'akjsdhfjhsdakjfhkajsdhfjkhasdfhkjashdfkjahsdkjfhkdshfkhadkfjakjsdfdkfh');
   // create protocol class
   final rand = Random();
   final nodeID = rand.nextInt(999999);
@@ -22,10 +26,10 @@ void main(List<String> arguments) {
   final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 
   daoTodo.changeStream.listen((objs) {
-    objs.forEach(print);
+    objs.forEach((o) => logger.fine(o.toString()));
   });
 
-  daoAss.changeStream.listen((objs) => objs.forEach(print));
+  daoAss.changeStream.listen((objs) => objs.forEach((o) => logger.fine(o.toString())));
 
   /// Setup connection
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
@@ -33,10 +37,10 @@ void main(List<String> arguments) {
       // setup send channel
       protocol.registerConnection(ws);
     } else {
-      print('[!]Connection Denied');
+      logger.warning('[!]Connection Denied');
     }
     // in case, if server is not running now
-  }, onError: (err) => print('[!]Error -- ${err.toString()}'));
+  }, onError: (err) => logger.error('[!]Error -- ${err.toString()}'));
 
   // apply changes
   final id = 'cka1jh04v000csa3aufnz114h';

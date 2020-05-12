@@ -9,6 +9,8 @@ dependencies:
   msgpack_dart: ^0.0.7
   meta: ^1.1.8
   logger: ^0.9.1
+  quick_log: ^0.4.0
+  console_log_handler: ^1.1.6
   web_socket_channel: ^1.1.0
 
 dev_dependencies:

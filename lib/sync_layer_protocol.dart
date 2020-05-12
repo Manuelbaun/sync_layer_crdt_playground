@@ -6,7 +6,9 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/sync_layer.dart';
-import 'package:sync_layer/logger.dart';
+import 'package:sync_layer/logger/index.dart';
+
+import 'logger/index.dart';
 
 enum MessageEnum {
   STATE,
@@ -61,7 +63,7 @@ class SyncLayerProtocol {
       onDone: () => unregisterConnection(ws),
       onError: (err) {
         unregisterConnection(ws);
-        log.e('[!]Error -- ${err.toString()}');
+        logger.error('[!]Error -- ${err.toString()}');
       },
       cancelOnError: true,
     );
@@ -73,7 +75,7 @@ class SyncLayerProtocol {
   }
 
   void unregisterConnection(WebSocket ws) {
-    log.d('Unregister Connection');
+    logger.debug('Unregister Connection');
     ws.close();
     websockets.remove(ws);
     websocketsNames.remove(ws);
@@ -88,7 +90,6 @@ class SyncLayerProtocol {
   }
 
   void broadCastAtoms(List<Atom> atoms) {
-    log.d('broadCast Atoms');
     final data = EnDecoder.encodeAtoms(atoms);
 
     for (final ws in websockets) {
@@ -105,13 +106,14 @@ class SyncLayerProtocol {
   }
 
   void receiveBuffer(dynamic rawData, WebSocket ws) {
+    print('Recieve bytes: ${rawData.length}');
     if (rawData is Uint8List) {
       final msgType = rawData[0];
       final data = rawData.sublist(1);
 
       // if atoms
       if (msgType == MessageEnum.ATOMS.index) {
-        log.d(MessageEnum.ATOMS);
+        // log.d(MessageEnum.ATOMS);
 
         final atoms = EnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
@@ -121,7 +123,7 @@ class SyncLayerProtocol {
       /// if it is just an state reponse, add receiving atoms to SyncLayer
       /// but do not relay to all other connections..
       if (msgType == MessageEnum.STATE_RESPONSE.index) {
-        log.d(MessageEnum.STATE_RESPONSE);
+        // log.d(MessageEnum.STATE_RESPONSE);
 
         final atoms = EnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
@@ -129,7 +131,7 @@ class SyncLayerProtocol {
 
       // if a state incoming is send => send back the diffs
       if (msgType == MessageEnum.STATE.index) {
-        log.d(MessageEnum.STATE);
+        // log.d(MessageEnum.STATE);
         final state = EnDecoder.decodeState(data);
         final atoms = syn.getAtomsByReceivingState(state);
         ws.add(EnDecoder.encodeAtoms(atoms, MessageEnum.STATE_RESPONSE));
@@ -137,7 +139,7 @@ class SyncLayerProtocol {
 
       // is a state request is issued
       if (msgType == MessageEnum.STATE_REQUEST.index) {
-        log.d(MessageEnum.STATE_REQUEST);
+        // log.d(MessageEnum.STATE_REQUEST);
 
         final stateData = EnDecoder.encodeState(syn.getState());
         ws.add(stateData);
@@ -149,10 +151,10 @@ class SyncLayerProtocol {
 
       //
       else {
-        log.e('UNKOWN type $msgType');
+        logger.error('UNKOWN type $msgType');
       }
     } else {
-      log.e('incorrect type');
+      logger.error('incorrect type');
     }
   }
 }
