@@ -3,8 +3,6 @@ import 'package:test/test.dart';
 
 var testHlc = Hlc(1579633503119, 42, 1234);
 
-// TODO: Changed internal of HLC to work on milli instead of micros..
-
 void main() {
   group('Comparison', () {
     test('Equality', () {
@@ -144,8 +142,8 @@ void main() {
       print(localHlc);
       print(remoteHlc);
 
-      expect(localHlc == remoteHlc, isTrue);
-      expect(Hlc.isEqual(localHlc, remoteHlc), isFalse);
+      expect(localHlc == remoteHlc, isFalse);
+      expect(localHlc.logicalTime == remoteHlc.logicalTime, isTrue);
     });
   });
 }

@@ -69,14 +69,14 @@ class SyncableObjectImpl implements SyncableObject {
     final currentTs = getCurrentHLCOfField(atom.key);
 
     // if field was not set or the local time happend before [hb] to new Atom
-    if (currentTs == null || Hlc.compareWithNodes(currentTs, atom.hlc)) {
+    if (currentTs == null || currentTs < atom.hlc) {
       _setField(atom);
       _updateHistory(atom);
       return 2;
     }
 
     // if atoms.ts < currentTs => true
-    if (Hlc.compareWithNodes(atom.hlc, currentTs)) {
+    if (atom.hlc < currentTs) {
       _updateHistory(atom);
       return 1;
     }

@@ -6,11 +6,11 @@ void main() {
   group('basic', () {
     test('to string', () {
       final lc = LogicalTime(0, 123);
-      expect(lc.toString(), '0-123');
+      expect(lc.toString(), '0-7b');
     });
     test('to string2', () {
       final lc = LogicalTime(0, 123);
-      expect(lc.toRON(), 'S123@T0');
+      expect(lc.toRON(), 'S7b@T0');
     });
 
     test('comp == not equal: same site', () {
@@ -80,7 +80,7 @@ void main() {
   group('hash', () {
     test('MurmurV3 hashcode', () {
       final t1 = LogicalTime(1, 122);
-      final hashcode = MurmurHashV3('122@1');
+      final hashcode = MurmurHashV3('${1.toRadixString(16)}-${122.toRadixString(16)}');
       expect(t1.hashCode, hashcode);
     });
   });
@@ -90,7 +90,7 @@ void main() {
       final t1 = LogicalTime(1, 122);
       final t2 = LogicalTime.send(t1);
 
-      expect(t2.toString(), '122@2');
+      expect(t2.toString(), '2-7a');
     });
   });
 }

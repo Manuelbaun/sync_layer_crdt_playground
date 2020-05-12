@@ -2,9 +2,7 @@
 
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/encoding_extent/encode_decode_int.dart';
-
 import 'logial_clock.dart';
 import 'logical_time.dart';
 
@@ -33,8 +31,8 @@ class Hlc extends LogicalTime {
   int _minutes;
   int get minutes => _minutes;
 
-  String _internal;
-  int _hashcode;
+  // String _internal;
+  // int _hashcode;
 
   // call only if needed!
   Uint8List toBytes() {
@@ -58,11 +56,11 @@ class Hlc extends LogicalTime {
   Hlc([int ms, this.counter, int site])
       : assert(counter < _MAX_COUNTER),
         assert(site != null),
-        super(((ms ?? DateTime.now().millisecondsSinceEpoch) << 16) | counter, site) {
-    _millis = logicalTime >> 16;
-    _minutes = (_millis / RESOLUTION).floor();
-    _internal = '${logicalTime.toRadixString(16)}-${site.toRadixString(16)}';
-    _hashcode = MurmurHashV3(_internal);
+        // little workaround, so that super can have its logical ts
+        // and ms is not null if left out
+        super(((ms ??= DateTime.now().millisecondsSinceEpoch) << 16) | counter, site) {
+    _millis = ms;
+    _minutes = (ms / RESOLUTION).floor();
   }
 
   /// Convert the [minutes] to radix
@@ -158,40 +156,10 @@ class Hlc extends LogicalTime {
   }
 
   @override
-  String toString() => _internal;
-
-  @override
-  String toRON() => 'S${site.toRadixString(16)}@T${logicalTime.toRadixString(16)}';
-
-  @override
-  int get hashCode => _hashcode;
-
-  @override
-  bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
-  bool operator <(other) => other is Hlc && logicalTime < other.logicalTime;
-  // bool operator <=(other) => other is Hlc && logicalTime <= other.logicalTime;
-  bool operator >(other) => other is Hlc && logicalTime > other.logicalTime;
-  // bool operator >=(other) => other is Hlc && logicalTime >= other.logicalTime;
+  String toString() => internal;
 
   @override
   int compareTo(LogicalClock other) => logicalTime.compareTo(other.logicalTime);
-
-  /// checks logical time and site id!
-  static bool isEqual(Hlc left, Hlc right) {
-    return left?.logicalTime == right?.logicalTime && left?.site == right?.site;
-  }
-
-  ///
-  /// meaning : left is older than right
-  /// returns [true] if left < right
-  /// This function also compares the node lexographically if node of l < node of r
-  /// Todo: think about, what if the hlc are identical
-  static bool compareWithNodes(Hlc left, Hlc right) {
-    /// first by timestamp
-    if (left < right) return true;
-    if (left == right) return left.site < right.site;
-    return false;
-  }
 }
 
 class ClockDriftException implements Exception {

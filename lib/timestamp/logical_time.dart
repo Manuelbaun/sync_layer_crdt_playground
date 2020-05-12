@@ -11,11 +11,14 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   @override
   final int site;
 
-  String _internal;
+  final String internal;
   int _hashCode;
-  LogicalTime(this.logicalTime, this.site) {
-    _internal = '$logicalTime-$site';
-    _hashCode = MurmurHashV3(_internal);
+
+  LogicalTime(this.logicalTime, this.site)
+      : internal = '${logicalTime.toRadixString(16)}-${site.toRadixString(16)}',
+        assert(logicalTime != null),
+        assert(site != null) {
+    _hashCode = MurmurHashV3(internal);
   }
 
   @override
@@ -68,6 +71,10 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   @override
   bool operator ==(other) => other is LogicalClock && logicalTime == other.logicalTime && site == other.site;
 
+  ///
+  /// meaning : left is older than right
+  /// returns [true] if left < right
+  /// This function also compares the node lexographically if node of l < node of r
   @override
   bool operator <(other) {
     final o = other as LogicalClock;
@@ -91,8 +98,8 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   }
 
   @override
-  String toString() => _internal;
+  String toString() => internal;
 
   @override
-  String toRON() => 'S$site@T$logicalTime';
+  String toRON() => 'S${site.toRadixString(16)}@T${logicalTime.toRadixString(16)}';
 }

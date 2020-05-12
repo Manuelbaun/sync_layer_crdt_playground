@@ -95,7 +95,7 @@ class CausalTree<T> {
     // set cause index, if null, then search!
     var causeIndex = index;
     causeIndex ??= atoms.indexWhere((a) {
-      return Hlc.isEqual(a.self, atom.cause);
+      return a.self == atom.cause;
     });
 
     // checks wether it should be inserted or just added
