@@ -1,62 +1,9 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/timestamp/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
-
-void main() {
-  final tree = CausalTree(111);
-  final root = tree.push('root');
-
-  final tree2 = CausalTree(222);
-  tree2.mergeRemoteAtoms([root]);
-
-  final h1 = tree.push(1);
-  final h2 = tree.push(2);
-  final h3 = tree.push(3);
-
-  final b = h1.toBytes();
-  print(b);
-  final a = CausalAtom.fromBytes(b);
-  print(a);
-
-  tree.insert(h1, 4);
-  tree.insert(h2, 5);
-
-  tree.atoms.forEach(print);
-  print('-----------');
-
-  final p1 = tree2.push('B');
-  final p2 = tree2.push('B');
-  final p3 = tree2.push('C');
-
-  tree2.atoms.forEach(print);
-
-  // merge 1
-
-  print('-----------');
-  tree2.mergeRemoteAtoms(tree.atoms);
-  tree2.atoms.forEach(print);
-
-  print('-----------');
-
-  tree.mergeRemoteAtoms(tree2.atoms);
-  tree.atoms.forEach(print);
-
-  print('----------------');
-
-  final bytes = tree.atoms.map((a) {
-    final b = a.toBytes();
-    print('$a : ${b.length}');
-    return b;
-  });
-
-  print('----------------');
-
-  print(bytes);
-  final allAtoms = bytes.map((b) => CausalAtom.fromBytes(b));
-  allAtoms.forEach(print);
-}
 
 class CausalTree<T> {
   int owner;
@@ -64,6 +11,10 @@ class CausalTree<T> {
 
   //! this Atom array has to be the same on all other sides.
   List<CausalAtom<T>> atoms = <CausalAtom<T>>[];
+
+  final _controller = StreamController<Atom>();
+
+  Stream<Atom> get stream => _controller.stream;
 
   // should we use deltedAtoms?
   Set<Hlc> deletedAtoms = {};
@@ -74,10 +25,10 @@ class CausalTree<T> {
   int get allAtomsLength => allAtomIds.length;
 
   //! the local site cache, does not need to be the same in the cloud
-  // final yarns = <int, List<CausalAtom<T>>>{};
+  final yarns = <int, List<CausalAtom<T>>>{};
 
   /// SiteId -> TimeStamp, Kind of Version vector
-  // final weft = <int, int>{};
+  final weft = <int, int>{};
 
   CausalTree(this.owner) : localClock = Hlc(0, 0, owner);
 
@@ -122,7 +73,7 @@ class CausalTree<T> {
 
     // yarns[atom.id.site].add(atom);
 
-    // notify(atom);
+    _controller.add(atom);
   }
 
   // Add to deletedAtoms set
@@ -178,6 +129,67 @@ class CausalTree<T> {
 
     _delete(atom);
     return atom;
+  }
+
+  // TODO assert if no filter;
+  static CausalTree filter(CausalTree tree, {int timestamp, Set<int> siteid}) {
+    final newTree = CausalTree(tree.owner);
+    var atoms = <CausalAtom>[];
+
+    if (siteid != null) {
+      Set ids = siteid.toSet();
+      atoms.addAll(tree.atoms.where((a) => ids.contains(a.site)));
+    }
+
+    if (timestamp != null) {
+      if (atoms.isNotEmpty) {
+        atoms = atoms.where((a) => a.self.logicalTime <= timestamp).toList();
+      } else {
+        atoms.addAll(tree.atoms.where((a) => a.self.logicalTime <= timestamp));
+      }
+    }
+
+    newTree.mergeRemoteAtoms(atoms);
+
+    return newTree;
+  }
+
+  ///
+  /// What happens if the ref points/parent are filted out????
+  /// CausalLink breaks?
+  // TODO assert if no filter;
+  static CausalTree filter2(CausalTree tree, {int timestamp, Set<int> siteid}) {
+    final newTree = CausalTree(tree.owner);
+    var filteredYarns = <int, List<CausalAtom>>{};
+
+    if (siteid != null) {
+      for (final id in siteid) {
+        filteredYarns[id] = tree.yarns[id];
+      }
+    }
+
+    if (timestamp != null) {
+      final yarns = siteid != null ? filteredYarns : tree.yarns;
+
+      for (final atomList in yarns.values) {
+        final index = atomList.indexWhere((a) => a.self.logicalTime == timestamp);
+        newTree.mergeRemoteAtoms(atomList.sublist(0, index + 1));
+      }
+    } else {
+      // apply filterd yarns
+      for (final yarn in filteredYarns.values) {
+        newTree.mergeRemoteAtoms(yarn);
+      }
+    }
+
+    return newTree;
+  }
+
+  @override
+  String toString() {
+    return atoms.where((a) => !(a.value == null || deletedAtoms.contains(a.id))).map(((a) {
+      return a.value;
+    })).join('');
   }
 }
 
