@@ -2,10 +2,10 @@ import 'package:sync_layer/abstract/index.dart';
 
 import 'syncable_object.dart';
 
-typedef SynableObjectFactory<T> = T Function(ContainerAccessor container, String id);
+typedef SynableObjectFactory<T> = T Function(Accessor container, String id);
 
 abstract class SyncableObjectContainer<T extends SyncableObject> {
-  String get typeId;
+  String get type;
   int get length;
 
   Stream<Set<T>> get changeStream;
@@ -30,7 +30,7 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
   T read(String id);
 
   /// updates an object field with value by id
-  void update(String objectId, String fieldId, dynamic value);
+  void update(String id, String field, dynamic value);
 
   ///
   bool delete(String id);

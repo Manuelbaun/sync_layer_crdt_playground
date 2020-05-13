@@ -4,42 +4,8 @@ import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logger/index.dart';
 
-class ContainerAccessorImpl implements ContainerAccessor {
-  ContainerAccessorImpl(this.synclayer, this.container) {
-    type = container.typeId;
-  }
-
-  final SyncableObjectContainer container;
-  final SyncLayer synclayer;
-
-  @override
-  String type;
-
-  @override
-  void onUpdate(String id, String key, dynamic value) {
-    final a = synclayer.createAtom(Value(type, id, key, value));
-    synclayer.applyAtoms([a]);
-  }
-
-  @override
-  String generateID() {
-    return synclayer.generateID();
-  }
-
-  @override
-  SyncableObject objectLookup(String type, String id, [bool shouldCreateIfNull = true]) {
-    final container = synclayer.getObjectContainer(type);
-    var obj = container.read(id);
-
-    if (shouldCreateIfNull && obj == null) {
-      obj = container.create(id);
-    }
-    return obj;
-  }
-}
-
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
-  final String _typeId;
+  final String _type;
   final Map<String, T> _objects = {}; // the real elements
   final SynableObjectFactory<T> _objectFactory;
   final _controller = StreamController<Set<T>>.broadcast();
@@ -79,21 +45,17 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   }
 
   @override
-  String get typeId => _typeId;
+  String get type => _type;
 
   /// Provide a default factory function for that Syncable Object
 
-  SyncableObjectContainerImpl(SyncLayer syn, String typeId, SynableObjectFactory<T> objectFactory)
-      : assert(syn != null),
-        assert(objectFactory != null),
-        assert(typeId != null),
-        _typeId = typeId.toLowerCase(),
-        _objectFactory = objectFactory {
-    // create accessor class for the synable objects
-    accessor = ContainerAccessorImpl(syn, this);
-  }
+  SyncableObjectContainerImpl(this.accessor, String type, SynableObjectFactory<T> objectFactory)
+      : assert(objectFactory != null),
+        assert(type != null),
+        _type = type.toLowerCase(),
+        _objectFactory = objectFactory;
 
-  ContainerAccessor accessor;
+  final Accessor accessor;
 
   ///
   /// CRUD Ops
@@ -111,7 +73,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
-      logger.error('Cannot recreate by the same id $typeId - $id. Will return same old object');
+      logger.error('Cannot recreate by the same id $type - $id. Will return same old object');
       return obj;
     } else
 
@@ -145,8 +107,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   /// updates an object ???
   // gets called from the sync object
   @override
-  void update(String objectId, String fieldId, dynamic value) {
-    accessor.onUpdate(objectId, fieldId, value);
+  void update(String id, String field, dynamic value) {
+    accessor.onUpdate([Value(type, id, field, value)]);
   }
 
   ///

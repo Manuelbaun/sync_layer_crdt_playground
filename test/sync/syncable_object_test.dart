@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 // TODO: Test accessing syncable object
 // todo: subtye syncable object!
 
-class TestAccessor implements ContainerAccessor {
+class TestAccessor implements Accessor {
   TestAccessor(this.type, this.site, this.update) {
     baseClock = Hlc(DateTime(2020).millisecondsSinceEpoch, 0, site);
   }
@@ -23,13 +23,15 @@ class TestAccessor implements ContainerAccessor {
   String type;
 
   @override
-  void onUpdate(String id, String key, dynamic value) {
-    // creates new baseClock
-    baseClock = Hlc.send(baseClock);
-    // send atom with that baseClock
-    final a = Atom<Value>(baseClock, Value(type, id, key, value));
+  void onUpdate(List values) {
+    final atoms = values.map((v) {
+      // creates new baseClock
+      baseClock = Hlc.send(baseClock);
+      // send atom with that baseClock
+      return Atom(baseClock, v);
+    });
 
-    update(a);
+    atoms.forEach(update);
     // so.applyAtom(a);
   }
 

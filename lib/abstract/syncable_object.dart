@@ -1,7 +1,7 @@
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 
-abstract class SyncableObject extends Comparable<SyncableObject> {
+abstract class SyncableObject<T> extends Comparable<SyncableObject> {
   /// Marks if the object is deleted!
   bool get tombstone;
   set tombstone(bool v);
@@ -9,7 +9,7 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
   String get id;
   String get type;
   Hlc get lastUpdated;
-  List<Atom> get history;
+  List<Atom<T>> get history;
 
   /// Returns the timestamp for that field
   Hlc getFieldClock(String key);
@@ -22,7 +22,7 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
   /// if -1 it throws an error
   ///
   /// TODO: should case of Atom beeing 'null' be handeled?
-  int applyAtom(Atom atom);
+  int applyAtom(Atom<T> atom);
 
   dynamic operator [](key);
 

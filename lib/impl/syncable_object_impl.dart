@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/index.dart';
@@ -15,14 +16,14 @@ class SyncableObjectImpl implements SyncableObject {
   /// this function is provided by the sync layer, therefore the synclayer
   /// deceides which the form of the id
 
-  SyncableObjectImpl(String id, ContainerAccessor accessor)
+  SyncableObjectImpl(String id, Accessor accessor)
       : _accessor = accessor,
         assert(accessor != null, 'Accessor prop cannot be null'),
         _id = id ?? accessor.generateID() {
     // define and set tombstone to false;
     _obj[_TOMBSTONE] = false;
   }
-  final ContainerAccessor _accessor;
+  final Accessor _accessor;
 
   @override
   String get type => _accessor.type;
@@ -127,10 +128,11 @@ class SyncableObjectImpl implements SyncableObject {
     // check if value is [SyncableObject]
     if (value is SyncableObject) {
       // create Ref type
+      /// TODO syncable Ref Object??
       val = {_TYPE_ID: value.type, _OBJ_ID: value.id};
     }
 
-    _accessor.onUpdate(_id, field, val);
+    _accessor.onUpdate([Value(type, id, field, val)]);
   }
 
   /// lexographical sort by ID

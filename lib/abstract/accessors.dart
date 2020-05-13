@@ -1,10 +1,10 @@
 import 'package:sync_layer/abstract/syncable_object.dart';
 
-abstract class ContainerAccessor<T> {
-  ContainerAccessor(this.type);
+abstract class Accessor<T> {
+  Accessor(this.type);
   final String type;
 
-  void onUpdate(String objectId, String fieldId, dynamic value);
+  void onUpdate(List<T> value);
   String generateID();
   SyncableObject objectLookup(String type, String id);
 }

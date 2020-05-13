@@ -11,11 +11,42 @@ import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
 
+class SynclayerAccessorImpl implements Accessor {
+  SynclayerAccessorImpl(this.synclayer, this.type);
+
+  final SyncLayer synclayer;
+
+  @override
+  final String type;
+
+  @override
+  void onUpdate(List values) {
+    final atoms = values.map((v) => synclayer.createAtom(v));
+    synclayer.applyAtoms(atoms);
+  }
+
+  @override
+  String generateID() {
+    return synclayer.generateID();
+  }
+
+  @override
+  SyncableObject objectLookup(String type, String id, [bool shouldCreateIfNull = true]) {
+    final container = synclayer.getObjectContainer(type);
+    var obj = container.read(id);
+
+    if (shouldCreateIfNull && obj == null) {
+      obj = container.create(id);
+    }
+    return obj;
+  }
+}
+
 class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
 
-  final containerAccessor = <String, ContainerAccessor>{};
+  final containerAccessor = <String, Accessor>{};
 
   @override
   int site;
@@ -47,9 +78,8 @@ class SyncLayerImpl implements SyncLayer {
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
       String typeId, SynableObjectFactory<T> objectFactory) {
-    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(this, typeId, objectFactory);
-
-    containerAccessor[container.typeId] = ContainerAccessorImpl(this, container);
+    Accessor accessor = SynclayerAccessorImpl(this, typeId);
+    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(accessor, typeId, objectFactory);
 
     _setContainer(container);
     return container;
@@ -62,10 +92,10 @@ class SyncLayerImpl implements SyncLayer {
   }
 
   void _setContainer(SyncableObjectContainer container) {
-    if (containers[container.typeId] == null) {
-      containers[container.typeId] = container;
+    if (containers[container.type] == null) {
+      containers[container.type] = container;
     } else {
-      throw SyncLayerError('Container with typeId ${container.typeId} already exist $container');
+      throw SyncLayerError('Container with typeId ${container.type} already exist $container');
     }
   }
 
