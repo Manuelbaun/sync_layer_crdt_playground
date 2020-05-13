@@ -1,5 +1,5 @@
-import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/index.dart';
+import 'package:sync_layer/sync/abstract/index.dart';
+import 'package:sync_layer/sync/index.dart';
 
 class Todo extends SyncableObjectImpl {
   Todo(Accessor accessor, {String id, String title}) : super(id, accessor);

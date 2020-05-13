@@ -1,6 +1,7 @@
 import 'dart:io' show HttpServer, HttpRequest, WebSocket, WebSocketTransformer;
 
 import 'package:sync_layer/logger/index.dart';
+import 'package:sync_layer/sync/index.dart';
 
 import 'dao.dart';
 import 'package:sync_layer/index.dart';

@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logger/index.dart';
+
+import 'abstract/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final String _type;

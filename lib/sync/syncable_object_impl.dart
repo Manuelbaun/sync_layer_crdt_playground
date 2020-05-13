@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
-import 'package:sync_layer/abstract/index.dart';
+
+import 'abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone_';
 const String _TYPE_ID = '_type_';

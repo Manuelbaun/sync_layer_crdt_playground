@@ -4,11 +4,14 @@ import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
-import 'package:sync_layer/abstract/index.dart';
+
 import 'package:sync_layer/errors/index.dart';
-import 'package:sync_layer/impl/syncable_object_container_impl.dart';
+
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
+
+import 'abstract/index.dart';
+import 'syncable_object_container_impl.dart';
 
 class SynclayerAccessor implements Accessor {
   SynclayerAccessor(this.synclayer, this.type);

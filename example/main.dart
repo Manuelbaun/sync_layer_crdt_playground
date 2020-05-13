@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/index.dart';
 import 'package:sync_layer/logger/index.dart';
+import 'package:sync_layer/sync/abstract/index.dart';
+import 'package:sync_layer/sync/index.dart';
 
 import 'dao.dart';
 

@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/types/index.dart';
-import 'package:sync_layer/impl/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
+import 'package:sync_layer/sync/abstract/index.dart';
+import 'package:sync_layer/sync/index.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:test/test.dart';
 
 // TODO: Test accessing syncable object
