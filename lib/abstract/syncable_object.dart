@@ -1,5 +1,5 @@
 import 'package:sync_layer/crdts/atom.dart';
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 
 abstract class SyncableObject extends Comparable<SyncableObject> {
   /// Marks if the object is deleted!

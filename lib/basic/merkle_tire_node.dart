@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 
 import 'merkle_node.dart';
 
