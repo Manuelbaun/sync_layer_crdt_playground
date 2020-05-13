@@ -1,6 +1,8 @@
 ## Basic
 http://blog.wafrat.com/test-coverage-in-dart-and-flutter/
 
+`dart --pause-isolates-on-exit --disable-service-auth-codes --enable-vm-service=NNNN .\test\.test_coverage.dart`
+
 ## inspiration
 
 https://github.com/cachapa/crdt
