@@ -2,7 +2,7 @@ import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/index.dart';
 
 class Todo extends SyncableObjectImpl {
-  Todo(Accessor<Todo> accessor, {String id, String title}) : super(id, accessor);
+  Todo(Accessor accessor, {String id, String title}) : super(id, accessor);
 
   String get title => super['title'];
   set title(String v) => super['title'] = v;
@@ -22,7 +22,7 @@ class Todo extends SyncableObjectImpl {
 }
 
 class Assignee extends SyncableObjectImpl {
-  Assignee(Accessor<Assignee> accessor, {String id, String title}) : super(id, accessor);
+  Assignee(Accessor accessor, {String id, String title}) : super(id, accessor);
 
   String get firstName => super['firstName'];
   set firstName(String v) => super['firstName'] = v;

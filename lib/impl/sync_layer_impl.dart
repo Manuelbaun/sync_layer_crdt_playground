@@ -11,8 +11,8 @@ import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
 
-class SynclayerAccessorImpl implements Accessor {
-  SynclayerAccessorImpl(this.synclayer, this.type);
+class SynclayerAccessor implements Accessor {
+  SynclayerAccessor(this.synclayer, this.type);
 
   final SyncLayer synclayer;
 
@@ -20,8 +20,8 @@ class SynclayerAccessorImpl implements Accessor {
   final String type;
 
   @override
-  void onUpdate(List values) {
-    final atoms = values.map((v) => synclayer.createAtom(v));
+  void onUpdate<V>(List<V> values) {
+    final atoms = values.map((v) => synclayer.createAtom(v)).toList();
     synclayer.applyAtoms(atoms);
   }
 
@@ -45,8 +45,6 @@ class SynclayerAccessorImpl implements Accessor {
 class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
-
-  final containerAccessor = <String, Accessor>{};
 
   @override
   int site;
@@ -78,8 +76,11 @@ class SyncLayerImpl implements SyncLayer {
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
       String typeId, SynableObjectFactory<T> objectFactory) {
-    Accessor accessor = SynclayerAccessorImpl(this, typeId);
-    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(accessor, typeId, objectFactory);
+    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(
+      SynclayerAccessor(this, typeId),
+      typeId,
+      objectFactory,
+    );
 
     _setContainer(container);
     return container;

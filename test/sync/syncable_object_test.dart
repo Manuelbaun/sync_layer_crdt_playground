@@ -23,7 +23,7 @@ class TestAccessor implements Accessor {
   String type;
 
   @override
-  void onUpdate(List values) {
+  void onUpdate<V>(List<V> values) {
     final atoms = values.map((v) {
       // creates new baseClock
       baseClock = Hlc.send(baseClock);
