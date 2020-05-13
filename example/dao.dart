@@ -1,7 +1,8 @@
+import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/index.dart';
 
 class Todo extends SyncableObjectImpl {
-  Todo(SyncableObjectContainerImpl<Todo> con, {String id, String title}) : super(id, con);
+  Todo(ContainerAccessor<Todo> con, {String id, String title}) : super(id, con);
 
   String get title => super['title'];
   set title(String v) => super['title'] = v;
@@ -21,7 +22,7 @@ class Todo extends SyncableObjectImpl {
 }
 
 class Assignee extends SyncableObjectImpl {
-  Assignee(SyncableObjectContainerImpl<Assignee> con, {String id, String title}) : super(id, con);
+  Assignee(ContainerAccessor<Assignee> con, {String id, String title}) : super(id, con);
 
   String get firstName => super['firstName'];
   set firstName(String v) => super['firstName'] = v;

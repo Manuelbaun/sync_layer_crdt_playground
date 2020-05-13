@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
@@ -9,28 +8,40 @@ import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
 import 'package:test/test.dart';
 
-ContainerAccessor accessFactory(String type, int site, Function(Atom) update) {
-  final rand = Random(0);
-  var baseClock = Hlc(DateTime(2020).millisecondsSinceEpoch, 0, site);
+// TODO: Test accessing syncable object
+// todo: subtye syncable object!
 
-  ContainerAccessor access;
+class TestAccessor implements ContainerAccessor {
+  TestAccessor(this.type, this.site, this.update) {
+    baseClock = Hlc(DateTime(2020).millisecondsSinceEpoch, 0, site);
+  }
 
-  /// Setup Accessors
-  access = ContainerAccessor(
-    type: type,
-    onUpdate: (String id, String key, value) {
-      // creates new baseClock
-      baseClock = Hlc.send(baseClock);
-      // send atom with that baseClock
-      final a = Atom<Value>(baseClock, Value(type, id, key, value));
-      update(a);
-      // so.applyAtom(a);
-    },
-    generateID: () => '__hello_world__',
-    objectLookup: (String type, String id) => null,
-  );
+  Hlc baseClock;
+  void Function(Atom) update;
+  final int site;
+  @override
+  String type;
 
-  return access;
+  @override
+  void onUpdate(String id, String key, dynamic value) {
+    // creates new baseClock
+    baseClock = Hlc.send(baseClock);
+    // send atom with that baseClock
+    final a = Atom<Value>(baseClock, Value(type, id, key, value));
+
+    update(a);
+    // so.applyAtom(a);
+  }
+
+  @override
+  String generateID() {
+    return '__hello_world__';
+  }
+
+  @override
+  SyncableObject objectLookup(String type, String id) {
+    return null;
+  }
 }
 
 void main() {
@@ -38,11 +49,11 @@ void main() {
     final type = 'todo';
     SyncableObject obj1;
     var atoms1 = <Atom>[];
-    final access1 = accessFactory(type, 22222, (Atom a) => atoms1.add(a));
+    final access1 = TestAccessor(type, 22222, (Atom a) => atoms1.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, null, access1);
+      obj1 = SyncableObjectImpl(null, access1);
       atoms1 = [];
     });
 
@@ -163,13 +174,13 @@ void main() {
     var atoms1 = <Atom>[];
     var atoms2 = <Atom>[];
 
-    final access1 = accessFactory(type, 11111, (Atom a) => atoms1.add(a));
-    final access2 = accessFactory(type, 22222, (Atom a) => atoms2.add(a));
+    final access1 = TestAccessor(type, 11111, (Atom a) => atoms1.add(a));
+    final access2 = TestAccessor(type, 22222, (Atom a) => atoms2.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, null, access1);
-      obj2 = SyncableObjectImpl(null, null, access2);
+      obj1 = SyncableObjectImpl(null, access1);
+      obj2 = SyncableObjectImpl(null, access2);
       atoms1 = [];
       atoms2 = [];
     });
@@ -274,13 +285,13 @@ void main() {
     var atoms1 = <Atom>[];
     var atoms2 = <Atom>[];
 
-    final access1 = accessFactory(type, 11111, (Atom a) => atoms1.add(a));
-    final access2 = accessFactory(type, 22222, (Atom a) => atoms2.add(a));
+    final access1 = TestAccessor(type, 11111, (Atom a) => atoms1.add(a));
+    final access2 = TestAccessor(type, 22222, (Atom a) => atoms2.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, null, access1);
-      obj2 = SyncableObjectImpl(null, null, access2);
+      obj1 = SyncableObjectImpl(null, access1);
+      obj2 = SyncableObjectImpl(null, access2);
       atoms1 = [];
       atoms2 = [];
     });

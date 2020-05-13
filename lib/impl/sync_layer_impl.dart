@@ -15,6 +15,8 @@ class SyncLayerImpl implements SyncLayer {
   final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
 
+  final containerAccessor = <String, ContainerAccessor>{};
+
   @override
   int site;
 
@@ -45,7 +47,9 @@ class SyncLayerImpl implements SyncLayer {
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
       String typeId, SynableObjectFactory<T> objectFactory) {
-    final container = SyncableObjectContainerImpl<T>(this, typeId, objectFactory);
+    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(this, typeId, objectFactory);
+
+    containerAccessor[container.typeId] = ContainerAccessorImpl(this, container);
 
     _setContainer(container);
     return container;
@@ -57,11 +61,11 @@ class SyncLayerImpl implements SyncLayer {
     _setContainer(cont);
   }
 
-  void _setContainer(SyncableObjectContainer cont) {
-    if (containers[cont.typeId] == null) {
-      containers[cont.typeId] = cont;
+  void _setContainer(SyncableObjectContainer container) {
+    if (containers[container.typeId] == null) {
+      containers[container.typeId] = container;
     } else {
-      throw SyncLayerError('Container with typeId ${cont.typeId} already exist $cont');
+      throw SyncLayerError('Container with typeId ${container.typeId} already exist $container');
     }
   }
 

@@ -14,11 +14,14 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
   /// Returns the timestamp for that field
   Hlc getFieldClock(String key);
 
-  /// applies atom:
-  /// * if successfull => returns [2]
-  /// * if atom is older then current value => returns [1] :
-  /// * else => returns [-1]
+  /// applies atom and returns
+  /// * returns [ 2] : if apply successfull
+  /// * returns [ 1] : if atom clock is equal to current => same atom
+  /// * returns [ 0] : if atom is older then current
+  /// * returns [-1] : if nothing applied => should never happen
+  /// if -1 it throws an error
   ///
+  /// TODO: should case of Atom beeing 'null' be handeled?
   int applyAtom(Atom atom);
 
   dynamic operator [](key);

@@ -4,6 +4,40 @@ import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logger/index.dart';
 
+class ContainerAccessorImpl implements ContainerAccessor {
+  ContainerAccessorImpl(this.synclayer, this.container) {
+    type = container.typeId;
+  }
+
+  final SyncableObjectContainer container;
+  final SyncLayer synclayer;
+
+  @override
+  String type;
+
+  @override
+  void onUpdate(String id, String key, dynamic value) {
+    final a = synclayer.createAtom(Value(type, id, key, value));
+    synclayer.applyAtoms([a]);
+  }
+
+  @override
+  String generateID() {
+    return synclayer.generateID();
+  }
+
+  @override
+  SyncableObject objectLookup(String type, String id, [bool shouldCreateIfNull = true]) {
+    final container = synclayer.getObjectContainer(type);
+    var obj = container.read(id);
+
+    if (shouldCreateIfNull && obj == null) {
+      obj = container.create(id);
+    }
+    return obj;
+  }
+}
+
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final String _typeId;
   final Map<String, T> _objects = {}; // the real elements
@@ -19,7 +53,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   }
 
   @override
-  final SyncLayer syn;
+  // final SyncLayer syn;
 
   @override
   Stream<Set<T>> get changeStream => _controller.stream;
@@ -49,14 +83,17 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
   /// Provide a default factory function for that Syncable Object
 
-  SyncableObjectContainerImpl(this.syn, String typeId, SynableObjectFactory<T> objectFactory)
+  SyncableObjectContainerImpl(SyncLayer syn, String typeId, SynableObjectFactory<T> objectFactory)
       : assert(syn != null),
         assert(objectFactory != null),
+        assert(typeId != null),
         _typeId = typeId.toLowerCase(),
-        _objectFactory = objectFactory;
+        _objectFactory = objectFactory {
+    // create accessor class for the synable objects
+    accessor = ContainerAccessorImpl(syn, this);
+  }
 
-  @override
-  String generateID() => syn.generateID();
+  ContainerAccessor accessor;
 
   ///
   /// CRUD Ops
@@ -70,7 +107,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
     if (obj == null) {
       // creates new object with provided ID
-      obj = _objectFactory(this, id);
+      obj = _objectFactory(accessor, id);
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
@@ -109,8 +146,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   // gets called from the sync object
   @override
   void update(String objectId, String fieldId, dynamic value) {
-    final a = syn.createAtom(Value(typeId, objectId, fieldId, value));
-    syn.applyAtoms([a]);
+    accessor.onUpdate(objectId, fieldId, value);
   }
 
   ///
