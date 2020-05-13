@@ -5,7 +5,7 @@ import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/crdts/clock.dart';
 import 'package:sync_layer/abstract/index.dart';
-
+import 'package:sync_layer/crdts/index.dart';
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';
@@ -31,13 +31,13 @@ class SynclayerAccessor implements Accessor {
   }
 
   @override
-  SyncableObject objectLookup(String type, String id, [bool shouldCreateIfNull = true]) {
-    final container = synclayer.getObjectContainer(type);
+  SyncableObject objectLookup(ObjectReference ref, [bool shouldCreateIfNull = true]) {
+    final container = synclayer.getObjectContainer(ref.type);
     // TODO: check if container Exists
-    var obj = container.read(id);
+    var obj = container.read(ref.id);
 
     if (shouldCreateIfNull && obj == null) {
-      obj = container.create(id);
+      obj = container.create(ref.id);
     }
     return obj;
   }
@@ -128,7 +128,7 @@ class SyncLayerImpl implements SyncLayer {
             container.setUpdatedObject(obj);
             changedContainer.add(container);
           }
-          // in any case, 
+          // in any case,
           atomCache.add(atom);
           trie.build([atom.clock]);
         } else {
@@ -172,6 +172,7 @@ class SyncLayerImpl implements SyncLayer {
     func();
     // send transationList
     transactionActive = false;
+
     applyAtoms([...transationList]);
     transationList.clear();
   }

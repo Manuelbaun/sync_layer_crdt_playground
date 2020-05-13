@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/index.dart';
 import 'package:sync_layer/logger/index.dart';
 
@@ -14,7 +15,7 @@ void main(List<String> arguments) {
   // create protocol class
   final rand = Random();
   final nodeID = rand.nextInt(999999);
-  final syn = SyncLayerImpl(nodeID);
+  final SyncLayer syn = SyncLayerImpl(nodeID);
   final protocol = SyncLayerProtocol(syn);
 
   // create first container by type
@@ -63,11 +64,11 @@ void main(List<String> arguments) {
         }
       });
 
-      Timer(Duration(seconds: 2), () {
-        daoTodo.delete(id);
-        // finish program
-        // tt.cancel();
-      });
+      // Timer(Duration(seconds: 2), () {
+      //   daoTodo.delete(id);
+      //   // finish program
+      //   // tt.cancel();
+      // });
     }
   });
 }

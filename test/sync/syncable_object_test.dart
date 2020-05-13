@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/crdts/atom.dart';
-import 'package:sync_layer/crdts/values.dart';
+import 'package:sync_layer/crdts/index.dart';
 import 'package:sync_layer/impl/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
@@ -41,7 +40,7 @@ class TestAccessor implements Accessor {
   }
 
   @override
-  SyncableObject objectLookup(String type, String id) {
+  SyncableObject objectLookup(ObjectReference ref) {
     return null;
   }
 }

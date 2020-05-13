@@ -1,4 +1,5 @@
 import 'package:sync_layer/abstract/syncable_object.dart';
+import 'package:sync_layer/crdts/index.dart';
 
 /// [V] is not for a syncable object,
 /// it should describe the type of the value, which is then updated
@@ -8,5 +9,5 @@ abstract class Accessor {
 
   void onUpdate<V>(List<V> value);
   String generateID();
-  SyncableObject objectLookup(String type, String id);
+  SyncableObject objectLookup(ObjectReference ref);
 }

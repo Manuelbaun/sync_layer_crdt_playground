@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
-import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/crdts/index.dart';
 import 'package:sync_layer/abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone_';
@@ -95,16 +95,9 @@ class SyncableObjectImpl implements SyncableObject {
     _obj[atom.data.key] = atom.data.value;
     _objClock[atom.data.key] = atom.clock;
 
-    if (atom.data.value is Map) {
-      final m = atom.data.value as Map;
-
-      final String type = m[_TYPE_ID];
-      final String objId = m[_OBJ_ID];
-
-      // if it is a synable object look it up and store it in the [_syncableObjects]
-      if (type != null && objId != null) {
-        _syncableObjects[atom.data.key] = _accessor.objectLookup(type, objId);
-      }
+    // lookup if it is on object reference
+    if (atom.data.value is ObjectReference) {
+      _syncableObjects[atom.data.key] = _accessor.objectLookup(atom.data.value);
     }
   }
 
@@ -131,7 +124,8 @@ class SyncableObjectImpl implements SyncableObject {
     if (value is SyncableObject) {
       // create Ref type
       /// TODO syncable Ref Object??
-      val = {_TYPE_ID: value.type, _OBJ_ID: value.id};
+      // val = {_TYPE_ID: value.type, _OBJ_ID: value.id};
+      val = ObjectReference(value.type, value.id);
     }
 
     _accessor.onUpdate([Value(type, id, field, val)]);
