@@ -1,5 +1,6 @@
 import 'package:sync_layer/impl/syncable_causal_tree_imple.dart';
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/timestamp/logical_time.dart';
+// import 'package:sync_layer/timestamp/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 
@@ -95,7 +96,7 @@ void main() {
     final a2 = a.insert(a1, 'M');
     final a3 = a.insert(a2, 'D');
 
-    a.localClock = Hlc(0, 5, a.owner);
+    a.localClock = LogicalTime(5, a.owner);
     final a6 = a.delete(a2);
     final a7 = a.delete(a3);
     final a8 = a.insert(a1, 'T');
@@ -103,7 +104,7 @@ void main() {
     final aA = a.insert(a9, 'L');
 
     // ------------- B
-    b.localClock = Hlc(0, 5, b.owner);
+    b.localClock = LogicalTime(5, b.owner);
     final b6 = b.insert(a3, 'D');
     final b7 = b.insert(b6, 'E');
     final b8 = b.insert(b7, 'L');
@@ -112,13 +113,13 @@ void main() {
     final bA = b.insert(b9, 'C');
     final bB = b.insert(bA, 'T');
 
-    c.localClock = Hlc(0, 5, c.owner);
+    c.localClock = LogicalTime(6, c.owner);
     final c7 = c.insert(a3, 'A');
     final c8 = c.insert(c7, 'L');
     final c9 = c.insert(c8, 'T');
 
     // ------------- C
-    d.localClock = Hlc(0, 10, d.owner);
+    d.localClock = LogicalTime(10, d.owner);
     ;
     final d10 = d.insert(aA, 'S');
     final d11 = d.insert(d10, 'P');

@@ -2,83 +2,36 @@ import 'dart:typed_data';
 
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/timestamp/index.dart';
-const ts = [
-  "2020-04-23T07:16:20.605Z-0000-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.605Z-0001-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.607Z-0000-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.607Z-0001-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.608Z-0000-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.608Z-0001-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.610Z-0000-9543e0e1f9d5ee5b",
-  "2020-04-23T07:16:20.610Z-0001-9543e0e1f9d5ee5b",
-  "2020-04-23T07:30:08.189Z-0000-bcd99f065ea9df0d",
-  "2020-04-23T07:30:08.189Z-0001-bcd99f065ea9df0d",
-  "2020-04-23T07:30:08.192Z-0000-bcd99f065ea9df0d",
-  "2020-04-23T07:30:08.192Z-0001-bcd99f065ea9df0d",
-  "2020-04-23T07:30:23.326Z-0000-adffe0da9d9d5b5e",
-  "2020-04-23T07:30:23.326Z-0001-adffe0da9d9d5b5e",
-  "2020-04-23T07:30:23.330Z-0000-adffe0da9d9d5b5e",
-  "2020-04-23T07:30:23.330Z-0001-adffe0da9d9d5b5e",
-  "2020-04-23T14:08:35.179Z-0000-a1f9e6b460fe9351",
-  "2020-04-23T14:08:35.180Z-0000-a1f9e6b460fe9351",
-  "2020-04-23T14:08:35.180Z-0001-a1f9e6b460fe9351",
-  "2020-04-23T14:08:50.567Z-0000-9cfd011f3d495287",
-  "2020-04-23T14:08:50.567Z-0001-9cfd011f3d495287",
-  "2020-04-23T14:08:50.567Z-0002-9cfd011f3d495287",
-  "2020-04-23T14:08:59.715Z-0000-a456a19d06bb842a",
-  "2020-04-23T14:08:59.715Z-0001-a456a19d06bb842a",
-  "2020-04-23T14:08:59.718Z-0000-a456a19d06bb842a",
-  "2020-04-23T14:08:59.718Z-0001-a456a19d06bb842a",
-  "2020-04-23T14:09:08.681Z-0000-9c47832e4da7e7a9",
-  "2020-04-23T14:09:08.681Z-0001-9c47832e4da7e7a9",
-  "2020-04-23T14:09:08.681Z-0002-9c47832e4da7e7a9",
-  "2020-04-23T14:10:29.181Z-0000-9819a0db4d4eb7aa",
-  "2020-04-23T14:10:29.181Z-0001-9819a0db4d4eb7aa",
-  "2020-04-23T14:10:29.181Z-0002-9819a0db4d4eb7aa",
-  "2020-04-23T14:11:52.644Z-0000-ba684f6b8ee22d57",
-  "2020-04-23T14:11:52.644Z-0001-ba684f6b8ee22d57",
-  "2020-04-23T14:11:52.644Z-0002-ba684f6b8ee22d57",
-  "2020-04-23T14:13:04.678Z-0000-a4fae62ac3edb535",
-  "2020-04-23T14:13:04.678Z-0001-a4fae62ac3edb535",
-  "2020-04-23T14:13:04.678Z-0002-a4fae62ac3edb535",
-  "2020-04-23T14:17:12.278Z-0000-a722c176509597e5",
-  "2020-04-23T14:17:49.950Z-0000-a4b850763f81f0f9",
-  "2020-04-23T14:17:49.950Z-0001-a4b850763f81f0f9",
-  "2020-04-23T14:17:49.950Z-0002-a4b850763f81f0f9",
-  "2020-04-23T14:17:26.562Z-0000-a4b850763f81f0f9",
-  "2020-04-23T14:17:34.713Z-0000-a4b850763f81f0f9",
-  "2020-04-23T14:17:56.079Z-0000-8ee34b85744f4b59",
-  "2020-04-23T14:17:56.079Z-0001-8ee34b85744f4b59",
-  '2020-04-23T14:17:56.079Z-0002-8ee34b85744f4b59',
-  "2020-04-23T14:22:46.367Z-0000-ad5d12fb06f65120",
-  "2020-04-23T14:22:53.719Z-0000-ad645bcad53e3658",
-  "2020-04-23T14:25:38.038Z-0000-938f25d9e9e81b25",
-  "2020-04-23T14:26:28.910Z-0000-bd471f3de6f13665",
-  "2020-04-23T14:26:28.910Z-0001-bd471f3de6f13665",
-  "2020-04-23T14:26:28.910Z-0002-bd471f3de6f13665",
-  "2020-04-24T10:57:49.198Z-0000-97f6c8ef1e121379",
-  "2020-04-24T10:57:49.198Z-0001-97f6c8ef1e121379",
-  "2020-04-24T10:57:49.198Z-0002-97f6c8ef1e121379",
-];
-
-Map<String, dynamic> sortMap(Map<String, dynamic> map) {
-  final keys = map.keys.toList()..sort();
-  final _map = <String, dynamic>{};
-  for (var key in keys) {
-    _map[key] = map[key] is Map ? sortMap(map[key]) : map[key];
-  }
-  return _map;
-}
 
 void main() {
   var h = 0;
-  for (final s in ts) {
-    final ss = MurmurHashV3(s);
-    h ^= ss;
-    final b = (ByteData(4)..setInt32(0, h)).getInt32(0);
+  var i = 0;
 
-    final m = Hlc.parse(s);
-    var rad = BigInt.from(m.millis / 1000 / 60).toRadixString(3);
-    print('${rad} $ss $b');
-  }
+  final ts = <String>[];
+
+  final l = (DateTime(2020, 1, 1, 1, i).millisecondsSinceEpoch);
+  final s = 9999;
+  final ss = '$l-$s';
+  print(ss);
+  MurmurHashV3(ss);
+
+  print(0xffffffff);
+
+  // for (var i = 0; i < 1; i++) {
+  //   final ms = DateTime(2020, 1, 1, 1, i).millisecondsSinceEpoch;
+  //   final h = Hlc(ms, i, 1234);
+  //   ts.add(h.toString());
+  // }
+
+  // for (final s in ts) {
+  //   final ss = MurmurHashV3(s);
+  //   h ^= ss;
+  //   final b = (ByteData(4)..setInt32(0, h)).getInt32(0);
+  //   // final b = h & 0xFFFFFFFF;
+
+  //   final m = Hlc.parse(s);
+  //   var rad = (m.millis / 1000 / 60).ceil().toRadixString(3);
+
+  //   print('${rad} $ss $b');
+  // }
 }

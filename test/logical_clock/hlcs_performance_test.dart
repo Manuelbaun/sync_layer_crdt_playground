@@ -1,3 +1,4 @@
+import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/timestamp/alternative/hlc.dart' as ts;
 import 'package:sync_layer/timestamp/hybrid_logical_clock.dart';
 import 'package:sync_layer/utils/measure.dart';
@@ -29,43 +30,20 @@ void main() {
     hlcs1.sort();
   });
 
-  final hlcs1Conv = [];
-  final bytes = [];
-  measureExecution('test hlc1 serialize', () {
-    for (final h in hlcs1) {
-      bytes.add(h.toBytes());
-    }
+  var b;
+
+  var h;
+
+  measureExecution('en decode', () {
+    b = hlcs1.map((a) => msgpackEncode(a));
+    h = b.map((bytes) => msgpackDecode(bytes)).toList();
   });
 
-  measureExecution('test hlc1 deserialize', () {
-    for (final b in bytes) {
-      hlcs1Conv.add(Hlc.fromBytes(b));
-    }
-  });
-
-  final h = [];
-  final h2 = [];
-  final b = [];
-
-  measureExecution('all together', () {
-    for (var i = 0; i < 1000; i++) {
-      h.add(Hlc(ms, 0, 1234));
-    }
-    hlcs1.sort();
-
-    for (final h in hlcs1) {
-      b.add(h.toBytes());
-    }
-
-    for (final b in b) {
-      h2.add(Hlc.fromBytes(b));
-    }
-  });
   var eq = false;
 
   test('De/Serialize', () {
     for (var i = 1; i < hlcs1.length; i++) {
-      eq = h[i] == h2[i];
+      eq = hlcs1[i] == h[i];
 
       if (!eq) break;
     }

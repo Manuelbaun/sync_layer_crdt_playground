@@ -36,23 +36,13 @@ void main() {
     });
   });
 
-  group('Logical time representation', () {
-    test('Hlc as logical time', () {
-      expect(testHlc.logicalTime, 103522861260406826);
-    });
-
-    test('Hlc from logical time', () {
-      expect(Hlc.fromLogicalTime(103522861260406826, 1234), testHlc);
-    });
-  });
-
   group('String operations', () {
     test('hlc to string', () {
-      expect(testHlc.toString(), '16fc97e6b8f002a-4d2');
+      expect(testHlc.toString(), '16fc97e6b8f-2a-4d2');
     });
 
     test('Parse hlc', () {
-      expect(Hlc.parse('16fc97e6b8f002a-4d2'), testHlc);
+      expect(Hlc.parse('16fc97e6b8f-2a-4d2'), testHlc);
     });
   });
 
@@ -62,13 +52,13 @@ void main() {
 
       final r = isNot(testHlc);
       expect(hlc, r);
-      expect(hlc.toString(), '16fc97e6b8f002b-4d2');
+      expect(hlc.toString(), '16fc97e6b8f-2b-4d2');
     });
 
     test('Send simultaneous', () {
       var hlc = Hlc.send(testHlc, 1579633503119);
       expect(hlc, isNot(testHlc));
-      expect(hlc.toString(), '16fc97e6b8f002b-4d2');
+      expect(hlc.toString(), '16fc97e6b8f-2b-4d2');
     });
 
     test('Send later', () {
@@ -143,7 +133,7 @@ void main() {
       print(remoteHlc);
 
       expect(localHlc == remoteHlc, isFalse);
-      expect(localHlc.logicalTime == remoteHlc.logicalTime, isTrue);
+      expect(localHlc.counter == remoteHlc.counter, isTrue);
     });
   });
 }
