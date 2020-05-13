@@ -1,4 +1,4 @@
-import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/types/index.dart';
 
 class SyncLayerAtomCache {
   /// for quick access and sync between client

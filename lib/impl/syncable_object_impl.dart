@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
-import 'package:sync_layer/crdts/index.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone_';

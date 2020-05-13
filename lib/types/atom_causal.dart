@@ -1,6 +1,6 @@
 import 'package:sync_layer/logical_clocks/index.dart';
 
-import 'atom.dart';
+import 'atom_base.dart';
 
 /// Todo  must be also en/decodeable!!!
 class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {

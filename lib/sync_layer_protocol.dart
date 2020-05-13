@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/abstract/sync_layer.dart';
 import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/logger/index.dart';

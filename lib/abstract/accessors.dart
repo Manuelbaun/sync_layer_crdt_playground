@@ -1,5 +1,5 @@
 import 'package:sync_layer/abstract/syncable_object.dart';
-import 'package:sync_layer/crdts/index.dart';
+import 'package:sync_layer/types/index.dart';
 
 /// [V] is not for a syncable object,
 /// it should describe the type of the value, which is then updated

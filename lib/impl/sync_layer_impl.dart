@@ -2,10 +2,9 @@ import 'dart:async';
 
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
-import 'package:sync_layer/crdts/atom.dart';
-import 'package:sync_layer/crdts/clock.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/crdts/index.dart';
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:sync_layer/crdts/atom_causal.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 
 class CausalTree<T> {

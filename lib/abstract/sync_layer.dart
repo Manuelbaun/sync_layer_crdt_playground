@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/crdts/atom.dart';
+import 'package:sync_layer/types/index.dart';
 
 import 'syncable_object.dart';
 import 'syncable_object_container.dart';

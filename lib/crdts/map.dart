@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
-import 'atom.dart';
+import 'package:sync_layer/types/index.dart';
 
 class AtomMapValue<K, V> {
   final String objId;

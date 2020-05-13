@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/crdts/values.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logger/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {

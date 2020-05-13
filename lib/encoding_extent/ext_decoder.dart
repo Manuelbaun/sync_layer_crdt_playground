@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:msgpack_dart/msgpack_dart.dart';
-import 'package:sync_layer/crdts/index.dart';
+import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 
