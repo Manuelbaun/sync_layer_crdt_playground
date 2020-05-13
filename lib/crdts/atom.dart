@@ -1,13 +1,13 @@
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
 
-abstract class AtomBase {
+abstract class AtomBase<T> {
   final LogicalClock clock;
-  final dynamic value;
-  AtomBase(this.clock, this.value);
+  final T data;
+  AtomBase(this.clock, this.data);
 }
 
-/// The [value] must be either an encodeable, which can be en/de coded by messagepack
+/// The [data] must be either an encodeable, which can be en/de coded by messagepack
 /// or must be provided by the value en/decoder extension classes [ValueDecoder] [ValueEncoder]
 ///
 /// if check for [==] equality, the value hashcode must be the same for the same copied value
@@ -55,7 +55,7 @@ abstract class AtomBase {
 //   }
 // }
 
-class Atom<V> implements AtomBase, Comparable<Atom> {
+class Atom<T> implements AtomBase, Comparable<Atom<T>> {
   @override
   final LogicalClock clock;
 
@@ -63,18 +63,18 @@ class Atom<V> implements AtomBase, Comparable<Atom> {
   int get counter => clock.counter;
 
   @override
-  final V value;
+  final T data;
 
-  Atom(this.clock, this.value);
+  Atom(this.clock, this.data);
 
   @override
-  int compareTo(Atom other) {
+  int compareTo(Atom<T> other) {
     return clock.compareTo(other.clock);
   }
 
   @override
   String toString() {
-    return 'Atom(ts: ${clock.toStringHuman()}, value: $value)';
+    return 'Atom(ts: ${clock.toStringHuman()}, value: $data)';
   }
 
   @override
@@ -85,6 +85,6 @@ class Atom<V> implements AtomBase, Comparable<Atom> {
 
   @override
   int get hashCode {
-    return clock.hashCode ^ nestedHashing(value);
+    return clock.hashCode ^ nestedHashing(data);
   }
 }

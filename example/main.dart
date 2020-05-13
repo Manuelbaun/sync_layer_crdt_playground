@@ -11,10 +11,6 @@ import 'dao.dart';
 /// --------------------------------------------------------------
 /// --------------------------------------------------------------
 void main(List<String> arguments) {
-  // Logger.writer = ConsolePrinter(minLevel: LogLevel.info, enableInReleaseMode: true);
-  logger.info('ajsdhfjkhaksjdflbkjasdkjh aahsdkljhahsd kj ja sdkfjhla sdfldasfhka jk sdf '
-      'aaksdjhflkajsdfkja sldkf lkjadlkj asd klasdf lkasdlkjlkasdf'
-      'akjsdhfjhsdakjfhkajsdhfjkhasdfhkjashdfkjahsdkjfhkdshfkhadkfjakjsdfdkfh');
   // create protocol class
   final rand = Random();
   final nodeID = rand.nextInt(999999);
@@ -26,10 +22,10 @@ void main(List<String> arguments) {
   final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
 
   daoTodo.changeStream.listen((objs) {
-    objs.forEach((o) => logger.fine(o.toString()));
+    objs.forEach((o) => logger.info(o.toString()));
   });
 
-  daoAss.changeStream.listen((objs) => objs.forEach((o) => logger.fine(o.toString())));
+  daoAss.changeStream.listen((objs) => objs.forEach((o) => logger.info(o.toString())));
 
   /// Setup connection
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {
@@ -43,8 +39,8 @@ void main(List<String> arguments) {
   }, onError: (err) => logger.error('[!]Error -- ${err.toString()}'));
 
   // apply changes
-  final id = 'cka1jh04v000csa3aufnz114h';
-  final tt = daoTodo.create(id);
+  final tt = daoTodo.create();
+  final id = tt.id;
   tt.title = 'init Title';
 
   Timer.periodic(Duration(seconds: 2), (tt) {
@@ -56,7 +52,7 @@ void main(List<String> arguments) {
 
         if (t.assignee == null) {
           final a = daoAss.create();
-          
+
           a.firstName = 'Hans';
           a.lastName = 'Peter';
           a.age = 25;
@@ -68,9 +64,9 @@ void main(List<String> arguments) {
       });
 
       Timer(Duration(seconds: 2), () {
-        daoTodo.delete('cka1jh04v000csa3aufnz114h');
+        daoTodo.delete(id);
         // finish program
-        tt.cancel();
+        // tt.cancel();
       });
     }
   });

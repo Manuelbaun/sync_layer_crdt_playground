@@ -11,11 +11,11 @@ class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
   int get counter => clock.counter;
 
   @override
-  final T value;
+  final T data;
 
   final LogicalTime cause;
 
-  CausalAtom(this.clock, this.value, this.cause);
+  CausalAtom(this.clock, this.data, this.cause);
 
   /// Checks wheter Atom **lhs** is causal **`less`** then **rhs**.
   /// Less means it is **left** to the other atom in the array.
@@ -67,7 +67,7 @@ class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
   String get causeId => 'S${cause?.site?.toRadixString(16)}@T${cause?.counter}';
 
   @override
-  String toString() => '${siteId}-${causeId} : ${value}';
+  String toString() => '${siteId}-${causeId} : ${data}';
 
   @override
   bool operator ==(Object o) {
@@ -79,12 +79,12 @@ class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
   int get hashCode {
     var hash = 0;
 
-    if (value is Map) {
-      (value as Map).entries.forEach((e) => hash ^= e.key.hashCode ^ e.value.hashCode);
-    } else if (value is List) {
-      (value as List).forEach((e) => hash ^= e.hashCode);
+    if (data is Map) {
+      (data as Map).entries.forEach((e) => hash ^= e.key.hashCode ^ e.value.hashCode);
+    } else if (data is List) {
+      (data as List).forEach((e) => hash ^= e.hashCode);
     } else {
-      hash = value.hashCode;
+      hash = data.hashCode;
     }
 
     return clock.hashCode ^ hash ^ cause?.hashCode;

@@ -24,8 +24,8 @@ class ExtendetEncoder implements ExtEncoder {
     if (object is LogicalTime) return serialize([object.counter, object.site]);
     if (object is Hlc) return serialize([object.ms, object.counter, object.site]);
     if (object is Value) return serialize([object.type, object.id, object.key, object.value]);
-    if (object is CausalAtom) return msgpackEncode([object.cause, object.clock, object.value]);
-    if (object is Atom) return msgpackEncode([object.clock, object.value]);
+    if (object is CausalAtom) return msgpackEncode([object.cause, object.clock, object.data]);
+    if (object is Atom) return msgpackEncode([object.clock, object.data]);
 
     return null;
   }

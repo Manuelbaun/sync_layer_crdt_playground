@@ -81,7 +81,7 @@ class CausalTree<T> {
 
   void mergeRemoteAtoms(List<CausalAtom<T>> atoms) {
     for (final atom in atoms) {
-      if (atom.value == null) {
+      if (atom.data == null) {
         _delete(atom);
       } else {
         _insert(atom);
@@ -183,8 +183,8 @@ class CausalTree<T> {
 
   @override
   String toString() {
-    return atoms.where((a) => !(a.value == null || deletedAtoms.contains(a.clock))).map(((a) {
-      return a.value;
+    return atoms.where((a) => !(a.data == null || deletedAtoms.contains(a.clock))).map(((a) {
+      return a.data;
     })).join('');
   }
 }

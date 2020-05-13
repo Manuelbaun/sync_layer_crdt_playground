@@ -5,9 +5,9 @@ import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/index.dart';
 
-const String _TOMBSTONE = '__tombstone';
-const String _TYPE_ID = '__type_id';
-const String _OBJ_ID = '__obj_id';
+const String _TOMBSTONE = '_tombstone_';
+const String _TYPE_ID = '_type_';
+const String _OBJ_ID = '_#_';
 
 class SyncableObjectImpl implements SyncableObject {
   /// **Important**
@@ -66,9 +66,11 @@ class SyncableObjectImpl implements SyncableObject {
   /// if -1 it throws an error
   ///
   /// TODO: should case of Atom beeing 'null' be handeled?
+  /// TODO: Think, what should happen, if atom exist here?
+  /// normally Synclayer is filtering it out!
   @override
   int applyAtom(Atom atom) {
-    final fieldClock = getFieldClock(atom.value.key);
+    final fieldClock = getFieldClock(atom.data.key);
 
     _history.add(atom);
     // if field was not set or the local time happend before [hb] to new Atom
@@ -83,25 +85,25 @@ class SyncableObjectImpl implements SyncableObject {
     return 0;
   }
 
-  /// somewhat redundet ?
+  /// somewhat redundent ?
   /// should be sorted?
   @override
   List<Atom> get history => _history.toList()..sort();
   final Set<Atom> _history = {};
 
   void _setField(Atom atom) {
-    _obj[atom.value.key] = atom.value.value;
-    _objClock[atom.value.key] = atom.clock;
+    _obj[atom.data.key] = atom.data.value;
+    _objClock[atom.data.key] = atom.clock;
 
-    if (atom.value is Map) {
-      final m = atom.value as Map;
+    if (atom.data.value is Map) {
+      final m = atom.data.value as Map;
 
       final String type = m[_TYPE_ID];
       final String objId = m[_OBJ_ID];
 
       // if it is a synable object look it up and store it in the [_syncableObjects]
       if (type != null && objId != null) {
-        _syncableObjects[atom.value.key] = _accessor.objectLookup(type, objId);
+        _syncableObjects[atom.data.key] = _accessor.objectLookup(type, objId);
       }
     }
   }

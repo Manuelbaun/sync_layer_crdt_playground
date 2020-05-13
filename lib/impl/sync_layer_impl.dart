@@ -33,6 +33,7 @@ class SynclayerAccessor implements Accessor {
   @override
   SyncableObject objectLookup(String type, String id, [bool shouldCreateIfNull = true]) {
     final container = synclayer.getObjectContainer(type);
+    // TODO: check if container Exists
     var obj = container.read(id);
 
     if (shouldCreateIfNull && obj == null) {
@@ -112,30 +113,24 @@ class SyncLayerImpl implements SyncLayer {
     for (final atom in atoms) {
       if (!atomCache.exist(atom)) {
         // test if table exits
-        final container = getObjectContainer(atom.value.type);
+        final container = getObjectContainer(atom.data.type);
 
         if (container != null) {
           // if row does not exist, new row will be added
-          var obj = container.read(atom.value.id);
-          obj ??= container.create(atom.value.id);
+          var obj = container.read(atom.data.id);
+          obj ??= container.create(atom.data.id);
 
           final res = obj.applyAtom(atom);
 
-          // based on the result..
-          if (res > 0) {
-            if (res == 2) {
-              // todo trigger! container /object update
-              container.setUpdatedObject(obj);
-              changedContainer.add(container);
-            } else {
-              // do not trigger, because those are older values
-            }
-
-            atomCache.add(atom);
-            trie.build([atom.clock]);
-          } else {
-            logger.error('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
+          // if successfull applied, => trigger!
+          if (res == 2) {
+            // todo trigger! container /object update
+            container.setUpdatedObject(obj);
+            changedContainer.add(container);
           }
+          // in any case, 
+          atomCache.add(atom);
+          trie.build([atom.clock]);
         } else {
           logger.error('Table does not exist');
         }

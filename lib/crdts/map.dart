@@ -68,8 +68,8 @@ class CRDTMap<K, V> {
         /// only merge if Atom of remote > then local
         _timestamp = Hlc.recv(_timestamp, atom.clock);
 
-        final key = atom.value.key as K;
-        final value = atom.value;
+        final key = atom.data.key as K;
+        final value = atom.data;
 
         // if localtime is smaller..
         if (_objHlc[key] < atom.clock) {

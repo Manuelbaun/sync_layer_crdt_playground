@@ -7,29 +7,33 @@ class CustomOutput implements LogOutput {
   @override
   void output(OutputEvent event) {
     if (event.level != Level.error && event.level != Level.warning && event.level != Level.wtf) {
-      final cause = event.lines[2];
-      final msgStart = cause.substring(0, 12);
-      var message = event.lines[4];
-      final msg = [cause];
+      event.lines.forEach(print);
 
-      final width = 100;
-      final width2 = width - msgStart.length;
+      // final cause = event.lines[2];
+      // final msgStart = cause.substring(0, 12);
+      // var message = event.lines.sublist(4, event.lines.length-1);
+      // print(cause);
+      // final msg = [cause];
 
-      final length = message.length < width ? message.length : width;
-      final sub = message.substring(0, length);
-      message = message.substring(length);
+      // final width = 100;
+      // final width2 = width - msgStart.length;
 
-      msg.add(sub);
+      // final length = message.length < width ? message.length : width;
+      // final sub = message.substring(0, length);
+      // message = message.substring(length);
 
-      // set message width
-      while (message.isNotEmpty) {
-        final nextLength = message.length < width2 ? message.length : width2;
-        final sub = message.substring(0, nextLength);
-        message = message.substring(nextLength);
-        msg.add(msgStart + sub);
-      }
+      // msg.add(sub);
 
-      msg.forEach(print);
+      // // set message width
+      // while (message.isNotEmpty) {
+      //   final nextLength = message.length < width2 ? message.length : width2;
+      //   final sub = message.substring(0, nextLength);
+      //   message = message.substring(nextLength);
+      //   msg.add(msgStart + sub);
+      // }
+
+      // msg.forEach(print);
+
     } else {
       event.lines.forEach((line) {
         print(line);
@@ -52,6 +56,7 @@ class CustomLogger {
         printTime: false // Should each log print contain a timestamp
         ),
     output: CustomOutput(),
+    level: Level.debug
   );
 
   CustomLogger();
