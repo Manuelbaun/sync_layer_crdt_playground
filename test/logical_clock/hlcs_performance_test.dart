@@ -1,18 +1,18 @@
 import 'package:sync_layer/encoding_extent/index.dart';
-import 'package:sync_layer/timestamp/alternative/hlc.dart' as ts;
-import 'package:sync_layer/timestamp/hybrid_logical_clock.dart';
+import 'package:sync_layer/logical_clocks/alternative/hlc.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 
 final ms = DateTime(2020).millisecondsSinceEpoch;
 
 void main() {
-  final hlcs0 = <ts.Hlc2>[];
+  final hlcs0 = <Hlc2>[];
   final hlcs1 = <Hlc>[];
 
   measureExecution('test hlc0', () {
     for (var i = 0; i < 1000; i++) {
-      final hlc = ts.Hlc2(ms, 0, '1234');
+      final hlc = Hlc2(ms, 0, '1234');
       hlcs0.add(hlc);
     }
 

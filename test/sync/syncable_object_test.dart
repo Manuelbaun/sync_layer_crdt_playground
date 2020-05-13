@@ -5,8 +5,7 @@ import 'package:sync_layer/abstract/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/impl/index.dart';
-import 'package:sync_layer/logger/index.dart';
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
 import 'package:test/test.dart';
 

@@ -1,4 +1,4 @@
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:test/test.dart';
 
 var testHlc = Hlc(1579633503119, 42, 1234);

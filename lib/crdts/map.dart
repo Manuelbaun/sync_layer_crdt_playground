@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/timestamp/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 import 'atom.dart';
 
 class AtomMapValue<K, V> {
