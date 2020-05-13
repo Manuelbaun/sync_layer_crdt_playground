@@ -26,11 +26,11 @@ class MerkleTrie {
     for (var h in hlcs) {
       final key = h.radixTime(radix);
 
-      if (!keys.contains(h.logicalTime)) {
+      if (!keys.contains(h.counter)) {
         _insert(root, key, h.hashCode, 0);
         root.hash = convHash(root.hash ^ h.hashCode);
         ms.merged.add(h.toString());
-        keys.add(h.logicalTime);
+        keys.add(h.counter);
       } else {
         ms.skipped.add(h.toString());
       }

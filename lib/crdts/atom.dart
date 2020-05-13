@@ -1,111 +1,64 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/timestamp/index.dart';
 
-class Atom implements Comparable<Atom> {
-  final Hlc hlc;
-  int get site => hlc.site;
-
-  /// In Context  of a Db, it's the **[Table]** id
-  final String type;
-
-  /// in Context of  a Db, its the **[Row]** id could be cuid id or any other
-  final String id;
-
-  /// In context ob a Db it is the **[column]**
-  final dynamic key;
-
-  /// In context of a Db its the **[value]** of the column
+abstract class AtomBase {
+  final LogicalClock clock;
   final dynamic value;
+  AtomBase(this.clock, this.value);
+}
 
-  Atom(
-    this.hlc,
-    this.type,
-    this.id,
-    this.key,
-    this.value,
-  );
+/// The [value] must be either an encodeable, which can be en/de coded by messagepack
+/// or must be provided by the value en/decoder extension classes [ValueDecoder] [ValueEncoder]
+///
+/// if check for [==] equality, the value hashcode must be the same for the same copied value
+/// Map/List etc do not have deep equality by default, hence two maps with the exact same values
+/// do not have the same hashcode. To get the same hashcode loop over every entry and calculate the hashcode
+class Atom<V> implements AtomBase, Comparable<Atom> {
+  @override
+  final Hlc clock;
+
+  int get site => clock.site;
+  int get logicaltime => clock.counter;
+
+  @override
+  final V value;
+
+  Atom(this.clock, this.value);
 
   @override
   int compareTo(Atom other) {
-    // return other.ts.logicalTime - ts.logicalTime; // DESC
-    return hlc.logicalTime - other.hlc.logicalTime; //ASC
+    // TODO: FIxME
+    return clock.counter - other.clock.counter;
   }
 
-  Atom copyWith({
-    Hlc hlc,
-    String type,
-    String id,
-    dynamic key,
-    dynamic value,
-  }) {
-    return Atom(
-      hlc ?? this.hlc,
-      type ?? this.type,
-      id ?? this.id,
-      key ?? this.key,
-      value ?? this.value,
-    );
+  int compareToDESC(Atom other) {
+    // TODO: FIxME
+
+    return other.clock.counter - clock.counter;
   }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'ts': hlc.toString(),
-      'type': type,
-      'id': id,
-      'key': key,
-      'value': value,
-    };
-  }
-
-  static Atom fromMap(Map<String, dynamic> map) {
-    if (map == null) return null;
-
-    return Atom(
-      Hlc.parse(map['ts']),
-      map['type'],
-      map['id'],
-      map['key'],
-      map['value'],
-    );
-  }
-
-  Uint8List toBytes() {
-    final list = [hlc.logicalTime, hlc.site, type, id, key, value];
-
-    return serialize(list);
-  }
-
-  factory Atom.fromBytes(Uint8List buff) {
-    final list = deserialize(buff);
-
-    return Atom(
-      Hlc.fromLogicalTime(list[0], list[1]),
-      list[2],
-      list[3],
-      list[4],
-      list[5],
-    );
-  }
-
-  String toJson() => json.encode(toMap());
-  static Atom fromJson(String source) => fromMap(json.decode(source));
 
   @override
   String toString() {
-    return 'Atom(ts: ${hlc.toRON()}, type: $type, id: $id, key: $key, value: $value)';
+    return 'Atom(ts: ${clock.toRON()}, value: $value)';
   }
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
-
-    return o is Atom && o.hlc == hlc && o.type == type && o.id == id && o.key == key && o.value == value;
+    return o is Atom && o.hashCode == hashCode;
   }
 
   @override
   int get hashCode {
-    return hlc.hashCode ^ type.hashCode ^ id.hashCode ^ key.hashCode ^ value.hashCode;
+    var hash = 0;
+
+    if (value is Map) {
+      (value as Map).entries.forEach((e) => hash ^= e.key.hashCode ^ e.value.hashCode);
+    } else if (value is List) {
+      (value as List).forEach((e) => hash ^= e.hashCode);
+    } else {
+      hash = value.hashCode;
+    }
+
+    return clock.hashCode ^ hash;
   }
 }

@@ -21,7 +21,7 @@ abstract class SyncLayer {
   void registerContainer(SyncableObjectContainer cont);
   String generateID();
 
-  Atom createAtom(String typeId, String objectId, String fieldId, dynamic value);
+  Atom createAtom(dynamic value);
 
   /// Function to add atoms
   void applyAtoms(List<Atom> atoms);

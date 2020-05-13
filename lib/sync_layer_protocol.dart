@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/sync_layer.dart';
+import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/logger/index.dart';
 
 import 'logger/index.dart';
@@ -20,23 +20,24 @@ enum MessageEnum {
 
 class EnDecoder {
   static Uint8List encodeAtoms(List<Atom> atoms, [MessageEnum msg = MessageEnum.ATOMS]) {
-    final updateBytes = atoms.map((a) => a.toBytes()).toList();
-    final buff = serialize(updateBytes);
+    // final updateBytes = atoms.map((a) => a.toBytes()).toList();
+    final buff = msgpackEncode(atoms);
     return Uint8List.fromList([msg.index, ...buff]);
   }
 
   static Uint8List encodeState(MerkleTrie state) {
-    final buff = serialize(state.toMap());
+    final buff = msgpackEncode(state.toMap());
     return Uint8List.fromList([MessageEnum.STATE.index, ...buff]);
   }
 
   static List<Atom> decodeAtoms(Uint8List buff) {
-    List atomsBuff = deserialize(buff);
-    return atomsBuff.map((b) => Atom.fromBytes(b)).toList();
+    List<Atom> atoms = msgpackDecode(buff);
+    return atoms;
+    // return atomsBuff.map((b) => Atom.fromBytes(b)).toList();
   }
 
   static MerkleTrie decodeState(Uint8List buff) {
-    Map trieMap = (deserialize(buff) as Map).cast<int, dynamic>();
+    Map trieMap = (msgpackDecode(buff) as Map).cast<int, dynamic>();
     return MerkleTrie.fromMap(trieMap);
   }
 }

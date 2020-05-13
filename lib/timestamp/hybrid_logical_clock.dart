@@ -1,15 +1,13 @@
-// https://github.com/cachapa/crdt
-
 import 'dart:math';
-import 'dart:typed_data';
-import 'package:sync_layer/encoding_extent/encode_decode_int.dart';
+import 'package:sync_layer/basic/murmur_hash.dart';
 import 'logial_clock.dart';
-import 'logical_time.dart';
 
 const _COUNTER_MASK = 0xFFFF;
 const _MAX_COUNTER = _COUNTER_MASK;
 const _MAX_DRIFT = 60000;
 const RESOLUTION = 60000;
+
+// https://github.com/cachapa/crdt
 
 // see Slides here: https://jlongster.com/s/dotjs-crdt-slides.pdf
 // View this app here: https://crdt.jlongster.com
@@ -23,43 +21,33 @@ const RESOLUTION = 60000;
 /// and the lower 16 bits are counter values, as logical time
 ///
 
-class Hlc extends LogicalTime {
-  int _millis;
-  int get millis => _millis;
+/// This Hlc implementation does not have the 64 bit represention as a logical clock, it always uses milliseconds - counter - site.
+/// This is due the fact, that javascript does not support xor manipulation on 64 bits
+/// it always converts it to 32 bits. So a 64 bit logical time, when used with bit shift, will lose the upper 32 bits!
+class Hlc implements LogicalClock, Comparable<Hlc> {
+  final int ms;
 
+  @override
   final int counter;
+
+  @override
+  final int site;
   int _minutes;
   int get minutes => _minutes;
 
-  // String _internal;
-  // int _hashcode;
+  @override
+  int get hashCode => _hashCode;
+  int _hashCode;
 
-  // call only if needed!
-  Uint8List toBytes() {
-    final m = encodeTrimmedInt(logicalTime); // max 6 bytes
-    final s = encodeTrimmedInt(site); // max 4 bytes
+  String _internal;
 
-    var full = Uint8List.fromList([m.length, ...m, ...s]);
-    return full;
-  }
-
-  factory Hlc.fromBytes(List<int> buff) {
-    final ml = buff[0];
-    final data = buff.sublist(1);
-
-    final m = decodeTrimmedInt(data.sublist(0, ml), 8);
-    final s = decodeTrimmedInt(data.sublist(ml));
-
-    return Hlc.fromLogicalTime(m, s);
-  }
-
-  Hlc([int ms, this.counter, int site])
-      : assert(counter < _MAX_COUNTER),
+  Hlc([int ms_, this.counter = 0, this.site])
+      : assert(counter < _MAX_COUNTER && counter >= 0),
         assert(site != null),
-        // little workaround, so that super can have its logical ts
-        // and ms is not null if left out
-        super(((ms ??= DateTime.now().millisecondsSinceEpoch) << 16) | counter, site) {
-    _millis = ms;
+        ms = ms_ ??= DateTime.now().millisecondsSinceEpoch {
+    // TODO: maybe add padding before release, after that, no changes to the hash function!
+    _internal = '${ms.toRadixString(16)}-${counter.toRadixString(16)}-${site.toRadixString(16)}';
+    _hashCode = MurmurHashV3(_internal);
     _minutes = (ms / RESOLUTION).floor();
   }
 
@@ -67,70 +55,65 @@ class Hlc extends LogicalTime {
   @override
   String radixTime(int radix) => minutes.toRadixString(radix);
 
-  factory Hlc.fromLogicalTime(int logicalTime, int site) {
-    final millis = logicalTime >> 16;
-    final counter = logicalTime & 0xFFFF;
-    return Hlc(millis, counter, site);
-  }
-
   // remove node complety
   factory Hlc.parse(String timestamp) {
     final parts = timestamp.split('-');
-    assert(parts.length == 2, 'Time format does not match');
+    assert(parts.length == 3, 'Time format does not match');
 
-    var logicalTime = int.parse(parts[0], radix: 16);
-    var site = int.parse(parts[1], radix: 16);
+    var ms = int.parse(parts[0], radix: 16);
+    var counter = int.parse(parts[1], radix: 16);
+    var site = int.parse(parts[2], radix: 16);
 
-    return Hlc.fromLogicalTime(logicalTime, site);
+    return Hlc(ms, counter, site);
   }
 
   /// Generates a unique, monotonic timestamp suitable for transmission to
   /// another system in string format. Local wall time will be used if [milliseconds]
   /// isn't supplied, useful for testing.
-  factory Hlc.send(Hlc timestamp, [int millis]) {
+  factory Hlc.send(Hlc timestamp, [int ms]) {
     // Retrieve the local wall time if micros is null
-    millis = (millis ?? DateTime.now().millisecondsSinceEpoch);
+    ms = (ms ?? DateTime.now().millisecondsSinceEpoch);
 
     // Unpack the timestamp's time and counter
-    var millisOld = timestamp.millis;
+    var msOld = timestamp.ms;
     var counterOld = timestamp.counter;
 
     // Calculate the next logical time and counter
     // * ensure that the logical time never goes backward
     // * increment the counter if physical time does not advance
-    var millisNew = max(millisOld, millis);
-    var counterNew = millisOld == millisNew ? counterOld + 1 : 0;
+    var msNew = max(msOld, ms);
+    var counterNew = msOld == msNew ? counterOld + 1 : 0;
 
     // Check the result for drift and counter overflow
-    if (millisNew - millis > _MAX_DRIFT) {
-      throw ClockDriftException(millisNew, millis);
+    if (msNew - ms > _MAX_DRIFT) {
+      throw ClockDriftException(msNew, ms);
     }
     if (counterNew > _MAX_COUNTER) {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(millisNew, counterNew, timestamp.site);
+    return Hlc(msNew, counterNew, timestamp.site);
   }
 
   /// Parses and merges a timestamp from a remote system with the local
   /// canonical timestamp to preserve monotonicity. Returns an updated canonical
-  /// timestamp instance. Local wall time will be used if [millis] isn't
+  /// timestamp instance. Local wall time will be used if [ms] isn't
   /// supplied, useful for testing.
-  factory Hlc.recv(Hlc local, Hlc remote, [int millis]) {
+  factory Hlc.recv(Hlc local, Hlc remote, [int ms]) {
     // Retrieve the local wall time if micros is null
-    millis = (millis ?? DateTime.now().millisecondsSinceEpoch);
+    ms = (ms ?? DateTime.now().millisecondsSinceEpoch);
 
     // Unpack the remote's time and counter
-    var millisRemote = remote.millis;
+    var msRemote = remote.ms;
     var counterRemote = remote.counter;
 
     // Assert remote clock drift
-    if (millisRemote - millis > _MAX_DRIFT) {
-      throw ClockDriftException(millisRemote, millis);
+    if (msRemote - ms > _MAX_DRIFT) {
+      throw ClockDriftException(msRemote, ms);
     }
 
     // Unpack the clock.timestamp logical time and counter
-    var millisLocal = local.millis;
+    var msLocal = local.ms;
     var counterLocal = local.counter;
 
     // Calculate the next logical time and counter.
@@ -139,33 +122,88 @@ class Hlc extends LogicalTime {
     // * if max = old > message, increment local counter,
     // * if max = message > old, increment message counter,
     // * otherwise, clocks are monotonic, reset counter
-    var millisNew = max(max(millisLocal, millis), millisRemote);
-    var counterNew = millisNew == millisLocal && millisNew == millisRemote
+    var msNew = max(max(msLocal, ms), msRemote);
+    var counterNew = msNew == msLocal && msNew == msRemote
         ? max(counterLocal, counterRemote) + 1
-        : millisNew == millisLocal ? counterLocal + 1 : millisNew == millisRemote ? counterRemote + 1 : 0;
+        : msNew == msLocal ? counterLocal + 1 : msNew == msRemote ? counterRemote + 1 : 0;
 
     // Check the result for drift and counter overflow
-    if (millisNew - millis > _MAX_DRIFT) {
-      throw ClockDriftException(millisNew, millis);
+    if (msNew - ms > _MAX_DRIFT) {
+      throw ClockDriftException(msNew, ms);
     }
     if (counterNew > _MAX_COUNTER) {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(millisNew, counterNew, local.site);
+    return Hlc(msNew, counterNew, local.site);
   }
 
   @override
-  String toString() => internal;
+  bool operator ==(other) => other is Hlc && ms == other.ms && counter == other.counter && site == other.site;
+
+  ///
+  /// meaning : left is older than right
+  /// returns [true] if left < right
+  /// This function also compares the node lexographically if node of l < node of r
+  @override
+  bool operator <(other) {
+    final o = other as Hlc;
+
+    if (ms < o.ms) {
+      return true;
+    } else if (ms == o.ms) {
+      if (counter < o.counter) {
+        return true;
+      } else if (counter == o.counter) return site < o.site;
+    }
+
+    return false;
+  }
 
   @override
-  int compareTo(LogicalClock other) => logicalTime.compareTo(other.logicalTime);
+  bool operator >(other) {
+    final o = other as Hlc;
+
+    if (ms > o.ms) {
+      return true;
+    } else if (ms == o.ms) {
+      if (counter > o.counter) {
+        return true;
+      } else if (counter == o.counter) return site > o.site;
+    }
+
+    return false;
+  }
+
+  @override
+  String toString() => _internal;
+
+  @override
+  String toRON() => 'S${site.toRadixString(16)}@T${ms.toRadixString(16)}-${counter.toRadixString(16)}';
+
+  @override
+
+// 1.compareTo(2) => -1
+// 2.compareTo(1) => 1
+// 1.compareTo(1) => 0
+  int compareTo(LogicalClock other) {
+    final o = other as Hlc; // cast
+    final res = ms.compareTo(o.ms);
+
+    if (res == 0) {
+      final cRes = counter.compareTo(o.counter);
+
+      if (cRes == 0) return site.compareTo(o.site);
+      return cRes;
+    }
+    return res;
+  }
 }
 
 class ClockDriftException implements Exception {
   final int drift;
 
-  ClockDriftException(int millisTs, int millisWall) : drift = millisTs - millisWall;
+  ClockDriftException(int msTs, int msWall) : drift = msTs - msWall;
 
   @override
   String toString() => 'Clock drift of $drift ms exceeds maximum ($_MAX_DRIFT).';

@@ -1,24 +1,25 @@
 import 'package:sync_layer/basic/index.dart';
-
 import 'logial_clock.dart';
 
 /// somewhat close to lamport clock
-/// mehr like a version vector
-class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
+/// moor like a version vector
+class LogicalTime implements LogicalClock, Comparable<LogicalTime> {
   @override
-  final int logicalTime;
+
+  /// to be compatible to js, only 32 bits!
+  final int counter;
 
   @override
   final int site;
 
-  final String internal;
+  final String _logicalClock;
   int _hashCode;
 
-  LogicalTime(this.logicalTime, this.site)
-      : internal = '${logicalTime.toRadixString(16)}-${site.toRadixString(16)}',
-        assert(logicalTime != null),
+  LogicalTime(this.counter, this.site)
+      : _logicalClock = '${counter.toRadixString(16)}-${site.toRadixString(16)}',
+        assert(counter != null),
         assert(site != null) {
-    _hashCode = MurmurHashV3(internal);
+    _hashCode = MurmurHashV3(_logicalClock);
   }
 
   @override
@@ -27,7 +28,7 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   }
 
   factory LogicalTime.send(LogicalClock lc) {
-    return LogicalTime(lc.logicalTime + 1, lc.site);
+    return LogicalTime(lc.counter + 1, lc.site);
   }
 
   factory LogicalTime.recv(LogicalClock lc) {
@@ -39,26 +40,21 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
     final parts = ts.split('-');
     assert(parts.length == 2, 'Time format does not match');
 
-    var logicalTime = int.parse(parts[0], radix: 16);
+    var counter = int.parse(parts[0], radix: 16);
     var site = int.parse(parts[1], radix: 16);
 
-    return LogicalTime.fromLogicalTime(logicalTime, site);
+    return LogicalTime(counter, site);
   }
 
   @override
-  factory LogicalTime.fromLogicalTime(int logicalTime, int site) {
-    return LogicalTime(logicalTime, site);
-  }
-
-  @override
-  int compareTo(LogicalClock other) => logicalTime.compareTo(other.logicalTime);
+  int compareTo(LogicalTime other) => counter.compareTo(other.counter);
 
   ///
   /// meaning : left is older than right
   /// returns [true] if left < right
   /// This function also compares the node lexographically if node of l < node of r
   /// Todo: think about, what if the hlc are identical
-  static bool compareWithNodes(LogicalClock left, LogicalClock right) {
+  static bool compareWithNodes(LogicalTime left, LogicalTime right) {
     /// first by timestamp
     if (left < right) return true;
     if (left == right) return left.site < right.site;
@@ -69,7 +65,7 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   int get hashCode => _hashCode;
 
   @override
-  bool operator ==(other) => other is LogicalClock && logicalTime == other.logicalTime && site == other.site;
+  bool operator ==(other) => other is LogicalTime && counter == other.counter && site == other.site;
 
   ///
   /// meaning : left is older than right
@@ -77,29 +73,29 @@ class LogicalTime implements LogicalClock, Comparable<LogicalClock> {
   /// This function also compares the node lexographically if node of l < node of r
   @override
   bool operator <(other) {
-    final o = other as LogicalClock;
+    final o = other as LogicalTime;
 
-    if (logicalTime < o.logicalTime) {
+    if (counter < o.counter) {
       return true;
-    } else if (logicalTime == o.logicalTime) return site < o.site;
+    } else if (counter == o.counter) return site < o.site;
 
     return false;
   }
 
   @override
   bool operator >(other) {
-    final o = other as LogicalClock;
+    final o = other as LogicalTime;
 
-    if (logicalTime > o.logicalTime) {
+    if (counter > o.counter) {
       return true;
-    } else if (logicalTime == o.logicalTime) return site > o.site;
+    } else if (counter == o.counter) return site > o.site;
 
     return false;
   }
 
   @override
-  String toString() => internal;
+  String toString() => _logicalClock;
 
   @override
-  String toRON() => 'S${site.toRadixString(16)}@T${logicalTime.toRadixString(16)}';
+  String toRON() => 'S${site.toRadixString(16)}@T${counter.toRadixString(16)}';
 }

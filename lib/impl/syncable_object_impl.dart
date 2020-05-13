@@ -1,3 +1,4 @@
+import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/timestamp/index.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/abstract/index.dart';
@@ -26,13 +27,13 @@ class SyncableObjectImpl implements SyncableObject {
   /// Stores the key /values of the fields, specify by the user.
   /// in case of a synable object, it stores the type and id
   final Map<String, dynamic> _obj = {};
-  final Map<String, Hlc> _objHlc = {};
+  final Map<String, Hlc> _objClock = {};
 
   /// Stores the reference to the syncable Object
   final Map<String, SyncableObject> _syncableObjects = {};
 
   // somewhat redundet
-  final List<Atom> history = [];
+  final List<Atom<Value>> history = [];
 
   /// **Important**
   ///
@@ -51,12 +52,12 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Returns the timestamp for that field
   @override
-  Hlc getCurrentHLCOfField(String field) => _objHlc[field];
+  Hlc getCurrentHLCOfField(String field) => _objClock[field];
 
   // TODO: could be set with [applyAtoms]
   @override
   Hlc get lastUpdated {
-    if (_objHlc.isNotEmpty) return _objHlc.values?.reduce((a, b) => a > b ? a : b);
+    if (_objClock.isNotEmpty) return _objClock.values?.reduce((a, b) => a > b ? a : b);
     return null;
   }
 
@@ -66,17 +67,17 @@ class SyncableObjectImpl implements SyncableObject {
   /// * returns [-1] : else
   @override
   int applyAtom(Atom atom) {
-    final currentTs = getCurrentHLCOfField(atom.key);
+    final currentTs = getCurrentHLCOfField(atom.value.key);
 
     // if field was not set or the local time happend before [hb] to new Atom
-    if (currentTs == null || currentTs < atom.hlc) {
+    if (currentTs == null || currentTs < atom.clock) {
       _setField(atom);
       _updateHistory(atom);
       return 2;
     }
 
     // if atoms.ts < currentTs => true
-    if (atom.hlc < currentTs) {
+    if (atom.clock < currentTs) {
       _updateHistory(atom);
       return 1;
     }
@@ -84,17 +85,18 @@ class SyncableObjectImpl implements SyncableObject {
     return -1;
   }
 
-  /// adds internally to the history log!
   /// TODO: what can be done with this...
+  /// adds internally to the history log!
   /// DB lookups?
-  void _updateHistory(Atom atom) {
+  void _updateHistory(Atom<Value> atom) {
     history.add(atom);
-    history.sort((a, b) => b.hlc.logicalTime - a.hlc.logicalTime);
+    // Sort DESC
+    history.sort((a, b) => a.clock.compareTo(b.clock));
   }
 
-  void _setField(Atom atom) {
-    _obj[atom.key] = atom.value;
-    _objHlc[atom.key] = atom.hlc;
+  void _setField(Atom<Value> atom) {
+    _obj[atom.value.key] = atom.value.value;
+    _objClock[atom.value.key] = atom.clock;
 
     if (atom.value is Map) {
       final m = atom.value as Map;
@@ -104,7 +106,7 @@ class SyncableObjectImpl implements SyncableObject {
 
       // if it is a synable object look it up and store it in the [_syncableObjects]
       if (type != null && objId != null) {
-        _syncableObjects[atom.key] = _lookUpSynableObject(type, objId);
+        _syncableObjects[atom.value.key] = _lookUpSynableObject(type, objId);
       }
     }
   }

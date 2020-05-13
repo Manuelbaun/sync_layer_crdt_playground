@@ -12,13 +12,13 @@ class SyncLayerAtomCache {
   void add(Atom atom) {
     _allAtoms.add(atom);
     _allAtomsHashcodes.add(atom.hashCode);
-    _allAtoms.sort((a, b) => b.hlc.logicalTime - a.hlc.logicalTime); // DESC
+    _allAtoms.sort((a, b) => b.clock.counter - a.clock.counter); // DESC
   }
 
   bool exist(Atom atom) => _allAtomsHashcodes.contains(atom.hashCode);
 
   List<Atom> getSince(int logicalTime) {
-    final index = _allAtoms.indexWhere((atom) => atom.hlc.logicalTime < logicalTime);
+    final index = _allAtoms.indexWhere((atom) => atom.clock.counter < logicalTime);
     final endIndex = index < 0 ? _allAtoms.length : index;
     return _allAtoms.sublist(0, endIndex);
   }

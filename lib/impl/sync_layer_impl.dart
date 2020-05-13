@@ -5,6 +5,7 @@ import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/crdts/clock.dart';
 import 'package:sync_layer/abstract/index.dart';
+import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';
@@ -70,19 +71,18 @@ class SyncLayerImpl implements SyncLayer {
 
   /// Work with Atoms
   ///
-  void _applyAtoms(List<Atom> atoms) {
+  void _applyAtoms(List<Atom<Value>> atoms) {
     final changedContainer = <SyncableObjectContainer>{};
 
     for (final atom in atoms) {
       if (!atomCache.exist(atom)) {
         // test if table exits
-        final container = getObjectContainer(atom.type);
+        final container = getObjectContainer(atom.value.type);
 
         if (container != null) {
           // if row does not exist, new row will be added
-          var obj = container.read(atom.id);
-          logger.info('Type: ${atom.type}- ${atom.id}');
-          obj ??= container.create(atom.id);
+          var obj = container.read(atom.value.id);
+          obj ??= container.create(atom.value.id);
 
           final res = obj.applyAtom(atom);
 
@@ -97,7 +97,7 @@ class SyncLayerImpl implements SyncLayer {
             }
 
             atomCache.add(atom);
-            trie.build([atom.hlc]);
+            trie.build([atom.clock]);
           } else {
             logger.error('Two Timestamps have the exact same logicaltime on two different nodes! $atom');
           }
@@ -114,8 +114,8 @@ class SyncLayerImpl implements SyncLayer {
   }
 
   @override
-  Atom createAtom(String typeId, String objectId, String fieldId, dynamic value) {
-    return Atom(clock.getForSend(), typeId, objectId, fieldId, value);
+  Atom createAtom(dynamic value) {
+    return Atom(clock.getForSend(), value);
   }
 
   /// [applyAtoms] should only be called from the local application.
@@ -153,7 +153,7 @@ class SyncLayerImpl implements SyncLayer {
   @override
   void receiveAtoms(List<Atom> atoms) {
     for (var atom in atoms) {
-      clock.fromReveive(atom.hlc);
+      clock.fromReveive(atom.clock);
     }
 
     _applyAtoms(atoms);
@@ -162,7 +162,7 @@ class SyncLayerImpl implements SyncLayer {
   List<Atom> getAtomsSinceMs(int ms) {
     if (ms != null && ms != 0) {
       var ts = clock.getHlc(ms, 0, site);
-      return atomCache.getSince(ts.logicalTime);
+      return atomCache.getSince(ts.counter);
     }
     return [];
   }

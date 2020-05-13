@@ -4,6 +4,13 @@ import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/timestamp/index.dart';
 import 'atom.dart';
 
+class AtomMapValue<K, V> {
+  final String objId;
+  final K key;
+  final V value;
+  AtomMapValue(this.objId, this.key, this.value);
+}
+
 ///
 /// A CRDT Map implements the Last Writer Wins Strategy only
 /// This map can be used to represent a Row in a database table
@@ -42,7 +49,10 @@ class CRDTMap<K, V> {
     _timestamp = Hlc.send(_timestamp);
     _obj[key] = value;
     _objHlc[key] = _timestamp;
-    return Atom(_timestamp, null, objId, key, value);
+
+    final v = AtomMapValue<K, V>(objId, key, value);
+
+    return Atom(_timestamp, v);
   }
 
   /// get value by key. Same property as the underlaying map
@@ -56,20 +66,20 @@ class CRDTMap<K, V> {
         history.add(atom);
 
         /// only merge if Atom of remote > then local
-        _timestamp = Hlc.recv(_timestamp, atom.hlc);
+        _timestamp = Hlc.recv(_timestamp, atom.clock);
 
-        final key = atom.key as K;
+        final key = atom.value.key as K;
         final value = atom.value;
 
         // if localtime is smaller..
-        if (_objHlc[key] < atom.hlc) {
+        if (_objHlc[key] < atom.clock) {
           _obj[key] = value;
-          _objHlc[key] = atom.hlc;
+          _objHlc[key] = atom.clock;
         } else if (_obj[key] == null) {
           // if no local entry exist
           _obj[key] = value;
-          _objHlc[key] = atom.hlc;
-        } else if (_objHlc[key] == atom.hlc) {
+          _objHlc[key] = atom.clock;
+        } else if (_objHlc[key] == atom.clock) {
           // TODO: sort by nodeid
 
         } // else ignore

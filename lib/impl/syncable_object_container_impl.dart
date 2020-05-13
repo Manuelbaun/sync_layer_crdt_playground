@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:sync_layer/abstract/index.dart';
+import 'package:sync_layer/crdts/values.dart';
 import 'package:sync_layer/logger/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
@@ -25,7 +26,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
   @override
   List<T> allObjects() {
-    List<T> o = _objects.values.where((o) => o.tombstone == false).toList();
+    final o = _objects.values.where((o) => o.tombstone == false).toList();
     if (o.isNotEmpty) {
       o.sort();
     }
@@ -108,7 +109,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   // gets called from the sync object
   @override
   void update(String objectId, String fieldId, dynamic value) {
-    final a = syn.createAtom(typeId, objectId, fieldId, value);
+    final a = syn.createAtom(Value(typeId, objectId, fieldId, value));
     syn.applyAtoms([a]);
   }
 
