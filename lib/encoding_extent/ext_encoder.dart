@@ -10,8 +10,8 @@ import 'package:sync_layer/timestamp/index.dart';
 class ExtendetEncoder implements ExtEncoder {
   @override
   int extTypeForObject(dynamic object) {
-    if (object is Hlc) return 2;
     if (object is LogicalTime) return 1;
+    if (object is Hlc) return 2;
     if (object is Value) return 3;
     if (object is CausalAtom) return 5;
     if (object is Atom) return 4;
@@ -21,8 +21,8 @@ class ExtendetEncoder implements ExtEncoder {
 
   @override
   Uint8List encodeObject(dynamic object) {
-    if (object is Hlc) return serialize([object.ms, object.counter, object.site]);
     if (object is LogicalTime) return serialize([object.counter, object.site]);
+    if (object is Hlc) return serialize([object.ms, object.counter, object.site]);
     if (object is Value) return serialize([object.type, object.id, object.key, object.value]);
     if (object is CausalAtom) return msgpackEncode([object.cause, object.clock, object.value]);
     if (object is Atom) return msgpackEncode([object.clock, object.value]);

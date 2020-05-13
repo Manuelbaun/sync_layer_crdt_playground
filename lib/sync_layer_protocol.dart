@@ -31,8 +31,9 @@ class EnDecoder {
   }
 
   static List<Atom> decodeAtoms(Uint8List buff) {
-    List<Atom> atoms = msgpackDecode(buff);
-    return atoms;
+    final list = List<Atom>.from(msgpackDecode(buff));
+    print(list);
+    return list;
     // return atomsBuff.map((b) => Atom.fromBytes(b)).toList();
   }
 

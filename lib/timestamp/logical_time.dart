@@ -3,7 +3,7 @@ import 'logial_clock.dart';
 
 /// somewhat close to lamport clock
 /// moor like a version vector
-class LogicalTime implements LogicalClock, Comparable<LogicalTime> {
+class LogicalTime implements LogicalClock<LogicalTime> {
   @override
 
   /// to be compatible to js, only 32 bits!
@@ -97,5 +97,8 @@ class LogicalTime implements LogicalClock, Comparable<LogicalTime> {
   String toString() => _logicalClock;
 
   @override
-  String toRON() => 'S${site.toRadixString(16)}@T${counter.toRadixString(16)}';
+  String toStringRON() => 'S${site.toRadixString(16)}@T${counter.toRadixString(16)}';
+
+  @override
+  String toStringHuman() => toStringRON();
 }

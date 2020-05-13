@@ -129,9 +129,6 @@ void main() {
       final remoteD = DateTime.now().millisecondsSinceEpoch;
       final remoteHlc = Hlc(remoteD, 0, 9999);
 
-      print(localHlc);
-      print(remoteHlc);
-
       expect(localHlc == remoteHlc, isFalse);
       expect(localHlc.counter == remoteHlc.counter, isTrue);
     });

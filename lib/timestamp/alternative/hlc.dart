@@ -22,7 +22,7 @@ const RESOLUTION = 60000;
 /// and the lower 16 bits are counter values, as logical time
 ///
 /// TODO: Overwork this Hlc remove what is not needed
-class Hlc implements Comparable<Hlc> {
+class Hlc2 implements Comparable<Hlc2> {
   int _millis;
   int _counter;
   int _minutes;
@@ -42,7 +42,7 @@ class Hlc implements Comparable<Hlc> {
 
   final String node;
 
-  Hlc([int millis, int counter = 0, this.node = '0']) : assert(counter < _MAX_COUNTER) {
+  Hlc2([int millis, int counter = 0, this.node = '0']) : assert(counter < _MAX_COUNTER) {
     _millis = (millis ?? DateTime.now().millisecondsSinceEpoch);
 
     // only for debug, remove later!
@@ -60,14 +60,14 @@ class Hlc implements Comparable<Hlc> {
     _hashcode = MurmurHashV3(_internal);
   }
 
-  factory Hlc.fromLogicalTime(int logicalTime, [String nodeId]) {
+  factory Hlc2.fromLogicalTime(int logicalTime, [String nodeId]) {
     final millis = logicalTime >> 16;
     final counter = logicalTime & 0xFFFF;
-    return Hlc(millis, counter, nodeId);
+    return Hlc2(millis, counter, nodeId);
   }
 
   // remove node complety
-  factory Hlc.parse(String timestamp) {
+  factory Hlc2.parse(String timestamp) {
     final parts = timestamp.split('-');
     assert(parts.length == 5, 'Time format does not match, missing ');
 
@@ -76,13 +76,13 @@ class Hlc implements Comparable<Hlc> {
     var counter = int.parse(parts[3], radix: 16);
     var node = parts[4];
 
-    return Hlc(millis, counter, node);
+    return Hlc2(millis, counter, node);
   }
 
   /// Generates a unique, monotonic timestamp suitable for transmission to
   /// another system in string format. Local wall time will be used if [milliseconds]
   /// isn't supplied, useful for testing.
-  factory Hlc.send(Hlc timestamp, [int millis]) {
+  factory Hlc2.send(Hlc2 timestamp, [int millis]) {
     // Retrieve the local wall time if micros is null
     millis = (millis ?? DateTime.now().millisecondsSinceEpoch);
 
@@ -104,14 +104,14 @@ class Hlc implements Comparable<Hlc> {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(millisNew, counterNew, timestamp.node);
+    return Hlc2(millisNew, counterNew, timestamp.node);
   }
 
   /// Parses and merges a timestamp from a remote system with the local
   /// canonical timestamp to preserve monotonicity. Returns an updated canonical
   /// timestamp instance. Local wall time will be used if [millis] isn't
   /// supplied, useful for testing.
-  factory Hlc.recv(Hlc local, Hlc remote, [int millis]) {
+  factory Hlc2.recv(Hlc2 local, Hlc2 remote, [int millis]) {
     // Retrieve the local wall time if micros is null
     millis = (millis ?? DateTime.now().millisecondsSinceEpoch);
 
@@ -147,7 +147,7 @@ class Hlc implements Comparable<Hlc> {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(millisNew, counterNew, local.node);
+    return Hlc2(millisNew, counterNew, local.node);
   }
 
   String toJson() => toString();
@@ -166,20 +166,20 @@ class Hlc implements Comparable<Hlc> {
   // int get hashCode => MurmurHashV3(toString());
 
   @override
-  bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
+  bool operator ==(other) => other is Hlc2 && logicalTime == other.logicalTime;
 
-  bool operator <(other) => other is Hlc && logicalTime < other.logicalTime;
+  bool operator <(other) => other is Hlc2 && logicalTime < other.logicalTime;
 
-  bool operator <=(other) => other is Hlc && logicalTime <= other.logicalTime;
+  bool operator <=(other) => other is Hlc2 && logicalTime <= other.logicalTime;
 
-  bool operator >(other) => other is Hlc && logicalTime > other.logicalTime;
+  bool operator >(other) => other is Hlc2 && logicalTime > other.logicalTime;
 
-  bool operator >=(other) => other is Hlc && logicalTime >= other.logicalTime;
+  bool operator >=(other) => other is Hlc2 && logicalTime >= other.logicalTime;
 
   @override
-  int compareTo(Hlc other) => logicalTime.compareTo(other.logicalTime);
+  int compareTo(Hlc2 other) => logicalTime.compareTo(other.logicalTime);
 
-  static bool isEqaul(Hlc left, Hlc right) {
+  static bool isEqaul(Hlc2 left, Hlc2 right) {
     return left.logicalTime == right?.logicalTime && left.node == right?.node;
   }
 
@@ -188,7 +188,7 @@ class Hlc implements Comparable<Hlc> {
   /// returns [true] if left < right
   /// This function also compares the node lexographically if node of l < node of r
   /// Todo: think about, what if the hlc are identical
-  static bool compareWithNodes(Hlc left, Hlc right) {
+  static bool compareWithNodes(Hlc2 left, Hlc2 right) {
     /// first by timestamp
     if (left < right) return true;
 

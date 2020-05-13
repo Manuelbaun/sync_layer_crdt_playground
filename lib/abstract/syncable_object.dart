@@ -1,18 +1,18 @@
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/timestamp/index.dart';
 
-import 'syncable_object_container.dart';
-
 abstract class SyncableObject extends Comparable<SyncableObject> {
-  String get id;
-
   /// Marks if the object is deleted!
-  bool tombstone;
-  SyncableObjectContainer get container;
+  bool get tombstone;
+  set tombstone(bool v);
+
+  String get id;
+  String get type;
+  Hlc get lastUpdated;
+  List<Atom> get history;
 
   /// Returns the timestamp for that field
-  Hlc getCurrentHLCOfField(String field);
-  Hlc get lastUpdated;
+  Hlc getFieldClock(String key);
 
   /// applies atom:
   /// * if successfull => returns [2]
@@ -23,6 +23,6 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
 
   dynamic operator [](key);
 
-  /// should create shortcut to update the field directly???
-  operator []=(field, value);
+  /// set operator field value
+  operator []=(key, value);
 }

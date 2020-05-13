@@ -10,7 +10,7 @@ void main() {
     });
     test('to string2', () {
       final lc = LogicalTime(0, 123);
-      expect(lc.toRON(), 'S7b@T0');
+      expect(lc.toStringRON(), 'S7b@T0');
     });
 
     test('comp == not equal: same site', () {

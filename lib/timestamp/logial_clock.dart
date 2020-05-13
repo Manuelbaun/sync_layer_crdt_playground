@@ -1,4 +1,4 @@
-abstract class LogicalClock {
+abstract class LogicalClock<T> implements Comparable<T> {
   final int counter;
   final int site;
 
@@ -18,7 +18,11 @@ abstract class LogicalClock {
   String radixTime(int radix);
 
   /// a format : S(site)@T(time)
-  String toRON();
+  String toStringRON();
+  String toStringHuman();
+
+  @override
+  int compareTo(T other);
 
   @override
   bool operator ==(other);

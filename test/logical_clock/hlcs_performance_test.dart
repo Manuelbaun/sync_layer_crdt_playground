@@ -7,14 +7,12 @@ import 'package:test/test.dart';
 final ms = DateTime(2020).millisecondsSinceEpoch;
 
 void main() {
-  print(ms);
-  print(ms << 16);
-  final hlcs0 = <ts.Hlc>[];
+  final hlcs0 = <ts.Hlc2>[];
   final hlcs1 = <Hlc>[];
 
   measureExecution('test hlc0', () {
     for (var i = 0; i < 1000; i++) {
-      final hlc = ts.Hlc(ms, 0, '1234');
+      final hlc = ts.Hlc2(ms, 0, '1234');
       hlcs0.add(hlc);
     }
 

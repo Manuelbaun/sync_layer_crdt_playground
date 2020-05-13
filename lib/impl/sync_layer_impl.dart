@@ -5,7 +5,7 @@ import 'package:sync_layer/basic/merkle_tire_node.dart';
 import 'package:sync_layer/crdts/atom.dart';
 import 'package:sync_layer/crdts/clock.dart';
 import 'package:sync_layer/abstract/index.dart';
-import 'package:sync_layer/crdts/values.dart';
+
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/impl/syncable_object_container_impl.dart';
 import 'package:sync_layer/logger/index.dart';
@@ -71,7 +71,7 @@ class SyncLayerImpl implements SyncLayer {
 
   /// Work with Atoms
   ///
-  void _applyAtoms(List<Atom<Value>> atoms) {
+  void _applyAtoms(List<Atom> atoms) {
     final changedContainer = <SyncableObjectContainer>{};
 
     for (final atom in atoms) {

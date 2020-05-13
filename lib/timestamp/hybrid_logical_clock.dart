@@ -24,7 +24,7 @@ const RESOLUTION = 60000;
 /// This Hlc implementation does not have the 64 bit represention as a logical clock, it always uses milliseconds - counter - site.
 /// This is due the fact, that javascript does not support xor manipulation on 64 bits
 /// it always converts it to 32 bits. So a 64 bit logical time, when used with bit shift, will lose the upper 32 bits!
-class Hlc implements LogicalClock, Comparable<Hlc> {
+class Hlc implements LogicalClock<Hlc> {
   final int ms;
 
   @override
@@ -70,13 +70,13 @@ class Hlc implements LogicalClock, Comparable<Hlc> {
   /// Generates a unique, monotonic timestamp suitable for transmission to
   /// another system in string format. Local wall time will be used if [milliseconds]
   /// isn't supplied, useful for testing.
-  factory Hlc.send(Hlc timestamp, [int ms]) {
+  factory Hlc.send(Hlc clock, [int ms]) {
     // Retrieve the local wall time if micros is null
     ms = (ms ?? DateTime.now().millisecondsSinceEpoch);
 
     // Unpack the timestamp's time and counter
-    var msOld = timestamp.ms;
-    var counterOld = timestamp.counter;
+    var msOld = clock.ms;
+    var counterOld = clock.counter;
 
     // Calculate the next logical time and counter
     // * ensure that the logical time never goes backward
@@ -92,7 +92,7 @@ class Hlc implements LogicalClock, Comparable<Hlc> {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(msNew, counterNew, timestamp.site);
+    return Hlc(msNew, counterNew, clock.site);
   }
 
   /// Parses and merges a timestamp from a remote system with the local
@@ -179,21 +179,23 @@ class Hlc implements LogicalClock, Comparable<Hlc> {
   String toString() => _internal;
 
   @override
-  String toRON() => 'S${site.toRadixString(16)}@T${ms.toRadixString(16)}-${counter.toRadixString(16)}';
+  String toStringHuman() => '${DateTime.fromMillisecondsSinceEpoch(ms).toIso8601String()}-${counter}-${site}';
+
+  @override
+  String toStringRON() => 'S${site.toRadixString(16)}@T${ms.toRadixString(16)}-${counter.toRadixString(16)}';
 
   @override
 
 // 1.compareTo(2) => -1
 // 2.compareTo(1) => 1
 // 1.compareTo(1) => 0
-  int compareTo(LogicalClock other) {
-    final o = other as Hlc; // cast
-    final res = ms.compareTo(o.ms);
+  int compareTo(Hlc other) {
+    final res = ms.compareTo(other.ms);
 
     if (res == 0) {
-      final cRes = counter.compareTo(o.counter);
+      final cRes = counter.compareTo(other.counter);
 
-      if (cRes == 0) return site.compareTo(o.site);
+      if (cRes == 0) return site.compareTo(other.site);
       return cRes;
     }
     return res;
