@@ -65,11 +65,11 @@ void main(List<String> arguments) {
         }
       });
 
-      // Timer(Duration(seconds: 2), () {
-      //   daoTodo.delete(id);
-      //   // finish program
-      //   // tt.cancel();
-      // });
+      Timer(Duration(seconds: 2), () {
+        daoTodo.delete(id);
+        // finish program
+        tt.cancel();
+      });
     }
   });
 }
