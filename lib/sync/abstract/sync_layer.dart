@@ -22,7 +22,7 @@ abstract class SyncLayer {
   /// changes or Atoms. This prevents from broadcast loops
   Stream<List<Atom>> get atomStream;
 
-  void registerContainer(SyncableObjectContainer cont);
+  // void registerContainer(SyncableObjectContainer cont);
   String generateID();
 
   Atom createAtom(dynamic value);

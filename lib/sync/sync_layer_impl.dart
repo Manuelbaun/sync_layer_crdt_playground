@@ -72,6 +72,9 @@ class StringNumberMapper {
   int getTypeNumber(String typeName) {
     return type2Id[typeName.toLowerCase()];
   }
+
+  bool containsTypeName(String typeName) => type2Id.containsKey(typeName);
+  bool containsNumber(String typeNumber) => id2type.containsKey(typeNumber);
 }
 
 class SyncLayerImpl implements SyncLayer {
@@ -126,31 +129,23 @@ class SyncLayerImpl implements SyncLayer {
     SynableObjectFactory<T> objectFactory, [
     int customNumberId,
   ]) {
-    final typeNumber = mapper.registerNewTypeName(typeName);
-    final accessor = SynclayerAccessor(this, typeNumber);
+    SyncableObjectContainer container;
 
-    SyncableObjectContainer container = SyncableObjectContainerImpl<T>(
-      accessor,
-      objectFactory,
-    );
+    if (!mapper.containsTypeName(typeName)) {
+      final typeNumber = mapper.registerNewTypeName(typeName);
+      final accessor = SynclayerAccessor(this, typeNumber);
 
-    _setContainer(container);
-    return container;
-  }
+      container = SyncableObjectContainerImpl<T>(
+        accessor,
+        objectFactory,
+      );
 
-  /// This function registers a container
-  @override
-  void registerContainer(SyncableObjectContainer cont) {
-    // _setContainer(cont);
-    throw AssertionError('Not implemented yet');
-  }
-
-  void _setContainer(SyncableObjectContainer container) {
-    if (containers[container.type] == null) {
-      containers[container.type] = container;
+      containers[typeNumber] = container;
     } else {
-      throw SyncLayerError('Container with typeId ${container.type} already exist $container');
+      throw SyncLayerError('Container with typeName $typeName already exist.');
     }
+
+    return container;
   }
 
   ///
