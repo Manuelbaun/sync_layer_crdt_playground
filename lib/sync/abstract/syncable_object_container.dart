@@ -4,7 +4,7 @@ import 'syncable_object.dart';
 typedef SynableObjectFactory<T> = T Function(Accessor container, String id);
 
 abstract class SyncableObjectContainer<T extends SyncableObject> {
-  String get type;
+  int get type;
   int get length;
 
   Stream<Set<T>> get changeStream;

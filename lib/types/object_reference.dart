@@ -1,10 +1,8 @@
 class ObjectReference {
-  final String type;
+  ObjectReference(this.type, this.id);
+
+  final int type;
   final String id;
-  ObjectReference(
-    this.type,
-    this.id,
-  );
 
   @override
   String toString() => 'ObjectReference(type: $type, id: $id)';

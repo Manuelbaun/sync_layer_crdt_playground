@@ -22,14 +22,14 @@ void main() {
 
   group('complex Atom en/decode', () {
     test('LC', () {
-      final a = Atom<Value>(LogicalTime(0, 1), Value('0', 'someidvalues1234', 1, 20));
+      final a = Atom<Value>(LogicalTime(0, 1), Value(0, 'someidvalues1234', 1, 20));
       final b = msgpackEncode(a);
       final c = msgpackDecode(b);
 
       expect(a == c, isTrue);
     });
     test('HLC', () {
-      final a = Atom<Value>(Hlc(0, 1, 1020), Value('0', 'someidvalues1234', 1, 40));
+      final a = Atom<Value>(Hlc(0, 1, 1020), Value(0, 'someidvalues1234', 1, 40));
       final b = msgpackEncode(a);
       final c = msgpackDecode(b);
 

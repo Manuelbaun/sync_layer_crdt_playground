@@ -6,7 +6,6 @@ import 'package:sync_layer/logger/index.dart';
 import 'abstract/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
-  final String _type;
   final Map<String, T> _objects = {}; // the real elements
   final SynableObjectFactory<T> _objectFactory;
   final _controller = StreamController<Set<T>>.broadcast();
@@ -46,15 +45,13 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   }
 
   @override
-  String get type => _type;
+  int get type => accessor.type;
 
   /// Provide a default factory function for that Syncable Object
 
-  SyncableObjectContainerImpl(this.accessor, String type, SynableObjectFactory<T> objectFactory)
-      : assert(objectFactory != null),
-        assert(type != null),
-        _type = type.toLowerCase(),
-        _objectFactory = objectFactory;
+  SyncableObjectContainerImpl(this.accessor, this._objectFactory)
+      : assert(accessor != null),
+        assert(_objectFactory != null);
 
   final Accessor accessor;
 

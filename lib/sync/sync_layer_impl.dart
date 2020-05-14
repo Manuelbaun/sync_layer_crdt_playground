@@ -19,7 +19,7 @@ class SynclayerAccessor implements Accessor {
   final SyncLayer synclayer;
 
   @override
-  final String type;
+  final int type;
 
   @override
   void onUpdate<V>(List<V> values) {
@@ -34,7 +34,8 @@ class SynclayerAccessor implements Accessor {
 
   @override
   SyncableObject objectLookup(ObjectReference ref, [bool shouldCreateIfNull = true]) {
-    final container = synclayer.getObjectContainer(ref.type);
+    final container = synclayer.getObjectContainer(typeNumber: ref.type);
+
     // TODO: check if container Exists
     var obj = container.read(ref.id);
 
@@ -45,9 +46,37 @@ class SynclayerAccessor implements Accessor {
   }
 }
 
+class StringNumberMapper {
+  final type2Id = <String, int>{};
+  final id2type = <int, String>{};
+  var containerCounter = 0;
+
+  /// converts all to lower case
+  int registerNewTypeName(String typeName, [int customNumber]) {
+    final name = typeName.toLowerCase();
+    if (type2Id[name] == null) {
+      var number = customNumber ?? containerCounter;
+      type2Id[name] = number;
+      id2type[number] = name;
+      containerCounter++;
+      return number;
+    } else {
+      throw AssertionError('The type $typeName is already registered');
+    }
+  }
+
+  String getTypeName(int type) {
+    return id2type[type];
+  }
+
+  int getTypeNumber(String typeName) {
+    return type2Id[typeName.toLowerCase()];
+  }
+}
+
 class SyncLayerImpl implements SyncLayer {
-  final Map<String, SyncableObjectContainer> containers = <String, SyncableObjectContainer>{};
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
+  final Map<int, SyncableObjectContainer> containers = <int, SyncableObjectContainer>{};
 
   @override
   int site;
@@ -69,19 +98,39 @@ class SyncLayerImpl implements SyncLayer {
         trie = trie ?? MerkleTrie();
 
   /// accessors and utils
-
+  /// use either typeName or typeNumber
+  /// in case of both, it throws a conflict
   @override
-  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>(String typeId) =>
-      containers[typeId.toLowerCase()] as SyncableObjectContainer<T>;
+  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>({String typeName, int typeNumber}) {
+    if (typeName != null && typeName.isNotEmpty && typeNumber != null) {
+      throw AssertionError('Unclear intention. TypeName $typeName and TypeNumber $typeNumber are set.');
+    }
+
+    var n = typeNumber;
+
+    if (typeName != null && typeName.isNotEmpty) {
+      n = mapper.getTypeNumber(typeName);
+    }
+
+    return containers[n] as SyncableObjectContainer<T>;
+  }
 
   /// this registers a syncable type and returns the container for it
   /// which provides basic crud
+  ///
+  StringNumberMapper mapper = StringNumberMapper();
+
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
-      String typeId, SynableObjectFactory<T> objectFactory) {
+    String typeName,
+    SynableObjectFactory<T> objectFactory, [
+    int customNumberId,
+  ]) {
+    final typeNumber = mapper.registerNewTypeName(typeName);
+    final accessor = SynclayerAccessor(this, typeNumber);
+
     SyncableObjectContainer container = SyncableObjectContainerImpl<T>(
-      SynclayerAccessor(this, typeId),
-      typeId,
+      accessor,
       objectFactory,
     );
 
@@ -92,7 +141,8 @@ class SyncLayerImpl implements SyncLayer {
   /// This function registers a container
   @override
   void registerContainer(SyncableObjectContainer cont) {
-    _setContainer(cont);
+    // _setContainer(cont);
+    throw AssertionError('Not implemented yet');
   }
 
   void _setContainer(SyncableObjectContainer container) {
@@ -115,7 +165,7 @@ class SyncLayerImpl implements SyncLayer {
     for (final atom in atoms) {
       if (!atomCache.exist(atom)) {
         // test if table exits
-        final container = getObjectContainer(atom.data.type);
+        final container = getObjectContainer(typeNumber: atom.data.typeId);
 
         if (container != null) {
           // if row does not exist, new row will be added

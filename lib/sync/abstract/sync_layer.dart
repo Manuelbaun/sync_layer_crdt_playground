@@ -10,7 +10,11 @@ import 'syncable_object_container.dart';
 abstract class SyncLayer {
   int site;
 
-  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>(String typeId);
+  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>({
+    String typeName,
+    int typeNumber,
+  });
+
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
       String typeId, SynableObjectFactory<T> objectFactory);
 

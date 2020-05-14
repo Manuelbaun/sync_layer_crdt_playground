@@ -7,7 +7,7 @@ abstract class SyncableObject<T> extends Comparable<SyncableObject> {
   set tombstone(bool v);
 
   String get id;
-  String get type;
+  int get type;
   Hlc get lastUpdated;
   List<Atom<T>> get history;
 

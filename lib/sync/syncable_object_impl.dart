@@ -26,7 +26,7 @@ class SyncableObjectImpl implements SyncableObject {
   final Accessor _accessor;
 
   @override
-  String get type => _accessor.type;
+  int get type => _accessor.type;
 
   @override
   String get id => _id;

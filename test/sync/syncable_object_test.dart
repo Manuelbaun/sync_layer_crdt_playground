@@ -19,7 +19,7 @@ class TestAccessor implements Accessor {
   void Function(Atom) update;
   final int site;
   @override
-  String type;
+  int type;
 
   @override
   void onUpdate<V>(List<V> values) {
@@ -47,7 +47,7 @@ class TestAccessor implements Accessor {
 
 void main() {
   group('Basic: ', () {
-    final type = 'todo';
+    final type = 'todo'.hashCode;
     SyncableObject obj1;
     var atoms1 = <Atom>[];
     final access1 = TestAccessor(type, 22222, (Atom a) => atoms1.add(a));
@@ -168,7 +168,7 @@ void main() {
   });
 
   group('Merging: ', () {
-    final type = 'todo';
+    final type = 'todo'.hashCode;
     SyncableObject obj1;
     SyncableObject obj2;
 
@@ -279,7 +279,7 @@ void main() {
   });
 
   group('Types', () {
-    final type = 'todo';
+    final type = 'todo'.hashCode;
     SyncableObject obj1;
     SyncableObject obj2;
 

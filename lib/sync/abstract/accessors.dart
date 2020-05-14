@@ -6,7 +6,7 @@ import 'syncable_object.dart';
 /// it should describe the type of the value, which is then updated
 abstract class Accessor {
   Accessor(this.type);
-  final String type;
+  final int type;
 
   void onUpdate<V>(List<V> value);
   String generateID();
