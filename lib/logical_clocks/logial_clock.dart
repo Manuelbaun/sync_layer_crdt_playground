@@ -23,6 +23,8 @@ abstract class LogicalClock<T> implements Comparable<T> {
 
   @override
   int compareTo(T other);
+  
+  int compareToDESC(T other);
 
   @override
   bool operator ==(other);
@@ -34,4 +36,6 @@ abstract class LogicalClock<T> implements Comparable<T> {
   /// will get the difference
   List<int> operator -(other);
   // void operator +(other);
+
+  /// TODO. Logical Clock needs a compare method abstracted
 }

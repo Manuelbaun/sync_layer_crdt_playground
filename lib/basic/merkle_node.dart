@@ -1,5 +1,5 @@
-final hashCode = 124;
-final tempHashCode = 125;
+final _hashCode = 124;
+final _tempHashCode = 125;
 
 class MerkleNode {
   List<MerkleNode> children;
@@ -16,14 +16,14 @@ class MerkleNode {
         if (children[i] != null) {
           final res = children[i].toMap();
 
-          map[i] = res[tempHashCode] ?? res;
+          map[i] = res[_tempHashCode] ?? res;
         }
       }
     } else {
-      return {tempHashCode: hash};
+      return {_tempHashCode: hash};
     }
 
-    map[hashCode] = hash;
+    map[_hashCode] = hash;
     return map;
   }
 
@@ -33,7 +33,7 @@ class MerkleNode {
     for (var i in map.keys) {
       var value = map[i];
 
-      if (i != hashCode) {
+      if (i != _hashCode) {
         if (value is Map) {
           // value =
           node.children[i] = MerkleNode.fromMap(value.cast<int, dynamic>(), radix);
@@ -43,7 +43,7 @@ class MerkleNode {
           node.children[i].hash = value;
         }
       } else {
-        node.hash = map[hashCode] as int;
+        node.hash = map[_hashCode] as int;
       }
     }
 

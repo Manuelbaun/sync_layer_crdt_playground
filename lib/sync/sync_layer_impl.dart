@@ -1,19 +1,12 @@
 import 'dart:async';
 
-import 'package:archive/archive_io.dart';
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
-import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
-
 import 'package:sync_layer/errors/index.dart';
-
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
-import 'package:sync_layer/types/values_transaction.dart';
-import 'package:sync_layer/utils/measure.dart';
-
 import 'abstract/index.dart';
 import 'syncable_object_container_impl.dart';
 
@@ -93,11 +86,9 @@ class SyncLayerImpl implements SyncLayer {
 
   /// only for sending Atoms => Network, not internally!
   final _atomStreamController = StreamController<List<Atom>>.broadcast();
-  final _atomStreamControllerTransactions = StreamController<ValueTransaction>.broadcast();
 
   @override
   Stream<List<Atom>> get atomStream => _atomStreamController.stream;
-  Stream<ValueTransaction> get atomStreamTransaction => _atomStreamControllerTransactions.stream;
 
   @override
   MerkleTrie getState() => trie;
@@ -226,12 +217,8 @@ class SyncLayerImpl implements SyncLayer {
     // send transationList
     transactionActive = false;
 
-    // TODO: Refactor all!!
-    final vt = ValueTransaction.fromAtoms(transationList);
-    _atomStreamControllerTransactions.add(vt);
-
-    _applyAtoms(transationList);
-
+    /// TODO: should it be copying the refs
+    applyAtoms([...transationList]);
     transationList.clear();
   }
 
@@ -248,23 +235,22 @@ class SyncLayerImpl implements SyncLayer {
     _applyAtoms(atoms);
   }
 
-  List<Atom> getAtomsSinceMs(int ms) {
-    if (ms != null && ms != 0) {
-      var ts = clock.getHlc(ms, 0, site);
-      return atomCache.getSince(ts.counter);
-    }
-    return [];
+  List<Atom> getAtomsSinceMs(Hlc clock) {
+    return atomCache.getSince(clock);
   }
 
   /// These are workarounds
   /// get ts diff and send it back to requestee
+  /// TODO: check siteid of '0' => what site idee should be there?
   @override
   List<Atom> getAtomsByReceivingState(MerkleTrie remoteState) {
     final tsKey = trie.diff(remoteState);
     if (tsKey != null) {
-      final ms = clock.tsKeyToMillisecond(tsKey);
+      final ms = clock.getClockFromTSKey(tsKey, 0);
+      print(ms.toStringHuman());
       return getAtomsSinceMs(ms);
     }
+    // send empty
     return [];
   }
 }

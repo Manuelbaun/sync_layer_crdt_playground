@@ -25,4 +25,9 @@ class Clock {
   int tsKeyToMillisecond(String tsKey) {
     return (int.parse(tsKey, radix: 36) * 60000);
   }
+
+  Hlc getClockFromTSKey(String tsKey, int site) {
+    final ms = tsKeyToMillisecond(tsKey);
+    return getHlc(ms, 0, site);
+  }
 }

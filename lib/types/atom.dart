@@ -27,6 +27,10 @@ class Atom<T> implements AtomBase, Comparable<Atom<T>> {
     return clock.compareTo(other.clock);
   }
 
+  int compareToDESC(Atom<T> other) {
+    return clock.compareToDESC(other.clock);
+  }
+
   @override
   String toString() {
     return 'Atom(ts: ${clock.toStringHuman()}, value: $data)';

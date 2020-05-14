@@ -213,6 +213,20 @@ class Hlc implements LogicalClock<Hlc> {
     }
     return res;
   }
+
+  @override
+  int compareToDESC(Hlc other) {
+    final res = ms.compareTo(other.ms);
+
+    if (res == 0) {
+      final cRes = counter.compareTo(other.counter);
+
+      if (cRes == 0) return site.compareTo(other.site);
+      return cRes * -1;
+    }
+
+    return res * -1;
+  }
 }
 
 class ClockDriftException implements Exception {

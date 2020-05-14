@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:sync_layer/logical_clocks/index.dart';
 
@@ -10,6 +11,12 @@ int convHash(int hash) => (ByteData(4)..setInt32(0, hash)).getInt32(0);
 class MergeSkip {
   List merged = [];
   List skipped = [];
+
+  @override
+  String toString() {
+    JsonEncoder encoder = new JsonEncoder.withIndent('  ');
+    return encoder.convert({'merged': merged, 'skipped': skipped});
+  }
 }
 
 class MerkleTrie {
@@ -26,15 +33,16 @@ class MerkleTrie {
     for (var h in hlcs) {
       final key = h.radixTime(radix);
 
-      if (!keys.contains(h.counter)) {
+      if (!keys.contains(h.hashCode)) {
         _insert(root, key, h.hashCode, 0);
         root.hash = convHash(root.hash ^ h.hashCode);
-        ms.merged.add(h.toString());
-        keys.add(h.counter);
+        ms.merged.add(h.toStringHuman());
+        keys.add(h.hashCode);
       } else {
         ms.skipped.add(h.toString());
       }
     }
+    print(ms);
     return ms;
   }
 
@@ -66,7 +74,10 @@ class MerkleTrie {
 
   /// this returns the first timestamp, which is not equal
   String diff(MerkleTrie remote) {
-    if (hashCode == remote.hashCode) return null;
+    // if (hashCode == remote.hashCode) return null;
+
+    final kl = getDifferences(remote);
+    print(kl);
     return _diff(root, remote.root);
   }
 
@@ -125,7 +136,7 @@ class MerkleTrie {
   KeysLR getDifferences(MerkleTrie remote) => _diffKeyLR(root, remote.root);
 
   KeysLR _diffKeyLR(MerkleNode local, MerkleNode remote, [String currKey = '']) {
-    if (local.hash == remote.hash) return null;
+    // if (local.hash == remote.hash) return null;
 
     final rlKeys = KeysLR();
     final keys = _getNodeKeys(local, remote);

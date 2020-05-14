@@ -47,7 +47,22 @@ class LogicalTime implements LogicalClock<LogicalTime> {
   }
 
   @override
-  int compareTo(LogicalTime other) => counter.compareTo(other.counter);
+  int compareTo(LogicalTime other) {
+    final res = counter.compareTo(other.counter);
+    if (res == 0) {
+      return site.compareTo(other.site);
+    }
+    return res;
+  }
+
+  @override
+  int compareToDESC(LogicalTime other) {
+    final res = counter.compareTo(other.counter);
+    if (res == 0) {
+      return site.compareTo(other.site) * -1;
+    }
+    return res * -1;
+  }
 
   ///
   /// meaning : left is older than right

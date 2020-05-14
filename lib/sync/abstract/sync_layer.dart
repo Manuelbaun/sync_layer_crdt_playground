@@ -21,7 +21,6 @@ abstract class SyncLayer {
   /// This Stream sends only changes/Atoms made locally, and does not contain any remote recieved
   /// changes or Atoms. This prevents from broadcast loops
   Stream<List<Atom>> get atomStream;
-  Stream<ValueTransaction> get atomStreamTransaction;
 
   // void registerContainer(SyncableObjectContainer cont);
   String generateID();
