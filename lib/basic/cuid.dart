@@ -6,8 +6,8 @@ import 'dart:math';
 
 final String _prefix = 'c';
 final int _base = 36; // size of the alphabet
-final _secureRandom = Random();
-// final _secureRandom = Random.secure();
+// final _secureRandom = Random();
+final _secureRandom = Random.secure();
 const MAX = 0xFFFFFFFF;
 
 String _timeBlock() {
@@ -15,12 +15,12 @@ String _timeBlock() {
   return now.toRadixString(_base);
 }
 
-final int _discreteValues = pow(_base, 4);
+final int _discreteValues = pow(_base, 2);
 int _counter = 0;
 String _counterBlock() {
   _counter = _counter < _discreteValues ? _counter : 0;
   _counter++;
-  return _pad((_counter - 1).toRadixString(_base), 4);
+  return _pad((_counter - 1).toRadixString(_base), 2);
 }
 
 final String _fingerprint = _pidFingerprint() + _hostFingerprint();
@@ -59,9 +59,14 @@ String newCuid() {
   final fblock = _fingerprint;
 
   // random block
-  final rblock = _secureRandomBlock() + _secureRandomBlock();
+  final rblock = _secureRandomBlock(); // + _secureRandomBlock();
 
-  return _prefix + tblock + cblock + fblock + rblock;
+  // return _prefix + tblock + cblock + fblock + rblock;
+  final cuid = tblock + cblock + rblock;
+  // fned68tje7
+  // ka5y2zg6
+  // ka5xy24t0000s8ax
+  return cuid;
 }
 
 /// isCuid validates the supplied string is a cuid

@@ -235,7 +235,7 @@ void main() {
         obj2['1'] = 'Test';
       });
 
-      Timer(Duration(milliseconds: 50), () {
+      Timer(Duration(milliseconds: 100), () {
         obj1['1'] = 1;
         atoms1.forEach(obj1.applyAtom);
         atoms2.forEach(obj2.applyAtom);

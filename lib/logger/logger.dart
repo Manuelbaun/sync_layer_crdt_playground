@@ -56,7 +56,6 @@ class CustomLogger {
         printTime: false // Should each log print contain a timestamp
         ),
     output: CustomOutput(),
-    level: Level.debug
   );
 
   CustomLogger();
