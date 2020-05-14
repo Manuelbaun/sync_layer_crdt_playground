@@ -16,6 +16,7 @@ enum MessageEnum {
   STATE_REQUEST,
   STATE_RESPONSE,
   ATOMS,
+  ATOMS_Transaction,
   NODE_NAME,
 }
 
@@ -26,6 +27,12 @@ class EnDecoder {
     return Uint8List.fromList([msg.index, ...buff]);
   }
 
+  static Uint8List encodeAtomsTransaction(ValueTransaction t, [MessageEnum msg = MessageEnum.ATOMS_Transaction]) {
+    // final updateBytes = atoms.map((a) => a.toBytes()).toList();
+    final buff = msgpackEncode(t);
+    return Uint8List.fromList([msg.index, ...buff]);
+  }
+
   static Uint8List encodeState(MerkleTrie state) {
     final buff = msgpackEncode(state.toMap());
     return Uint8List.fromList([MessageEnum.STATE.index, ...buff]);
@@ -33,8 +40,10 @@ class EnDecoder {
 
   static List<Atom> decodeAtoms(Uint8List buff) {
     return List<Atom>.from(msgpackDecode(buff));
+  }
 
-    // return atomsBuff.map((b) => Atom.fromBytes(b)).toList();
+  static List<Atom> decodeAtomsTransaction(Uint8List buff) {
+    return List<Atom>.from(msgpackDecode(buff));
   }
 
   static MerkleTrie decodeState(Uint8List buff) {
@@ -51,6 +60,7 @@ class SyncLayerProtocol {
   StreamSubscription atomSub;
   SyncLayerProtocol(this.syn) {
     atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
+    atomSub = syn.atomStreamTransaction.listen((t) => broadCastAtomsTransation(t));
   }
 
   void dispose() async {
@@ -99,6 +109,14 @@ class SyncLayerProtocol {
     }
   }
 
+  void broadCastAtomsTransation(ValueTransaction t) {
+    final data = EnDecoder.encodeAtomsTransaction(t);
+
+    for (final ws in websockets) {
+      ws.add(data);
+    }
+  }
+
   void relayMessage(Uint8List data, WebSocket ws) {
     for (final _ws in websockets) {
       if (_ws != ws) {
@@ -118,6 +136,15 @@ class SyncLayerProtocol {
         // log.d(MessageEnum.ATOMS);
 
         final atoms = EnDecoder.decodeAtoms(data);
+        syn.receiveAtoms(atoms);
+        relayMessage(rawData, ws);
+      } else
+
+      /// if ValueTransaction
+      if (msgType == MessageEnum.ATOMS_Transaction.index) {
+        // log.d(MessageEnum.ATOMS);
+
+        final atoms = EnDecoder.decodeAtomsTransaction(data);
         syn.receiveAtoms(atoms);
         relayMessage(rawData, ws);
       } else

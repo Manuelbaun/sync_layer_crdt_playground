@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:archive/archive_io.dart';
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire_node.dart';
+import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
 
@@ -9,6 +11,8 @@ import 'package:sync_layer/errors/index.dart';
 
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
+import 'package:sync_layer/types/values_transaction.dart';
+import 'package:sync_layer/utils/measure.dart';
 
 import 'abstract/index.dart';
 import 'syncable_object_container_impl.dart';
@@ -87,11 +91,13 @@ class SyncLayerImpl implements SyncLayer {
   final Clock clock;
   final MerkleTrie trie;
 
-  // only for sending Atoms => Network, not internally!
+  /// only for sending Atoms => Network, not internally!
   final _atomStreamController = StreamController<List<Atom>>.broadcast();
+  final _atomStreamControllerTransactions = StreamController<ValueTransaction>.broadcast();
 
   @override
   Stream<List<Atom>> get atomStream => _atomStreamController.stream;
+  Stream<ValueTransaction> get atomStreamTransaction => _atomStreamControllerTransactions.stream;
 
   @override
   MerkleTrie getState() => trie;
@@ -220,7 +226,12 @@ class SyncLayerImpl implements SyncLayer {
     // send transationList
     transactionActive = false;
 
-    applyAtoms([...transationList]);
+    // TODO: Refactor all!!
+    final vt = ValueTransaction.fromAtoms(transationList);
+    _atomStreamControllerTransactions.add(vt);
+
+    _applyAtoms(transationList);
+
     transationList.clear();
   }
 

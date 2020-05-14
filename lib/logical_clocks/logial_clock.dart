@@ -30,4 +30,8 @@ abstract class LogicalClock<T> implements Comparable<T> {
   bool operator <(other);
 
   bool operator >(other);
+
+  /// will get the difference
+  List<int> operator -(other);
+  // void operator +(other);
 }

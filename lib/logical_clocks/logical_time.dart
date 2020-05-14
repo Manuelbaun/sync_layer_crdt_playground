@@ -94,6 +94,20 @@ class LogicalTime implements LogicalClock<LogicalTime> {
   }
 
   @override
+  List<int> operator -(other) {
+    final o = other as LogicalTime;
+    return [counter - o.counter];
+  }
+
+  /// added List<int> as difference to the counter !!
+  // @override
+  // void operator +(other) {
+  //   final o = other as List<int>;
+  //   assert(o.length != 1, 'adding only a list of int of length 1');
+  //   counter += o[0];
+  // }
+
+  @override
   String toString() => _logicalClock;
 
   @override

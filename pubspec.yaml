@@ -12,10 +12,10 @@ dependencies:
   quick_log: ^0.4.0
   console_log_handler: ^1.1.6
   web_socket_channel: ^1.1.0
+  archive: ^2.0.13
 
 dev_dependencies:
   protoc_plugin: ^19.0.1
-  archive: ^2.0.13
   lzma: ^0.4.0+2
   faker: ^1.2.1
   pedantic: ^1.8.0

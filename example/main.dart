@@ -51,6 +51,7 @@ void main(List<String> arguments) {
     if (t != null) {
       syn.transaction(() {
         t.title = 'hallo $nodeID ${tt.tick}';
+        t.title = 'hallo $nodeID ${tt.tick}-2';
 
         if (t.assignee == null) {
           final a = daoAss.create();
@@ -58,7 +59,30 @@ void main(List<String> arguments) {
           a.firstName = 'Hans';
           a.lastName = 'Peter';
           a.age = 25;
-          // a.todo = t;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.age = 25;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.age = 25;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.age = 25;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.age = 25;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.age = 25;
+          a.age = 26;
+          a.age = 27;
+          a.firstName = 'Doch Ben';
+          a.todo = t;
 
           t.assignee = a;
           // circular ref!

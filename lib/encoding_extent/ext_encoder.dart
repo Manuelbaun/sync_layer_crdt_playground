@@ -13,9 +13,8 @@ class ExtendetEncoder implements ExtEncoder {
     if (o is Value) return 3;
     if (o is Atom) return 4;
     if (o is CausalAtom) return 5;
-    if (o is ObjectReference) {
-      return 6;
-    }
+    if (o is ObjectReference) return 6;
+    if (o is ValueTransaction) return 7;
 
     return null;
   }
@@ -27,9 +26,8 @@ class ExtendetEncoder implements ExtEncoder {
     if (o is Value) return msgpackEncode([o.typeId, o.id, o.key, o.value]);
     if (o is CausalAtom) return msgpackEncode([o.cause, o.clock, o.data]);
     if (o is Atom) return msgpackEncode([o.clock, o.data]);
-    if (o is ObjectReference) {
-      return msgpackEncode([o.type, o.id]);
-    }
+    if (o is ObjectReference) return msgpackEncode([o.type, o.id]);
+    if (o is ValueTransaction) return msgpackEncode([o.baseClock, o.internal]);
 
     return null;
   }

@@ -37,6 +37,11 @@ class ExtendetDecoder implements ExtDecoder {
       return ObjectReference(v[0], v[1]);
     }
 
+    if (extType == 7) {
+      final v = msgpackDecode(data);
+      return ValueTransaction.transaction2Atoms(v[0], v[1]);
+    }
+
     return null;
   }
 }

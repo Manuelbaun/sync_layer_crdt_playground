@@ -6,8 +6,6 @@ import 'package:sync_layer/types/index.dart';
 import 'abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone_';
-const String _TYPE_ID = '_type_';
-const String _OBJ_ID = '_#_';
 
 class SyncableObjectImpl implements SyncableObject {
   /// **Important**
@@ -43,6 +41,15 @@ class SyncableObjectImpl implements SyncableObject {
   /// in case of a synable object, it stores the type and id
   final Map<String, dynamic> _obj = {};
   final Map<String, Hlc> _objClock = {};
+
+  // var keyCounter = 0;
+  // final Map<String, int> keyNumMap = {};
+  // final List<dynamic> _obj_ = [];
+  // final List<Hlc> _objClock_ = [];
+
+  // int registerField(String field) {
+  //   return keyNumMap[field] = keyCounter++;
+  // }
 
   /// Stores the reference to the syncable Object
   final Map<String, SyncableObject> _syncableObjects = {};
@@ -123,8 +130,6 @@ class SyncableObjectImpl implements SyncableObject {
     // check if value is [SyncableObject]
     if (value is SyncableObject) {
       // create Ref type
-      /// TODO syncable Ref Object??
-      // val = {_TYPE_ID: value.type, _OBJ_ID: value.id};
       val = ObjectReference(value.type, value.id);
     }
 
@@ -157,6 +162,5 @@ class SyncableObjectImpl implements SyncableObject {
 
     final encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(obj);
-    // return obj.toString();
   }
 }

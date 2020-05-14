@@ -176,6 +176,19 @@ class Hlc implements LogicalClock<Hlc> {
   }
 
   @override
+  List<int> operator -(other) {
+    final o = other as Hlc;
+    return [ms - o.ms, counter - o.counter];
+  }
+
+  // @override
+  // List<int> operator +(other) {
+  //   final o = other as List<int>;
+  //   assert(o.length != 2, 'adding only a list of int of length 2');
+  //   return [ms + o[0], counter + o[1]];
+  // }
+
+  @override
   String toString() => _internal;
 
   @override
