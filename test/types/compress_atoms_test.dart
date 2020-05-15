@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:lzma/lzma.dart';
 import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
@@ -53,7 +52,6 @@ void l_zipping(List<Atom> atoms) {
   measureExecution('zlib pack', () {
     encoded = msgpackEncode(atoms);
     zipped = zlib.encode(encoded);
-    
   });
 
   var decoded;
@@ -67,7 +65,6 @@ void l_zipping(List<Atom> atoms) {
   print(unzipped.length);
   // print(decoded);
 }
-
 
 void main() {
   final atoms = <Atom>[];

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:msgpack_dart/msgpack_dart.dart';
+import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
@@ -40,6 +41,11 @@ class ExtendetDecoder implements ExtDecoder {
     if (extType == 7) {
       final v = msgpackDecode(data);
       return ValueTransaction.transaction2Atoms(v[0], v[1]);
+    }
+
+    if (extType == 8) {
+      final v = (msgpackDecode(data) as Map).cast<int, dynamic>();
+      return MerkleTrie.fromMap(v);
     }
 
     return null;

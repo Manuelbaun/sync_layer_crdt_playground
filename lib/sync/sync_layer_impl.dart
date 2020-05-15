@@ -247,7 +247,7 @@ class SyncLayerImpl implements SyncLayer {
     final tsKey = trie.diff(remoteState);
     if (tsKey != null) {
       final ms = clock.getClockFromTSKey(tsKey, 0);
-      print(ms.toStringHuman());
+      logger.verbose(ms.toStringHuman());
       return getAtomsSinceMs(ms);
     }
     // send empty

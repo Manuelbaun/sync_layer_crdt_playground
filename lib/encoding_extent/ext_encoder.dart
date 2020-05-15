@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:msgpack_dart/msgpack_dart.dart';
+import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/encoding_extent/endecode.dart';
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
@@ -15,6 +16,7 @@ class ExtendetEncoder implements ExtEncoder {
     if (o is CausalAtom) return 5;
     if (o is ObjectReference) return 6;
     if (o is ValueTransaction) return 7;
+    if (o is MerkleTrie) return 8;
 
     return null;
   }
@@ -28,6 +30,7 @@ class ExtendetEncoder implements ExtEncoder {
     if (o is Atom) return msgpackEncode([o.clock, o.data]);
     if (o is ObjectReference) return msgpackEncode([o.type, o.id]);
     if (o is ValueTransaction) return msgpackEncode([o.baseClock, o.internal]);
+    if (o is MerkleTrie) return msgpackEncode(o.toMap());
 
     return null;
   }

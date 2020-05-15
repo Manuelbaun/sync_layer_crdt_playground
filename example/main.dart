@@ -38,7 +38,7 @@ void main(List<String> arguments) {
       logger.warning('[!]Connection Denied');
     }
     // in case, if server is not running now
-  }, onError: (err) => logger.error('[!]Error -- ${err.toString()}'));
+  }, onError: (err) => logger.error(err.toString()));
 
   // apply changes
   final tt = daoTodo.create();

@@ -13,43 +13,33 @@ import 'logger/index.dart';
 
 enum MessageEnum { STATE, STATE_REQUEST, STATE_RESPONSE, ATOMS, NODE_NAME, NO_ATOMS }
 
-void sendMsg(dynamic msg) {
-  print('send: $msg');
-}
-
-void recvMsg(dynamic msg) {
-  print('recv: $msg');
-}
-
 class SyncLayerProtocolEnDecoder {
-  static Uint8List encodeAtoms(List<Atom> atoms, [MessageEnum msg = MessageEnum.ATOMS]) {
+  static Uint8List encodeAtoms(List<Atom> atoms) {
     final buff = msgpackEncode(atoms);
     final zipped = zlib.encode(buff);
-    sendMsg('* Atoms: ${atoms.length} ::  b:${buff.length} => z:${zipped.length}');
-    return Uint8List.fromList([msg.index, ...zipped]);
-  }
-
-  static Uint8List encodeState(MerkleTrie state) {
-    final buff = msgpackEncode(state.toMap());
-    final zipped = zlib.encode(buff);
-    sendMsg('* State:::  b:${buff.length} => z:${zipped.length}');
-    return Uint8List.fromList([MessageEnum.STATE.index, ...zipped]);
+    logger.verbose('send: * Atoms: ${atoms.length} ::  b:${buff.length} => z:${zipped.length}');
+    return zipped;
   }
 
   static List<Atom> decodeAtoms(Uint8List buff) {
     final unzipped = zlib.decode(buff);
     final atoms = msgpackDecode(unzipped);
-
-    print('* recv Atom: ${atoms.length}:: z:${buff.length} =>  b:${unzipped.length}');
-
+    logger.verbose('recv Atom: ${atoms.length}:: z:${buff.length} =>  b:${unzipped.length}');
     return List<Atom>.from(atoms);
+  }
+
+  static Uint8List encodeState(MerkleTrie state) {
+    final buff = msgpackEncode(state);
+    final zipped = zlib.encode(buff);
+    logger.verbose('send:* State:::  b:${buff.length} => z:${zipped.length}');
+    return zipped;
   }
 
   static MerkleTrie decodeState(Uint8List buff) {
     final unzipped = zlib.decode(buff);
-    print('* recv State::: z:${buff.length} =>  b:${unzipped.length} ');
-    Map trieMap = (msgpackDecode(unzipped) as Map).cast<int, dynamic>();
-    return MerkleTrie.fromMap(trieMap);
+    logger.verbose('recv State::: z:${buff.length} =>  b:${unzipped.length} ');
+    MerkleTrie trie = msgpackDecode(unzipped);
+    return trie;
   }
 }
 
@@ -69,9 +59,9 @@ class SyncLayerProtocol {
 
   void registerConnection(WebSocket ws) {
     websockets.add(ws);
-    print('\n---------------------------------');
-    print('<<<recv: >> Register Websocket');
-    print('---------------------------------');
+    logger.info('---------------------------------\n'
+        '<<<recv: >> Register Websocket\n'
+        '---------------------------------');
 
     ws.listen(
       (rawData) => receiveBuffer(rawData, ws),
@@ -84,11 +74,13 @@ class SyncLayerProtocol {
     );
 
     // Start sync process => send local State
-    sendMsg('MessageEnum.NODE_NAME');
+    logger.info('send:MessageEnum.NODE_NAME');
     ws.add(Uint8List.fromList([MessageEnum.NODE_NAME.index, syn.site]));
 
-    sendMsg('MessageEnum.STATE');
-    ws.add(SyncLayerProtocolEnDecoder.encodeState(syn.getState()));
+    logger.info('send:MessageEnum.STATE');
+
+    final buff = SyncLayerProtocolEnDecoder.encodeState(syn.getState());
+    ws.add([MessageEnum.STATE.index, ...buff]);
   }
 
   void unregisterConnection(WebSocket ws) {
@@ -108,10 +100,11 @@ class SyncLayerProtocol {
 
   void broadCastAtoms(List<Atom> atoms) {
     final data = SyncLayerProtocolEnDecoder.encodeAtoms(atoms);
-    sendMsg('MessageEnum.ATOMS Broadcast');
+    logger.info('send:MessageEnum.ATOMS Broadcast');
 
     for (final ws in websockets) {
-      ws.add(data);
+      // Uint8List.fromList([msg.index, ...zipped])
+      ws.add([MessageEnum.ATOMS.index, ...data]);
     }
   }
 
@@ -129,15 +122,15 @@ class SyncLayerProtocol {
       final data = rawData.sublist(1);
 
       if (msgType == MessageEnum.NO_ATOMS.index) {
-        recvMsg('MessageEnum.NO_ATOMS');
+        logger.info('recv: MessageEnum.NO_ATOMS');
       } else
 
       // if atoms
       if (msgType == MessageEnum.ATOMS.index) {
-        recvMsg('MessageEnum.ATOMS');
+        logger.info('recv: MessageEnum.ATOMS');
         final atoms = SyncLayerProtocolEnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
-        sendMsg('MessageEnum.ATOMS relay');
+        logger.info('send:MessageEnum.ATOMS relay');
 
         relayMessage(rawData, ws);
       } else
@@ -145,7 +138,7 @@ class SyncLayerProtocol {
       /// if it is just an state reponse, add receiving atoms to SyncLayer
       /// but do not relay to all other connections..
       if (msgType == MessageEnum.STATE_RESPONSE.index) {
-        recvMsg('MessageEnum.STATE_RESPONSE');
+        logger.info('recv: MessageEnum.STATE_RESPONSE');
 
         final atoms = SyncLayerProtocolEnDecoder.decodeAtoms(data);
         syn.receiveAtoms(atoms);
@@ -157,31 +150,34 @@ class SyncLayerProtocol {
 
       // if a state incoming is send recv:  send back the diffs
       if (msgType == MessageEnum.STATE.index) {
-        recvMsg('MessageEnum.STATE');
+        logger.info('recv: MessageEnum.STATE');
 
         final state = SyncLayerProtocolEnDecoder.decodeState(data);
         final atoms = syn.getAtomsByReceivingState(state);
 
         if (atoms.isNotEmpty) {
-          sendMsg('MessageEnum.STATE_RESPONSE');
-          ws.add(SyncLayerProtocolEnDecoder.encodeAtoms(atoms, MessageEnum.STATE_RESPONSE));
+          logger.info('send:MessageEnum.STATE_RESPONSE');
+          final msg = [MessageEnum.STATE_RESPONSE.index, ...SyncLayerProtocolEnDecoder.encodeAtoms(atoms)];
+
+          // TODO: msg to utin8list
+          ws.add(msg);
         } else {
-          sendMsg('MessageEnum.NO_ATOMS');
+          logger.info('send:MessageEnum.NO_ATOMS');
           ws.add([MessageEnum.NO_ATOMS.index]);
         }
       } else
 
       // is a state request is issued
       if (msgType == MessageEnum.STATE_REQUEST.index) {
-        recvMsg('MessageEnum.STATE_REQUEST');
+        logger.info('recv: MessageEnum.STATE_REQUEST');
+        final buff = SyncLayerProtocolEnDecoder.encodeState(syn.getState());
 
-        final stateData = SyncLayerProtocolEnDecoder.encodeState(syn.getState());
-        sendMsg('MessageEnum.STATE');
-        ws.add(stateData);
+        logger.info('send:MessageEnum.STATE');
+        ws.add([MessageEnum.STATE.index, ...buff]);
       } else
       // give name of node
       if (msgType == MessageEnum.NODE_NAME.index) {
-        recvMsg('MessageEnum.NODE_NAME');
+        logger.info('recv: MessageEnum.NODE_NAME');
 
         websocketsNames[ws] = String.fromCharCodes(rawData.sublist(1));
       }
