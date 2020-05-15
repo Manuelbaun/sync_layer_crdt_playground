@@ -17,27 +17,27 @@ class _EnDecoder {
   static Uint8List encodeAtoms(List<Atom> atoms) {
     final buff = msgpackEncode(atoms);
     final zipped = zlib.encode(buff);
-    logger.verbose('send: * Atoms: ${atoms.length} ::  b:${buff.length} => z:${zipped.length}');
+    logger.verbose('⏫ send Atoms::: ${atoms.length} ::  b:${buff.length} => z:${zipped.length}');
     return zipped;
   }
 
   static List<Atom> decodeAtoms(Uint8List buff) {
     final unzipped = zlib.decode(buff);
     final atoms = msgpackDecode(unzipped);
-    logger.verbose('recv Atom: ${atoms.length}:: z:${buff.length} =>  b:${unzipped.length}');
+    logger.verbose('🔻 recv Atom: ${atoms.length}:: z:${buff.length} =>  b:${unzipped.length}');
     return List<Atom>.from(atoms);
   }
 
   static Uint8List encodeState(MerkleTrie state) {
     final buff = msgpackEncode(state);
     final zipped = zlib.encode(buff);
-    logger.verbose('send:* State:::  b:${buff.length} => z:${zipped.length}');
+    logger.verbose('⏫ send State:::  b:${buff.length} => z:${zipped.length}');
     return zipped;
   }
 
   static MerkleTrie decodeState(Uint8List buff) {
     final unzipped = zlib.decode(buff);
-    logger.verbose('recv State::: z:${buff.length} =>  b:${unzipped.length} ');
+    logger.verbose('🔻 recv State::: z:${buff.length} =>  b:${unzipped.length} ');
     MerkleTrie trie = msgpackDecode(unzipped);
     return trie;
   }
