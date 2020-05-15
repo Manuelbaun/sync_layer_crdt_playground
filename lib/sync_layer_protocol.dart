@@ -60,7 +60,7 @@ class SyncLayerProtocol {
   void registerConnection(WebSocket ws) {
     websockets.add(ws);
     logger.info('---------------------------------\n'
-        '<<<recv: >> Register Websocket\n'
+        ' <<< Register Websocket >>> \n'
         '---------------------------------');
 
     ws.listen(
