@@ -4,6 +4,67 @@ import 'package:test/test.dart';
 var testHlc = Hlc(1579633503119, 42, 1234);
 
 void main() {
+  group('Compare < = >', () {
+    // 3^6 iteration => 729
+    String comStr(bool b) => b ? 'equal'.padRight(10, ' ') : 'different'.padRight(10, ' ');
+
+    final mss = [1579633503119, 1579633503119 + 100, 1579633503119 + 200];
+
+    final counter = [0, 1, 2];
+    final sites = [111, 222, 333];
+    var i = 1;
+    for (var m1 in mss) {
+      for (var m2 in mss) {
+        for (var c1 in counter) {
+          for (var c2 in counter) {
+            for (var s1 in sites) {
+              for (var s2 in sites) {
+                // run tests
+                final h1 = Hlc(m1, c1, s1);
+                final h2 = Hlc(m2, c2, s2);
+                i++;
+                compareHLC_Less_Equal_Greater_Tests(comStr, m1, m2, c1, c2, s1, s2, h1, h2);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    print('Compare < = > Tests $i');
+  });
+  group('Compare Subtract diffs', () {
+    final mss = [1579633503119, 1579633503120, 1579633503121];
+    final counter = [0, 1, 2];
+
+    var i = 1;
+    for (var m1 in mss) {
+      for (var m2 in mss) {
+        for (var c1 in counter) {
+          for (var c2 in counter) {
+            // run tests
+            final h1 = Hlc(m1, c1, 0);
+            final h2 = Hlc(m2, c2, 0);
+            i++;
+            test('Compare Subtract ms:$m1:$m2:${m1 == m2} counter: $c1:$c2:${c1 == c2}', () {
+              final md1 = m1 - m2;
+              final md2 = m2 - m1;
+              final cd1 = c1 - c2;
+              final cd2 = c2 - c1;
+
+              expect((h1 - h2)[0] == md1, isTrue);
+              expect((h2 - h1)[0] == md2, isTrue);
+
+              expect((h1 - h2)[1] == cd1, isTrue);
+              expect((h2 - h1)[1] == cd2, isTrue);
+            });
+          }
+        }
+      }
+    }
+    print('Compare Subtract diffs Tests $i');
+  });
+
   group('Comparison', () {
     test('Equality', () {
       var hlc = Hlc(1579633503119, 42, 1234);
@@ -132,5 +193,72 @@ void main() {
       expect(localHlc == remoteHlc, isFalse);
       expect(localHlc.counter == remoteHlc.counter, isTrue);
     });
+  });
+}
+
+void compareHLC_Less_Equal_Greater_Tests(
+  String Function(bool b) comStr,
+  int m1,
+  int m2,
+  int c1,
+  int c2,
+  int s1,
+  int s2,
+  Hlc h1,
+  Hlc h2,
+) {
+  void expectLessGreater(Hlc less, Hlc greater) {
+    expect(less < greater, isTrue);
+    expect(greater < less, isFalse);
+    expect(less > greater, isFalse);
+    expect(greater > less, isTrue);
+  }
+
+  void expectLessGreaterCompareTo(Hlc less, Hlc greater) {
+    expect(less.compareTo(greater), -1);
+    expect(less.compareToDESC(greater), 1);
+    expect(greater.compareTo(less), 1);
+    expect(greater.compareToDESC(less), -1);
+  }
+
+  test('LC - time: ${comStr(m1 == m2)} - counter: ${comStr(c1 == c2)} - sites: ${comStr(s1 == s2)}', () {
+    if (m1 < m2) {
+      expectLessGreater(h1, h2);
+      expectLessGreaterCompareTo(h1, h2);
+    } else if (m1 > m2) {
+      expectLessGreater(h2, h1);
+      expectLessGreaterCompareTo(h2, h1);
+    } else if (m1 == m2) {
+      if (c1 < c2) {
+        expectLessGreater(h1, h2);
+        expectLessGreaterCompareTo(h1, h2);
+      } else if (c1 > c2) {
+        expectLessGreater(h2, h1);
+        expectLessGreaterCompareTo(h2, h1);
+      } else if (c1 == c2) {
+        if (s1 < s2) {
+          expectLessGreater(h1, h2);
+          expectLessGreaterCompareTo(h1, h2);
+        } else if (s1 > s2) {
+          expectLessGreater(h2, h1);
+          expectLessGreaterCompareTo(h2, h1);
+        } else if (s1 == s2) {
+          expect(s1 == s2, isTrue);
+          expect(s2 == s1, isTrue);
+
+          expect(s1 != s2, isFalse);
+          expect(s2 != s1, isFalse);
+
+          expect(s1.compareTo(s2), 0);
+          expect(s2.compareTo(s1), 0);
+        } else {
+          throw AssertionError('this should never happen');
+        }
+      } else {
+        throw AssertionError('this should never happen');
+      }
+    } else {
+      throw AssertionError('this should never happen');
+    }
   });
 }

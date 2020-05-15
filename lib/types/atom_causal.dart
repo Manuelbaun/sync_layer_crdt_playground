@@ -1,11 +1,14 @@
+import 'package:sync_layer/basic/hashing.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
-
 import 'atom_base.dart';
 
-/// Todo  must be also en/decodeable!!!
-class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
+class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
+  /// the clock is the atom [clock]
   @override
-  LogicalTime clock;
+  final LogicalClock clock;
+
+  /// the cause is the clock of the causing atom => [clock]
+  final LogicalClock cause;
 
   int get site => clock.site;
   int get counter => clock.counter;
@@ -13,34 +16,8 @@ class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
   @override
   final T data;
 
-  final LogicalTime cause;
-
-  CausalAtom(this.clock, this.data, this.cause);
-
-  /// Checks wheter Atom **lhs** is causal **`less`** then **rhs**.
-  /// Less means it is **left** to the other atom in the array.
-  ///
-  /// `**Note**: you can use the < operator`
-  ///
-  /// Rules:
-  /// 1. If Atoms are sequence of charactors, then it is sorted by the timestamp [ASC Order]
-  /// 2. If two Atoms don't have the same cause, they are not either sequence nor related
-  /// 3. If same cause (parent): Then the Atom with the highest timestamp is right next to the parent in the array.
-  /// The highest timestamp means the youngest atom or the lastest edit.
-  /// 4. if the times are equal, then it gets sorted by the site [DESC ORDER]
-  static int compare(CausalAtom left, CausalAtom right) {
-    // if cause is equal => siblings
-    if (left.cause == right.cause) {
-      if (left.clock > right.clock) {
-        return -1;
-      } else if (left.clock == right.clock) {
-        // TODO: test if this comapre is correct!
-        return right.site - left.site;
-      }
-    }
-
-    return 0;
-  }
+  CausalAtom(this.clock, this.cause, this.data) : assert(clock != null);
+  // assert(cause != null ?? clock.runtimeType != cause.runtimeType, 'clock and cause need to be the same type!');
 
   static bool isSibling(CausalAtom a, CausalAtom b) => a.cause == b.cause;
 
@@ -56,37 +33,48 @@ class CausalAtom<T> implements AtomBase, Comparable<CausalAtom> {
     return false;
   }
 
+  /// Checks wheter Atom **lhs** is causal **`less`** then **rhs**.
+  /// Less means it is **left** to the other atom in the array.
+  ///
+  /// `**Note**: you can use the < operator`
+  ///
+  /// Rules:
+  /// 1. If Atoms are sequence of charactors, then it is sorted by the timestamp [ASC Order]
+  /// 2. If two Atoms don't have the same cause, they are not either sequence nor related
+  /// 3. If same cause (parent): Then the Atom with the highest timestamp is right next to the parent in the array.
+  /// The highest timestamp means the youngest atom or the lastest edit.
+  /// 4. if the times are equal, then it gets sorted by the site [DESC ORDER]
   @override
   int compareTo(CausalAtom other) {
-    // TODO: FIxME
+    // if cause is equal => siblings
+    if (cause == other.cause) {
+      if (clock > other.clock) {
+        return -1;
+      } else if (clock == other.clock) {
+        // TODO: test if this compare is correct!
+        return other.site - site;
+      }
+    }
 
-    return clock.counter - other.clock.counter;
+    return 0;
   }
 
-  String get siteId => 'S${site?.toRadixString(16)}@T${counter}';
-  String get causeId => 'S${cause?.site?.toRadixString(16)}@T${cause?.counter}';
+  String get clockString => clock.toStringRON();
+  String get causeString => cause?.toStringRON();
 
   @override
-  String toString() => '${siteId}-${causeId} : ${data}';
+  String toString() => '${clockString}::${causeString} : ${data}';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
-    return o is CausalAtom && cause == o.cause && clock == o.clock;
+
+    /// TODO: what if cause is null???
+    return o is CausalAtom && clock == o.clock && cause == o.cause && data == o.data;
   }
 
   @override
   int get hashCode {
-    var hash = 0;
-
-    if (data is Map) {
-      (data as Map).entries.forEach((e) => hash ^= e.key.hashCode ^ e.value.hashCode);
-    } else if (data is List) {
-      (data as List).forEach((e) => hash ^= e.hashCode);
-    } else {
-      hash = data.hashCode;
-    }
-
-    return clock.hashCode ^ hash ^ cause?.hashCode;
+    return clock.hashCode ^ nestedHashing(data) ^ cause?.hashCode;
   }
 }

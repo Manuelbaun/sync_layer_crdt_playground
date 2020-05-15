@@ -17,8 +17,8 @@ class LogicalTime implements LogicalClock<LogicalTime> {
 
   LogicalTime(this.counter, this.site)
       : _logicalClock = '${counter.toRadixString(16)}-${site.toRadixString(16)}',
-        assert(counter != null),
-        assert(site != null) {
+        assert(counter != null && counter >= 0),
+        assert(site != null && site != null) {
     _hashCode = MurmurHashV3(_logicalClock);
   }
 
@@ -64,17 +64,17 @@ class LogicalTime implements LogicalClock<LogicalTime> {
     return res * -1;
   }
 
-  ///
-  /// meaning : left is older than right
-  /// returns [true] if left < right
-  /// This function also compares the node lexographically if node of l < node of r
-  /// Todo: think about, what if the hlc are identical
-  static bool compareWithNodes(LogicalTime left, LogicalTime right) {
-    /// first by timestamp
-    if (left < right) return true;
-    if (left == right) return left.site < right.site;
-    return false;
-  }
+  // ///
+  // /// meaning : left is older than right
+  // /// returns [true] if left < right
+  // /// This function also compares the node lexographically if node of l < node of r
+  // /// Todo: think about, what if the hlc are identical
+  // static bool compareWithNodes(LogicalTime left, LogicalTime right) {
+  //   /// first by timestamp
+  //   if (left < right) return true;
+  //   if (left == right) return left.site < right.site;
+  //   return false;
+  // }
 
   @override
   int get hashCode => _hashCode;

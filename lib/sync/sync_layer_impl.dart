@@ -161,8 +161,8 @@ class SyncLayerImpl implements SyncLayer {
 
         if (container != null) {
           // if row does not exist, new row will be added
-          var obj = container.read(atom.data.id);
-          obj ??= container.create(atom.data.id);
+          var obj = container.read(atom.data.clock);
+          obj ??= container.create(atom.data.clock);
 
           final res = obj.applyAtom(atom);
 

@@ -4,7 +4,7 @@ import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 
 class CausalTree<T> {
-  int owner;
+  int site;
   LogicalTime localClock;
 
   //! this Atom array has to be the same on all other sides.
@@ -26,7 +26,7 @@ class CausalTree<T> {
   /// SiteId -> TimeStamp, Kind of Version vector
   final weft = <int, int>{};
 
-  CausalTree(this.owner) : localClock = LogicalTime(0, owner);
+  CausalTree(this.site) : localClock = LogicalTime(0, site);
 
   // importent, the timestamp needs to be overritten with the new one!
   // only this way, LogicalTime send is able to increment the counter field;
@@ -92,8 +92,8 @@ class CausalTree<T> {
   CausalAtom<T> insert(CausalAtom parent, T value) {
     final atom = CausalAtom<T>(
       _newID(),
-      value,
       parent?.clock,
+      value,
     );
 
     _insert(atom);
@@ -103,8 +103,8 @@ class CausalTree<T> {
   CausalAtom<T> push(T value) {
     final atom = CausalAtom<T>(
       _newID(),
-      value,
       atoms.isNotEmpty ? atoms.last.clock : null,
+      value,
     );
 
     _insert(atom, atoms.length);
@@ -119,8 +119,8 @@ class CausalTree<T> {
   CausalAtom<T> delete(CausalAtom a) {
     final atom = CausalAtom<T>(
       _newID(),
-      null,
       a?.clock,
+      null,
     );
 
     _delete(atom);
@@ -129,7 +129,7 @@ class CausalTree<T> {
 
   // TODO assert if no filter;
   static CausalTree filter(CausalTree tree, {int timestamp, Set<int> siteid}) {
-    final newTree = CausalTree(tree.owner);
+    final newTree = CausalTree(tree.site);
     var atoms = <CausalAtom>[];
 
     if (siteid != null) {
@@ -155,7 +155,7 @@ class CausalTree<T> {
   /// CausalLink breaks?
   // TODO assert if no filter;
   static CausalTree filter2(CausalTree tree, {int timestamp, Set<int> siteid}) {
-    final newTree = CausalTree(tree.owner);
+    final newTree = CausalTree(tree.site);
     var filteredYarns = <int, List<CausalAtom>>{};
 
     if (siteid != null) {

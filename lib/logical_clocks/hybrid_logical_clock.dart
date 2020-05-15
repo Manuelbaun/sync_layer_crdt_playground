@@ -43,8 +43,9 @@ class Hlc implements LogicalClock<Hlc> {
 
   Hlc([int ms_, this.counter = 0, this.site])
       : assert(counter < _MAX_COUNTER && counter >= 0),
-        assert(site != null),
-        ms = ms_ ??= DateTime.now().millisecondsSinceEpoch {
+        assert(site != null && site >= 0),
+        ms = ms_ ??= DateTime.now().millisecondsSinceEpoch,
+        assert(ms_ >= 0) {
     // TODO: maybe add padding before release, after that, no changes to the hash function!
     _internal = '${ms.toRadixString(16)}-${counter.toRadixString(16)}-${site.toRadixString(16)}';
     _hashCode = MurmurHashV3(_internal);
@@ -181,13 +182,6 @@ class Hlc implements LogicalClock<Hlc> {
     return [ms - o.ms, counter - o.counter];
   }
 
-  // @override
-  // List<int> operator +(other) {
-  //   final o = other as List<int>;
-  //   assert(o.length != 2, 'adding only a list of int of length 2');
-  //   return [ms + o[0], counter + o[1]];
-  // }
-
   @override
   String toString() => _internal;
 
@@ -221,7 +215,7 @@ class Hlc implements LogicalClock<Hlc> {
     if (res == 0) {
       final cRes = counter.compareTo(other.counter);
 
-      if (cRes == 0) return site.compareTo(other.site);
+      if (cRes == 0) return site.compareTo(other.site) * -1;
       return cRes * -1;
     }
 
