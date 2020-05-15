@@ -42,7 +42,7 @@ class CausalTree<T> {
     // set cause index, if null, then search!
     var causeIndex = index;
     causeIndex ??= atoms.indexWhere((a) {
-      return a.clock == atom.cause;
+      return a.clock.hashCode == atom.cause.hashCode;
     });
 
     // checks wether it should be inserted or just added
@@ -50,14 +50,21 @@ class CausalTree<T> {
       atoms.add(atom);
     } else {
       causeIndex += 1;
+      var index = causeIndex;
 
       if (CausalAtom.isSibling(atom, atoms[causeIndex])) {
         // increase [index] as long as atom is not left/less of atoms[index]
         // Note: operator < is overwritten and means causal 'less'/left
 
+        for (; index < atoms.length; index++) {
+          if (!CausalAtom.leftIsLeft(atom, atoms[index])) break;
+        }
+
         while (causeIndex < atoms.length && !CausalAtom.leftIsLeft(atom, atoms[causeIndex])) {
           causeIndex++;
         }
+
+        print(causeIndex == index);
       }
 
       atoms.insert(causeIndex, atom);

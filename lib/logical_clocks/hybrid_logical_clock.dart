@@ -12,6 +12,8 @@ const RESOLUTION = 60000;
 // see Slides here: https://jlongster.com/s/dotjs-crdt-slides.pdf
 // View this app here: https://crdt.jlongster.com
 
+/// Importent: The Hlc compares onle milliseconds and counter not site!
+
 /// A Hybrid Logical Clock implementation.
 /// This class trades time precision for a guaranteed monotonically increasing
 /// clock in distributed systems.
@@ -24,6 +26,7 @@ const RESOLUTION = 60000;
 /// This Hlc implementation does not have the 64 bit represention as a logical clock, it always uses milliseconds - counter - site.
 /// This is due the fact, that javascript does not support xor manipulation on 64 bits
 /// it always converts it to 32 bits. So a 64 bit logical time, when used with bit shift, will lose the upper 32 bits!
+///
 class Hlc implements LogicalClock<Hlc> {
   final int ms;
 
@@ -34,10 +37,6 @@ class Hlc implements LogicalClock<Hlc> {
   final int site;
   int _minutes;
   int get minutes => _minutes;
-
-  @override
-  int get hashCode => _hashCode;
-  int _hashCode;
 
   String _internal;
 
@@ -139,43 +138,32 @@ class Hlc implements LogicalClock<Hlc> {
     return Hlc(msNew, counterNew, local.site);
   }
 
+  /// use hashcode  if compare to another HLC to check if they are really equal!
+  /// this uses the murmurhashv3 and hashes [milliseconds], [counter] and [site]
   @override
-  bool operator ==(other) => other is Hlc && ms == other.ms && counter == other.counter && site == other.site;
+  int get hashCode => _hashCode;
+  int _hashCode;
 
-  ///
-  /// meaning : left is older than right
-  /// returns [true] if left < right
-  /// This function also compares the node lexographically if node of l < node of r
+  /// Id same as hashCode, just for better reasoning
   @override
-  bool operator <(other) {
-    final o = other as Hlc;
+  int get id => _hashCode;
 
-    if (ms < o.ms) {
-      return true;
-    } else if (ms == o.ms) {
-      if (counter < o.counter) {
-        return true;
-      } else if (counter == o.counter) return site < o.site;
-    }
-
-    return false;
-  }
-
+  /// Do not use to compare two HLC if they are equal! Use only to compare, if
+  /// Time is equal. [site] is **NOT** considered => use [hashCode]
   @override
-  bool operator >(other) {
-    final o = other as Hlc;
+  bool operator ==(other) => other is Hlc && ms == other.ms && counter == other.counter;
 
-    if (ms > o.ms) {
-      return true;
-    } else if (ms == o.ms) {
-      if (counter > o.counter) {
-        return true;
-      } else if (counter == o.counter) return site > o.site;
-    }
+  /// The less operator compares only the [milliseconds] and [counter]!!!
+  /// this does not involve site
+  @override
+  bool operator <(o) => o is Hlc && (ms == o.ms ? counter < o.counter : ms < o.ms);
 
-    return false;
-  }
+  /// The greater operator compares only the [milliseconds] and [counter]!!!
+  /// this does not involve site
+  @override
+  bool operator >(o) => o is Hlc && (ms == o.ms ? counter > o.counter : ms > o.ms);
 
+  /// calculates the diffes of the [milliseconds] and [counter]
   @override
   List<int> operator -(other) {
     final o = other as Hlc;
@@ -191,36 +179,28 @@ class Hlc implements LogicalClock<Hlc> {
   @override
   String toStringRON() => 'S${site.toRadixString(16)}@T${ms.toRadixString(16)}-${counter.toRadixString(16)}';
 
+  /// * Hlc(30, ...).compareTo(Hlc(20, ..)) => 1
+  /// * Hlc(30, some counter).compareTo(Hlc(30, same counter)) => 0
+  /// * Hlc(20, ...).compareTo(Hlc(30, ..)) => -1
   @override
-
-// 1.compareTo(2) => -1
-// 2.compareTo(1) => 1
-// 1.compareTo(1) => 0
   int compareTo(Hlc other) {
     final res = ms.compareTo(other.ms);
-
-    if (res == 0) {
-      final cRes = counter.compareTo(other.counter);
-
-      if (cRes == 0) return site.compareTo(other.site);
-      return cRes;
-    }
+    if (res == 0) return counter.compareTo(other.counter);
     return res;
   }
 
   @override
-  int compareToDESC(Hlc other) {
-    final res = ms.compareTo(other.ms);
+  int compareToDESC(Hlc other) => compareTo(other) * -1;
 
-    if (res == 0) {
-      final cRes = counter.compareTo(other.counter);
-
-      if (cRes == 0) return site.compareTo(other.site) * -1;
-      return cRes * -1;
-    }
-
-    return res * -1;
+  @override
+  int compareWithSiteASC(Hlc other) {
+    final res = compareTo(other);
+    if (res == 0) return site.compareTo(other.site);
+    return res;
   }
+
+  @override
+  int compareWithSiteDESC(Hlc other) => compareWithSiteASC(other) * -1;
 }
 
 class ClockDriftException implements Exception {

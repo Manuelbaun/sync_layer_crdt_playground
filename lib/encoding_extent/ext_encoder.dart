@@ -26,7 +26,7 @@ class ExtendetEncoder implements ExtEncoder {
     if (o is LogicalTime) return msgpackEncode([o.counter, o.site]);
     if (o is Hlc) return msgpackEncode([o.ms, o.counter, o.site]);
     if (o is Value) return msgpackEncode([o.typeId, o.id, o.key, o.value]);
-    if (o is CausalAtom) return msgpackEncode([o.cause, o.clock, o.data]);
+    if (o is CausalAtom) return msgpackEncode([o.clock, o.cause, o.data]);
     if (o is Atom) return msgpackEncode([o.clock, o.data]);
     if (o is ObjectReference) return msgpackEncode([o.type, o.id]);
     if (o is ValueTransaction) return msgpackEncode([o.baseClock, o.internal]);

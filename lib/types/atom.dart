@@ -14,6 +14,11 @@ class Atom<T> implements AtomBase, Comparable<Atom<T>> {
   @override
   final LogicalClock clock;
 
+  /// its the clocks since the clock should be unique!
+  /// TODO: Test and reconsider id;
+  @override
+  int get id => clock.hashCode;
+
   int get site => clock.site;
   int get counter => clock.counter;
 

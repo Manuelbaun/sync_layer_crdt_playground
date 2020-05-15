@@ -1,8 +1,10 @@
 import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/logical_clocks/index.dart';
 import 'logial_clock.dart';
 
-/// somewhat close to lamport clock
-/// moor like a version vector
+/// Importent!!!
+/// when compare two logical clocks,
+/// it only compares the time aspects of it! it does not consider the site aspects
 class LogicalTime implements LogicalClock<LogicalTime> {
   @override
 
@@ -46,8 +48,17 @@ class LogicalTime implements LogicalClock<LogicalTime> {
     return LogicalTime(counter, site);
   }
 
+  /// * Hlc(30, ...).compareTo(Hlc(20, ..)) => 1
+  /// * Hlc(30, some counter).compareTo(Hlc(30, same counter)) => 0
+  /// * Hlc(20, ...).compareTo(Hlc(30, ..)) => -1
   @override
-  int compareTo(LogicalTime other) {
+  int compareTo(LogicalTime other) => counter.compareTo(other.counter);
+
+  @override
+  int compareToDESC(LogicalTime other) => compareTo(other) * -1;
+
+  @override
+  int compareWithSiteASC(LogicalTime other) {
     final res = counter.compareTo(other.counter);
     if (res == 0) {
       return site.compareTo(other.site);
@@ -56,71 +67,37 @@ class LogicalTime implements LogicalClock<LogicalTime> {
   }
 
   @override
-  int compareToDESC(LogicalTime other) {
-    final res = counter.compareTo(other.counter);
-    if (res == 0) {
-      return site.compareTo(other.site) * -1;
-    }
-    return res * -1;
-  }
+  int compareWithSiteDESC(LogicalTime other) => compareWithSiteASC(other) * -1;
 
-  // ///
-  // /// meaning : left is older than right
-  // /// returns [true] if left < right
-  // /// This function also compares the node lexographically if node of l < node of r
-  // /// Todo: think about, what if the hlc are identical
-  // static bool compareWithNodes(LogicalTime left, LogicalTime right) {
-  //   /// first by timestamp
-  //   if (left < right) return true;
-  //   if (left == right) return left.site < right.site;
-  //   return false;
-  // }
-
+  /// is the unique hash of the logical time,
+  /// it consists of counter and site as radix 16
+  /// hashed with MurmurHashV3
   @override
   int get hashCode => _hashCode;
 
+  /// Id same as [hashCode], just for better reasoning
   @override
-  bool operator ==(other) => other is LogicalTime && counter == other.counter && site == other.site;
+  int get id => _hashCode;
+
+  /// compares only counter/time!! not site!!
+  @override
+  bool operator ==(other) => other is LogicalTime && counter == other.counter;
 
   ///
-  /// meaning : left is older than right
-  /// returns [true] if left < right
-  /// This function also compares the node lexographically if node of l < node of r
+  /// compares the time if less/smaller counter => its older!
   @override
-  bool operator <(other) {
-    final o = other as LogicalTime;
+  bool operator <(o) => o is LogicalTime && counter < o.counter;
 
-    if (counter < o.counter) {
-      return true;
-    } else if (counter == o.counter) return site < o.site;
-
-    return false;
-  }
-
+  /// compares the time if greater/bigger counter => its newer!
   @override
-  bool operator >(other) {
-    final o = other as LogicalTime;
+  bool operator >(o) => o is LogicalTime && counter > o.counter;
 
-    if (counter > o.counter) {
-      return true;
-    } else if (counter == o.counter) return site > o.site;
-
-    return false;
-  }
-
+  /// calculates only the diffes of the [counter]
   @override
   List<int> operator -(other) {
     final o = other as LogicalTime;
     return [counter - o.counter];
   }
-
-  /// added List<int> as difference to the counter !!
-  // @override
-  // void operator +(other) {
-  //   final o = other as List<int>;
-  //   assert(o.length != 1, 'adding only a list of int of length 1');
-  //   counter += o[0];
-  // }
 
   @override
   String toString() => _logicalClock;

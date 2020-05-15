@@ -1,3 +1,4 @@
+//  returns [elapsedMicroseconds]
 int measureExecution(String name, Function func, {skipLog = false}) {
   final s = Stopwatch();
   s.start();

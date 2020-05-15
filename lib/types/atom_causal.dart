@@ -2,13 +2,31 @@ import 'package:sync_layer/basic/hashing.dart';
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'atom_base.dart';
 
+enum RelationShip { Sibling, CausalLeft, CausalRight, Unknown, Identical }
+
+/// for a causal atom to work, the clock must be from the same type,
+/// no mix of Hlc and logicaltime
+///
+/// Atoms should be not mutable,
+/// otherwise recalculate the hash!!!!
 class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
-  /// the clock is the atom [clock]
+  CausalAtom(this.clock, this.cause, this.data) : assert(clock != null) {
+    _hashcode = clock.hashCode ^ nestedHashing(data) ^ (cause?.hashCode ?? 0);
+  }
+  int _hashcode;
+
+  /// its the clocks since the clock should be unique!
+  /// TODO: Test and reconsider id;
+  @override
+  int get id => clock.hashCode;
+
+  /// the clock is the atoms [clock] / id?
   @override
   final LogicalClock clock;
 
   /// the cause is the clock of the causing atom => [clock]
   final LogicalClock cause;
+  int get causeId => cause?.hashCode;
 
   int get site => clock.site;
   int get counter => clock.counter;
@@ -16,21 +34,54 @@ class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
   @override
   final T data;
 
-  CausalAtom(this.clock, this.cause, this.data) : assert(clock != null);
-  // assert(cause != null ?? clock.runtimeType != cause.runtimeType, 'clock and cause need to be the same type!');
+  static bool isSibling(CausalAtom a, CausalAtom b) => a.causeId == b.causeId;
 
-  static bool isSibling(CausalAtom a, CausalAtom b) => a.cause == b.cause;
+  /// all comparison are related to Causal Atom [a]
+  static RelationShip getRelationshipOf_A_to_B(CausalAtom a, CausalAtom b) => a.relatesTo(b);
+
+  /// all comparison are related to Causal Atom [a]
+  RelationShip relatesTo(CausalAtom other) {
+    if (this == other) return RelationShip.Identical;
+    if (causeId == null && other.causeId == null) return RelationShip.Unknown;
+
+    if (causeId == null && other.causeId != null) {
+      if (id == other.causeId) return RelationShip.CausalLeft;
+    }
+
+    if (causeId != null && other.causeId == null) {
+      if (causeId == other.id) return RelationShip.CausalRight;
+    }
+
+    if (causeId == other.causeId) return RelationShip.Sibling;
+
+    // is this right
+    return RelationShip.Unknown;
+  }
 
   /// This function only to be used in the context when two atoms are siblings to the same cause.
   /// then a loop should call this function to compare if the atom on the left side
   /// is still
-  static bool leftIsLeft(CausalAtom left, CausalAtom right) {
-    if (left.clock > right.clock) {
-      return true;
-    } else if (left.clock == right.clock) {
-      return left.site > right.site;
+  static bool leftIsLeft(CausalAtom left, CausalAtom other) {
+    if (left.site == other.site) {
+      return left.clock < other.clock;
     }
-    return false;
+    return left.site < other.site;
+
+    // if (left.clock > right.clock) {
+    //   return true;
+    // } else if (left.clock == right.clock) {
+    //   return left.site > right.site;
+    // }
+    // return false;
+  }
+
+  // return site == other.site ? clock < other.clock : site < other.site;
+  bool isLeftOf(CausalAtom other) {
+    return clock == other.clock ? site > other.site : clock > other.clock;
+    // if (site == other.site) {
+    //   return clock < other.clock;
+    // }
+    // return site < other.site;
   }
 
   /// Checks wheter Atom **lhs** is causal **`less`** then **rhs**.
@@ -59,22 +110,18 @@ class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
     return 0;
   }
 
-  String get clockString => clock.toStringRON();
+  String get selfString => clock.toStringRON();
   String get causeString => cause?.toStringRON();
 
   @override
-  String toString() => '${clockString}::${causeString} : ${data}';
+  String toString() => '${selfString}->${causeString} : ${data}';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
-
-    /// TODO: what if cause is null???
-    return o is CausalAtom && clock == o.clock && cause == o.cause && data == o.data;
+    return o is CausalAtom && hashCode == o.hashCode;
   }
 
   @override
-  int get hashCode {
-    return clock.hashCode ^ nestedHashing(data) ^ cause?.hashCode;
-  }
+  int get hashCode => _hashcode;
 }
