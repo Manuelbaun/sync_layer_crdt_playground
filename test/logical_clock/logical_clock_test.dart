@@ -17,63 +17,63 @@ void main() {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(10, 123);
 
-      expect(t1 == t2, isFalse);
+      expect(t1.deepEqual(t2), isFalse);
     });
 
     test('comp == not equal: same time not same site', () {
       final t1 = LogicalTime(10, 122);
       final t2 = LogicalTime(10, 123);
 
-      expect(t1 == t2, isFalse);
+      expect(t1.deepEqual(t2), isFalse);
     });
 
     test('comp == equal: same time, same site', () {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(0, 123);
 
-      expect(t1 == t2, isTrue);
+      expect(t1.deepEqual(t2), isTrue);
     });
 
     test('comp < same site', () {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(1, 123);
 
-      expect(t1 < t2, isTrue);
+      expect(t1.isLessWithSite(t2), isTrue);
     });
 
     test('comp > same site', () {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(1, 123);
 
-      expect(t2 > t1, isTrue);
+      expect(t2.isGreaterWithSite(t1), isTrue);
     });
 
     test('comp < diffenent site', () {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(1, 123);
 
-      expect(t1 < t2, isTrue);
+      expect(t1.isLessWithSite(t2), isTrue);
     });
 
     test('comp > different site', () {
       final t1 = LogicalTime(0, 123);
       final t2 = LogicalTime(1, 124);
 
-      expect(t2 > t1, isTrue);
+      expect(t2.isGreaterWithSite(t1), isTrue);
     });
 
     test('comp < same time, diffenent site', () {
       final t1 = LogicalTime(1, 122);
       final t2 = LogicalTime(1, 123);
 
-      expect(t1 < t2, isTrue);
+      expect(t1.isLessWithSite(t2), isTrue);
     });
 
     test('comp > different site', () {
       final t1 = LogicalTime(1, 122);
       final t2 = LogicalTime(1, 123);
 
-      expect(t2 > t1, isTrue);
+      expect(t2.isGreaterWithSite(t1), isTrue);
     });
   });
 
@@ -105,17 +105,11 @@ void main() {
 
             test('LC - time: ${comStr(t1 == t2)} - sites : ${comStr(site1 == site2)}', () {
               if (t1 == t2 && site1 == site2) {
-                expect(c1 == c2, isTrue);
-                expect(c2 == c1, isTrue);
-
-                expect(c1 != c2, isFalse);
-                expect(c2 != c1, isFalse);
+                expect(c1.deepEqual(c2), isTrue);
+                expect(c2.deepEqual(c1), isTrue);
               } else {
-                expect(c1 == c2, isFalse);
-                expect(c2 == c1, isFalse);
-
-                expect(c1 != c2, isTrue);
-                expect(c2 != c1, isTrue);
+                expect(c1.deepEqual(c2), isFalse);
+                expect(c2.deepEqual(c1), isFalse);
               }
             });
           }
@@ -139,8 +133,8 @@ void main() {
 
             test('LC - time: ${comStr(t1 == t2)} - sites : ${comStr(site1 == site2)}', () {
               if (t1 < t2) {
-                expect(c1 < c2, isTrue);
-                expect(c2 > c1, isTrue);
+                expect(c1.isLessWithSite(c2), isTrue);
+                expect(c2.isGreaterWithSite(c1), isTrue);
 
                 expect(c1.compareTo(c2), -1);
                 expect(c1.compareToDESC(c2), 1);
@@ -148,8 +142,8 @@ void main() {
                 expect(c2.compareToDESC(c1), -1);
               } else if (t1 == t2) {
                 if (site1 < site2) {
-                  expect(c1 < c2, isTrue);
-                  expect(c2 > c1, isTrue);
+                  expect(c1.isLessWithSite(c2), isTrue);
+                  expect(c2.isGreaterWithSite(c1), isTrue);
 
                   expect(c1.compareTo(c2), -1);
                   expect(c1.compareToDESC(c2), 1);
@@ -157,8 +151,8 @@ void main() {
                   expect(c2.compareToDESC(c1), -1);
                 }
                 if (site1 > site2) {
-                  expect(c1 > c2, isTrue);
-                  expect(c2 < c1, isTrue);
+                  expect(c1.isGreaterWithSite(c2), isTrue);
+                  expect(c2.isLessWithSite(c1), isTrue);
 
                   expect(c1.compareTo(c2), 1);
                   expect(c1.compareToDESC(c2), -1);
@@ -166,11 +160,8 @@ void main() {
                   expect(c2.compareToDESC(c1), 1);
                 }
                 if (site1 == site2) {
-                  expect(c1 == c2, isTrue);
-                  expect(c2 == c1, isTrue);
-
-                  expect(c1 != c2, isFalse);
-                  expect(c2 != c1, isFalse);
+                  expect(c1.deepEqual(c2), isTrue);
+                  expect(c2.deepEqual(c1), isTrue);
 
                   expect(c1.compareTo(c2), 0);
                   expect(c1.compareToDESC(c2), 0);
@@ -197,8 +188,7 @@ void main() {
 
   group('Comparing diffing', () {
     String comStr(bool b) => b ? 'same'.padRight(10, ' ') : 'different'.padRight(10, ' ');
-    // final times = [0, 1, 2];
-    // final sites = [111, 222, 333];
+
     for (var t1 in times) {
       for (var t2 in times) {
         for (var site1 in sites) {
