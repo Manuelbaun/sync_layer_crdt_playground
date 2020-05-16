@@ -15,8 +15,8 @@ class CausalTree<T> {
   Stream<CausalAtom> get stream => _controller.stream;
 
   // should we use deltedAtoms?
-  final Set<LogicalTime> _deletedAtoms = {};
-  final Set<LogicalTime> _cache = {};
+  final Set<LogicalClock> _deletedAtoms = {};
+  final Set<LogicalClock> _cache = {};
 
   // if atoms could not find the cause in this tree, but belong to this one
   final pendingAtoms = <CausalAtom>[];
@@ -72,12 +72,9 @@ class CausalTree<T> {
       // throw AssertionError('Pending is not supported yet');
     }
 
-    // if (yarns[atom.id.site] == null) {
-    //   yarns[atom.id.site] = <CausalAtom<T>>[];
-    // }
+    yarns[atom.site] ??= <CausalAtom<T>>[];
+    yarns[atom.site].add(atom);
 
-    // yarns[atom.id.site].add(atom);
-    // print('broadcast');
     _controller.add(atom);
   }
 
