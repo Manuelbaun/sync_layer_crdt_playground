@@ -1,5 +1,4 @@
-import 'id.dart';
-import 'lc2.dart';
+import 'package:sync_layer/crdts/id/index.dart';
 
 enum RelationShip { Sibling, CausalLeft, CausalRight, Unknown, Identical }
 

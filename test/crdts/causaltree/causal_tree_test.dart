@@ -1,6 +1,5 @@
-import 'package:sync_layer/crdts/causal_tree/causal_entry.dart';
-import 'package:sync_layer/crdts/causal_tree/causal_tree.dart';
-import 'package:sync_layer/crdts/causal_tree/lc2.dart';
+import 'package:sync_layer/crdts/causal_tree/index.dart';
+import 'package:sync_layer/crdts/id/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 

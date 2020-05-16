@@ -1,10 +1,9 @@
 import 'package:sync_layer/basic/index.dart';
-
-import 'lc2.dart';
+import 'package:sync_layer/crdts/id/logical_clock_base.dart';
 
 /// At the moment Id is only used within Causal Tree!!!!
 class Id {
-  final LogicalClock ts;
+  final LogicalClockBase ts;
   final int site;
   final int _hashCode;
   Id(this.ts, this.site)
@@ -19,14 +18,15 @@ class Id {
   @override
   String toString() => 'Id(ts: $ts, site: $site)';
 
-  String toRON() => 'S$site@T${ts.logicalTime}';
+  String toRON() => 'S$site@T${ts}';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
+    return _hashCode == o.hashCode;
 
-    /// Or hashcode!
-    return o is Id && o.ts == ts && o.site == site;
+    // /// Or hashcode!
+    // return o is Id && o.ts == ts && o.site == site;
   }
 
   @override

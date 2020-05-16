@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:sync_layer/crdts/id/index.dart';
+
 import 'causal_entry.dart';
-import 'id.dart';
-import 'lc2.dart';
 
 enum FilterSemantic { AND, OR }
 

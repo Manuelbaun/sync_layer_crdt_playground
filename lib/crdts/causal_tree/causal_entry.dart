@@ -1,7 +1,6 @@
 import 'package:sync_layer/basic/hashing.dart';
 import 'causal_entry_base.dart';
-import 'id.dart';
-import 'lc2.dart';
+import 'package:sync_layer/crdts/id/index.dart';
 
 /// for a causal atom to work, the clock must be from the same type,
 /// no mix of Hlc and logicaltime
@@ -11,11 +10,7 @@ import 'lc2.dart';
 /// , Comparable<CausalEntry> removed Comparable!!
 ///
 class CausalEntry<T> implements CausalEntryBase {
-  CausalEntry(
-    this.id, {
-    this.data,
-    this.cause,
-  }) : assert(id != null, 'id must be provided') {
+  CausalEntry(this.id, {this.data, this.cause}) : assert(id != null, 'id must be provided') {
     _hashcode = id.hashCode ^ nestedHashing(data) ^ (cause?.hashCode ?? 0);
   }
   int _hashcode;
