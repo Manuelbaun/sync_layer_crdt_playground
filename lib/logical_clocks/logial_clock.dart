@@ -1,3 +1,9 @@
+/// Compare operator like [>, <, ==] consider only the time aspect of the clock
+/// not the site.
+///
+/// To fully compare if two Logical clocks are equal, use the provides compare
+/// methods [isLessWithSite], [isGreaterWithSite] etc
+///
 abstract class LogicalClock<T> implements Comparable<T> {
   final int counter;
   final int site;
@@ -31,14 +37,16 @@ abstract class LogicalClock<T> implements Comparable<T> {
   /// This compares **without** site!
   int compareToDESC(T other);
 
-  /// this compares with Site considered
+  /// this compares **with** Site considered
   int compareWithSiteASC(T other);
 
-  /// this compares with Site considered
+  /// this compares **with** Site considered
   int compareWithSiteDESC(T other);
 
+  /// this compares **with** site
   bool isLessWithSite(T o);
 
+  /// this compares **with** site
   bool isGreaterWithSite(T o);
 
   // compares the two hashcodes
