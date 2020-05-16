@@ -81,14 +81,17 @@ class SyncableObjectImpl implements SyncableObject {
 
     _history.add(atom);
     // if field was not set or the local time happend before [hb] to new Atom
-    if (fieldClock == null || fieldClock < atom.clock) {
+
+    // fieldClock < atom.clock ||
+    // fieldClock == atom.clock && fieldClock.site < atom.clock.site
+    if (fieldClock == null || fieldClock.isLessWithSite(atom.clock)) {
       _setField(atom);
       return 2;
     }
 
-    if (fieldClock == atom.clock) return 1;
+    if (fieldClock.deepEqual(atom.clock)) return 1;
 
-    // if (fieldClock > atom.clock)
+    // if fieldClock > atom.clock
     return 0;
   }
 

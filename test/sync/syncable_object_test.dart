@@ -197,7 +197,7 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      expect(obj1.getFieldClock('1') == obj2.getFieldClock('1'), isFalse);
+      expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
       expect(obj1.getFieldClock('1').site, 11111);
       expect(obj2.getFieldClock('1').site, 22222);
 
@@ -212,7 +212,7 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      expect(obj1.getFieldClock('1') == obj2.getFieldClock('1'), isFalse);
+      expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
       expect(obj1.getFieldClock('1').site, 11111);
       expect(obj2.getFieldClock('1').site, 22222);
 
@@ -222,9 +222,12 @@ void main() {
       atoms2.forEach(obj1.applyAtom);
       atoms1.forEach(obj2.applyAtom);
 
-      expect(obj1.getFieldClock('1') == obj2.getFieldClock('1'), isTrue);
-      expect(obj1.getFieldClock('1').site, 22222);
-      expect(obj2.getFieldClock('1').site, 22222);
+      final h1 = obj1.getFieldClock('1');
+      final h2 = obj2.getFieldClock('1');
+
+      expect(h1.deepEqual(h2), isTrue);
+      expect(h1.site, 22222);
+      expect(h2.site, 22222);
 
       expect(obj1['1'], 'Test');
       expect(obj2['1'], 'Test');
@@ -240,7 +243,7 @@ void main() {
         atoms1.forEach(obj1.applyAtom);
         atoms2.forEach(obj2.applyAtom);
 
-        expect(obj1.getFieldClock('1') == obj2.getFieldClock('1'), isFalse);
+        expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
         expect(obj1.getFieldClock('1').site, 11111);
         expect(obj2.getFieldClock('1').site, 22222);
 
@@ -250,7 +253,7 @@ void main() {
         atoms2.forEach(obj1.applyAtom);
         atoms1.forEach(obj2.applyAtom);
 
-        expect(obj1.getFieldClock('1') == obj2.getFieldClock('1'), isTrue);
+        expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isTrue);
         expect(obj1.getFieldClock('1').site, 11111);
         expect(obj2.getFieldClock('1').site, 11111);
 

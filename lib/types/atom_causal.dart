@@ -40,9 +40,13 @@ class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
   static RelationShip getRelationshipOf_A_to_B(CausalAtom a, CausalAtom b) => a.relatesTo(b);
 
   /// all comparison are related to Causal Atom [a]
+  /// should be sorted by frequency of occurrence
   RelationShip relatesTo(CausalAtom other) {
+    /// is this relevant?
     if (this == other) return RelationShip.Identical;
+
     if (causeId == null && other.causeId == null) return RelationShip.Unknown;
+    if (causeId == other.causeId) return RelationShip.Sibling;
 
     if (causeId == null && other.causeId != null) {
       if (id == other.causeId) return RelationShip.CausalLeft;
@@ -52,36 +56,24 @@ class CausalAtom<T> implements AtomBase<T>, Comparable<CausalAtom> {
       if (causeId == other.id) return RelationShip.CausalRight;
     }
 
-    if (causeId == other.causeId) return RelationShip.Sibling;
-
     // is this right
     return RelationShip.Unknown;
   }
 
-  /// This function only to be used in the context when two atoms are siblings to the same cause.
+  /// This function only to be used in the context when two atoms are [siblings] to the same cause.
   /// then a loop should call this function to compare if the atom on the left side
-  /// is still
-  static bool leftIsLeft(CausalAtom left, CausalAtom other) {
-    if (left.site == other.site) {
-      return left.clock < other.clock;
-    }
-    return left.site < other.site;
+  /// is still,
+  /// is not to be used, when comparing two atoms. These atoms do have cause and effekt relationship
+  // static bool leftIsLeft(CausalAtom left, CausalAtom other) {
+  //   return left.clock == other.clock ? left.site > other.site : left.clock > other.clock;
+  // }
 
-    // if (left.clock > right.clock) {
-    //   return true;
-    // } else if (left.clock == right.clock) {
-    //   return left.site > right.site;
-    // }
-    // return false;
-  }
-
-  // return site == other.site ? clock < other.clock : site < other.site;
+  /// This function only to be used in the context when two atoms are [siblings] to the same cause.
+  /// then a loop should call this function to compare if the atom on the left side
+  /// is still,
+  /// is not to be used, when comparing two atoms. These atoms do have cause and effekt relationship
   bool isLeftOf(CausalAtom other) {
     return clock == other.clock ? site > other.site : clock > other.clock;
-    // if (site == other.site) {
-    //   return clock < other.clock;
-    // }
-    // return site < other.site;
   }
 
   /// Checks wheter Atom **lhs** is causal **`less`** then **rhs**.

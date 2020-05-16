@@ -37,6 +37,13 @@ abstract class LogicalClock<T> implements Comparable<T> {
   /// this compares with Site considered
   int compareWithSiteDESC(T other);
 
+  bool isLessWithSite(T o);
+
+  bool isGreaterWithSite(T o);
+
+  // compares the two hashcodes
+  bool deepEqual(T o);
+
   /// compares only if logical time/counter/ms ar equal and not if Logical Clock is
   /// equal with site to another logical clock. for this use hashCode!
   @override

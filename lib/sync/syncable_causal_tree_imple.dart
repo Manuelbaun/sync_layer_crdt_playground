@@ -8,17 +8,22 @@ class CausalTree<T> {
   LogicalTime localClock;
 
   //! this Atom array has to be the same on all other sides.
-  List<CausalAtom<T>> atoms = <CausalAtom<T>>[];
-  final _controller = StreamController<CausalAtom>();
+  List<CausalAtom<T>> sequence = <CausalAtom<T>>[];
+
+  /// TODO: sync is true
+  final _controller = StreamController<CausalAtom>(sync: true);
   Stream<CausalAtom> get stream => _controller.stream;
 
   // should we use deltedAtoms?
-  Set<LogicalTime> deletedAtoms = {};
-  Set<LogicalTime> allAtomIds = {};
+  final Set<LogicalTime> _deletedAtoms = {};
+  final Set<LogicalTime> _cache = {};
 
-  int get length => allAtomIds.length - deletedAtoms.length;
-  int get deleteAtomsLength => deletedAtoms.length;
-  int get allAtomsLength => allAtomIds.length;
+  // if atoms could not find the cause in this tree, but belong to this one
+  final pendingAtoms = <CausalAtom>[];
+
+  int get length => _cache.length - _deletedAtoms.length;
+  int get deleteAtomsLength => _deletedAtoms.length;
+  int get allAtomsLength => _cache.length;
 
   //! the local site cache, does not need to be the same in the cloud
   final yarns = <int, List<CausalAtom>>{};
@@ -28,46 +33,43 @@ class CausalTree<T> {
 
   CausalTree(this.site) : localClock = LogicalTime(0, site);
 
-  // importent, the timestamp needs to be overritten with the new one!
-  // only this way, LogicalTime send is able to increment the counter field;
-  LogicalTime _newID() {
-    return localClock = LogicalTime.send(localClock);
-  }
+  /// New LogicalTime will increase monotonically. Therefore, an Atoms of the
+  /// same site cannot have the same counter.
+  LogicalTime _newID() => localClock = LogicalTime(localClock.counter + 1, site);
 
   void _insert(CausalAtom atom, [int index]) {
-    // Do not insert if already inserted
-    if (allAtomIds.contains(atom.clock)) return;
-    allAtomIds.add(atom.clock);
+    if (_cache.contains(atom.clock)) return;
+    _cache.add(atom.clock);
 
     // set cause index, if null, then search!
     var causeIndex = index;
-    causeIndex ??= atoms.indexWhere((a) {
-      return a.clock.hashCode == atom.cause.hashCode;
-    });
+    causeIndex ??= sequence.indexWhere((a) => a.id == atom.causeId);
 
-    // checks wether it should be inserted or just added
-    if ((causeIndex >= (atoms.length - 1)) || causeIndex < 0) {
-      atoms.add(atom);
-    } else {
+    if (sequence.isEmpty || causeIndex >= sequence.length - 1) {
+      sequence.add(atom);
+      // print('Add $atom  :: $causeIndex');
+    } else
+
+    /// insert after cause
+    if (causeIndex >= 0) {
       causeIndex += 1;
-      var index = causeIndex;
 
-      if (CausalAtom.isSibling(atom, atoms[causeIndex])) {
-        // increase [index] as long as atom is not left/less of atoms[index]
-        // Note: operator < is overwritten and means causal 'less'/left
-
-        for (; index < atoms.length; index++) {
-          if (!CausalAtom.leftIsLeft(atom, atoms[index])) break;
-        }
-
-        while (causeIndex < atoms.length && !CausalAtom.leftIsLeft(atom, atoms[causeIndex])) {
+      /// checks if atom to insert and atom at causeIndex are siblings
+      if (atom.causeId == sequence[causeIndex].causeId) {
+        /// increase causeIndex and check if atom at causeIndex is left of current atom
+        while (causeIndex < sequence.length && sequence[causeIndex].isLeftOf(atom)) {
           causeIndex++;
         }
-
-        print(causeIndex == index);
       }
 
-      atoms.insert(causeIndex, atom);
+      // print('insert $atom :: $causeIndex');
+      sequence.insert(causeIndex, atom);
+    } else if (causeIndex < 0 && sequence.isNotEmpty) {
+      pendingAtoms.add(atom);
+
+      /// TODO: mechanism to insert pending atom
+      print('pending atom $atom');
+      // throw AssertionError('Pending is not supported yet');
     }
 
     // if (yarns[atom.id.site] == null) {
@@ -75,14 +77,14 @@ class CausalTree<T> {
     // }
 
     // yarns[atom.id.site].add(atom);
-
+    // print('broadcast');
     _controller.add(atom);
   }
 
   // Add to deletedAtoms set
   void _delete(CausalAtom atom, [int index]) {
-    deletedAtoms.add(atom.cause);
-    deletedAtoms.add(atom.clock);
+    _deletedAtoms.add(atom.cause);
+    _deletedAtoms.add(atom.clock);
     _insert(atom, index);
   }
 
@@ -110,17 +112,17 @@ class CausalTree<T> {
   CausalAtom<T> push(T value) {
     final atom = CausalAtom<T>(
       _newID(),
-      atoms.isNotEmpty ? atoms.last.clock : null,
+      sequence.isNotEmpty ? sequence.last.clock : null,
       value,
     );
 
-    _insert(atom, atoms.length);
+    _insert(atom, sequence.length);
     // maybe just add here?
     return atom;
   }
 
   void pop() {
-    _delete(atoms.last, atoms.length);
+    _delete(sequence.last, sequence.length);
   }
 
   CausalAtom<T> delete(CausalAtom a) {
@@ -134,64 +136,87 @@ class CausalTree<T> {
     return atom;
   }
 
-  // TODO assert if no filter;
-  static CausalTree filter(CausalTree tree, {int timestamp, Set<int> siteid}) {
-    final newTree = CausalTree(tree.site);
+  /// [semantic] is set to [OR] by default, means either [ts] or [siteid] will be filterd by
+  ///
+  /// if set to **AND**: it is expected to use one or both [tsMin, tsMax] **and** the [siteid/s]
+  ///
+  /// When filter by time:  **tsMin <= ts < tsMax**
+  /// [tsMin] is inclusive
+  /// [tsMax] is not included anymore
+  ///
+  List<CausalAtom> filtering({
+    int tsMin,
+    int tsMax,
+    Set<int> siteid,
+    bool containsDeleted = false,
+    semantic = FilterSemantic.OR,
+  }) {
+    assert(!(tsMax == null && tsMin == null && siteid == null), 'all filter are null, cannot filter by something');
+
     var atoms = <CausalAtom>[];
 
-    if (siteid != null) {
-      Set ids = siteid.toSet();
-      atoms.addAll(tree.atoms.where((a) => ids.contains(a.site)));
-    }
+    for (var a in sequence) {
+      var hasTs = _filterTimestamp(a, tsMin, tsMax);
+      var hasId = _filterSiteIds(a, siteid);
+      var isDeleted = _filterIsDelete(a);
 
-    if (timestamp != null) {
-      if (atoms.isNotEmpty) {
-        atoms = atoms.where((a) => a.clock.counter <= timestamp).toList();
+      var should = false;
+      if (semantic == FilterSemantic.OR) {
+        should = (hasTs || hasId) && !isDeleted;
       } else {
-        atoms.addAll(tree.atoms.where((a) => a.clock.counter <= timestamp));
+        should = hasTs && hasId && !isDeleted;
       }
+
+      // final aStr = a.toString().padRight(20);
+      // final s = '$should'.padRight(10);
+      // final ht = '$hasTs'.padRight(10);
+      // final hID = '$hasId'.padRight(10);
+      // final hD = '$isDeleted'.padRight(10);
+
+      // print('$aStr => $s : TS: $ht : ID: $hID  D: $hD');
+
+      if (should) atoms.add(a);
     }
 
-    newTree.mergeRemoteAtoms(atoms);
-
-    return newTree;
+    return atoms;
   }
 
-  ///
-  /// What happens if the ref points/parent are filted out????
-  /// CausalLink breaks?
-  // TODO assert if no filter;
-  static CausalTree filter2(CausalTree tree, {int timestamp, Set<int> siteid}) {
-    final newTree = CausalTree(tree.site);
-    var filteredYarns = <int, List<CausalAtom>>{};
+  /// returns [false] if tsMin [AND] tsMax is [null], else check the time cases
+  bool _filterTimestamp(CausalAtom a, int tsMin, int tsMax) {
+    if (tsMin == null && tsMax == null) return false;
 
-    if (siteid != null) {
-      for (final id in siteid) {
-        filteredYarns[id] = tree.yarns[id];
-      }
+    if (tsMin != null && tsMax != null) {
+      return tsMin <= a.counter && a.counter < tsMax;
     }
 
-    if (timestamp != null) {
-      final yarns = siteid != null ? filteredYarns : tree.yarns;
+    if (tsMin != null) return tsMin <= a.clock.counter;
+    if (tsMax != null) return a.clock.counter < tsMax;
 
-      for (final atomList in yarns.values) {
-        final index = atomList.indexWhere((a) => a.clock.counter == timestamp);
-        newTree.mergeRemoteAtoms(atomList.sublist(0, index + 1));
-      }
-    } else {
-      // apply filterd yarns
-      for (final yarn in filteredYarns.values) {
-        newTree.mergeRemoteAtoms(yarn);
-      }
-    }
+    throw AssertionError('should never be reached');
+  }
 
-    return newTree;
+  /// returns true if data is null or the atom is deleted
+  bool _filterIsDelete(CausalAtom a) {
+    return a.data == null || _deletedAtoms.contains(a.clock);
+  }
+
+  /// returns false if siteid is null or does not contain the id
+  bool _filterSiteIds(CausalAtom a, Set<int> siteid) {
+    return siteid == null ? false : siteid.contains(a.site);
   }
 
   @override
   String toString() {
-    return atoms.where((a) => !(a.data == null || deletedAtoms.contains(a.clock))).map(((a) {
+    return sequence.where((a) => !(a.data == null || _deletedAtoms.contains(a.clock))).map(((a) {
       return a.data;
     })).join('');
   }
 }
+
+enum FilterSemantic { AND, OR }
+
+// class TimestampFilter {
+//   final int min;
+//   final int max;
+//   TimestampFilter({this.max, this.min});
+// }

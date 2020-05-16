@@ -189,6 +189,29 @@ class Hlc implements LogicalClock<Hlc> {
     return res;
   }
 
+  /// checks also with site!
+  @override
+  bool isLessWithSite(Hlc o) {
+    if (ms == o.ms) {
+      if (counter == o.counter) return site < o.site;
+      return counter < o.counter;
+    }
+    return ms < o.ms;
+  }
+
+  @override
+  bool isGreaterWithSite(Hlc o) {
+    if (ms == o.ms) {
+      if (counter == o.counter) return site > o.site;
+      return counter > o.counter;
+    }
+    return ms > o.ms;
+  }
+
+  @override
+  // bool isEqualWithSite(Hlc o) => ms == o.ms && counter == o.counter && site == o.site;
+  bool deepEqual(Hlc o) => hashCode == o.hashCode;
+
   @override
   int compareToDESC(Hlc other) => compareTo(other) * -1;
 

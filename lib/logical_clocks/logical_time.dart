@@ -92,6 +92,22 @@ class LogicalTime implements LogicalClock<LogicalTime> {
   @override
   bool operator >(o) => o is LogicalTime && counter > o.counter;
 
+  // checks also with site!
+  @override
+  bool isLessWithSite(LogicalTime o) {
+    if (counter == o.counter) return site < o.site;
+    return counter < o.counter;
+  }
+
+  @override
+  bool isGreaterWithSite(LogicalTime o) {
+    if (counter == o.counter) return site > o.site;
+    return counter > o.counter;
+  }
+
+  @override
+  bool deepEqual(LogicalTime o) => hashCode == o.hashCode;
+
   /// calculates only the diffes of the [counter]
   @override
   List<int> operator -(other) {
