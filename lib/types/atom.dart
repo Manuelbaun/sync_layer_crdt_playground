@@ -1,7 +1,8 @@
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:meta/meta.dart';
 import 'package:sync_layer/basic/hashing.dart';
 
-import 'atom_base.dart';
+import 'abstract/atom_base.dart';
+import 'id.dart';
 
 /// The [data] must be either an encodeable, which can be en/de coded by messagepack
 /// or must be provided by the value en/decoder extension classes [ValueDecoder] [ValueEncoder]
@@ -10,36 +11,30 @@ import 'atom_base.dart';
 /// Map/List etc do not have deep equality by default, hence two maps with the exact same values
 /// do not have the same hashcode. To get the same hashcode loop over every entry and calculate the hashcode
 
-class Atom<T> implements AtomBase, Comparable<Atom<T>> {
-  @override
-  final LogicalClock clock;
+/// This atom is used to transport the Data
+class Atom<T> implements AtomBase<T> {
+  Atom(this.id, {@required this.data})
+      : assert(id != null),
+        assert(data != null) {
+    _hashCode = id.hashCode ^ nestedHashing(data);
+  }
 
-  /// its the clocks since the clock should be unique!
-  /// TODO: Test and reconsider id;
   @override
-  int get id => clock.hashCode;
-
-  int get site => clock.site;
-  int get counter => clock.counter;
+  final Id id;
 
   @override
   final T data;
+  int _hashCode;
 
-  Atom(this.clock, this.data);
+  /// TODO Test if it works as expected!
+  @override
+  int compareTo(AtomBase<T> other) => id.ts - other.id.ts;
 
   @override
-  int compareTo(Atom<T> other) {
-    return clock.compareTo(other.clock);
-  }
-
-  int compareToDESC(Atom<T> other) {
-    return clock.compareToDESC(other.clock);
-  }
+  int compareToDESC(AtomBase<T> other) => -(id.ts - other.id.ts);
 
   @override
-  String toString() {
-    return 'Atom(ts: ${clock.toStringHuman()}, value: $data)';
-  }
+  String toString() => 'Atom(id: $id, data: $data)';
 
   @override
   bool operator ==(Object o) {
@@ -48,7 +43,5 @@ class Atom<T> implements AtomBase, Comparable<Atom<T>> {
   }
 
   @override
-  int get hashCode {
-    return clock.hashCode ^ nestedHashing(data);
-  }
+  int get hashCode => _hashCode;
 }

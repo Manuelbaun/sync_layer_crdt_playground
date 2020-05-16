@@ -1,56 +1,23 @@
 import 'dart:async';
 
-import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/basic/hashing.dart';
-import 'package:sync_layer/sync/abstract/index.dart';
-import 'package:sync_layer/sync/index.dart';
-import 'package:sync_layer/types/index.dart';
+import 'package:sync_layer/sync/abstract/syncable_object.dart';
+import 'package:sync_layer/sync/syncable_object_impl.dart';
+import 'package:sync_layer/types/abstract/atom_base.dart';
+import 'package:sync_layer/types/hybrid_logical_clock.dart';
 import 'package:test/test.dart';
+
+import 'fake_accessor.dart';
 
 // TODO: Test accessing syncable object
 // todo: subtye syncable object!
-
-class TestAccessor implements Accessor {
-  TestAccessor(this.type, this.site, this.update) {
-    baseClock = Hlc(DateTime(2020).millisecondsSinceEpoch, 0, site);
-  }
-
-  Hlc baseClock;
-  void Function(Atom) update;
-  final int site;
-  @override
-  int type;
-
-  @override
-  void onUpdate<V>(List<V> values) {
-    final atoms = values.map((v) {
-      // creates new baseClock
-      baseClock = Hlc.send(baseClock);
-      // send atom with that baseClock
-      return Atom(baseClock, v);
-    });
-
-    atoms.forEach(update);
-    // so.applyAtom(a);
-  }
-
-  @override
-  String generateID() {
-    return '__hello_world__';
-  }
-
-  @override
-  SyncableObject objectLookup(ObjectReference ref) {
-    return null;
-  }
-}
 
 void main() {
   group('Basic: ', () {
     final type = 'todo'.hashCode;
     SyncableObject obj1;
-    var atoms1 = <Atom>[];
-    final access1 = TestAccessor(type, 22222, (Atom a) => atoms1.add(a));
+    var atoms1 = <AtomBase>[];
+    final access1 = FakeAccessor(type, 22222, (AtomBase a) => atoms1.add(a));
 
     setUp(() {
       // create test object
@@ -172,11 +139,11 @@ void main() {
     SyncableObject obj1;
     SyncableObject obj2;
 
-    var atoms1 = <Atom>[];
-    var atoms2 = <Atom>[];
+    var atoms1 = <AtomBase>[];
+    var atoms2 = <AtomBase>[];
 
-    final access1 = TestAccessor(type, 11111, (Atom a) => atoms1.add(a));
-    final access2 = TestAccessor(type, 22222, (Atom a) => atoms2.add(a));
+    final access1 = FakeAccessor(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessor(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object
@@ -197,12 +164,18 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
-      expect(obj1.getFieldClock('1').site, 11111);
-      expect(obj2.getFieldClock('1').site, 22222);
+      final id1 = obj1.getFieldOriginId('1');
+      final id2 = obj2.getFieldOriginId('1');
+
+      expect(id1 == id2, isFalse);
+      expect(id1.site, 11111);
+      expect(id2.site, 22222);
 
       // depending on the time, the clock is created, it could be the same ms or just one after another
-      expect(atoms1[0].clock == atoms2[0].clock || atoms1[0].clock < atoms2[0].clock, isTrue);
+      final a = atoms1[0];
+      final b = atoms2[0];
+      expect(a.id == b.id || a.id < b.id, isTrue);
+      print('ok');
     });
 
     test('apply same fields and merge', () {
@@ -212,9 +185,12 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
-      expect(obj1.getFieldClock('1').site, 11111);
-      expect(obj2.getFieldClock('1').site, 22222);
+      final id1 = obj1.getFieldOriginId('1');
+      final id2 = obj2.getFieldOriginId('1');
+
+      expect(id1 == id2, isFalse);
+      expect(id1.site, 11111);
+      expect(id2.site, 22222);
 
       /// --------------------------------
       /// --------------------------------
@@ -222,12 +198,12 @@ void main() {
       atoms2.forEach(obj1.applyAtom);
       atoms1.forEach(obj2.applyAtom);
 
-      final h1 = obj1.getFieldClock('1');
-      final h2 = obj2.getFieldClock('1');
+      final id11 = obj1.getFieldOriginId('1');
+      final id22 = obj2.getFieldOriginId('1');
 
-      expect(h1.deepEqual(h2), isTrue);
-      expect(h1.site, 22222);
-      expect(h2.site, 22222);
+      expect(id11 == id22, isTrue);
+      expect(id11.site, 22222);
+      expect(id22.site, 22222);
 
       expect(obj1['1'], 'Test');
       expect(obj2['1'], 'Test');
@@ -243,9 +219,12 @@ void main() {
         atoms1.forEach(obj1.applyAtom);
         atoms2.forEach(obj2.applyAtom);
 
-        expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isFalse);
-        expect(obj1.getFieldClock('1').site, 11111);
-        expect(obj2.getFieldClock('1').site, 22222);
+        final id1 = obj1.getFieldOriginId('1');
+        final id2 = obj2.getFieldOriginId('1');
+
+        expect(id1 == id2, isFalse);
+        expect(id1.site, 11111);
+        expect(id2.site, 22222);
 
         /// --------------------------------
         /// --------------------------------
@@ -253,9 +232,12 @@ void main() {
         atoms2.forEach(obj1.applyAtom);
         atoms1.forEach(obj2.applyAtom);
 
-        expect(obj1.getFieldClock('1').deepEqual(obj2.getFieldClock('1')), isTrue);
-        expect(obj1.getFieldClock('1').site, 11111);
-        expect(obj2.getFieldClock('1').site, 11111);
+        final id11 = obj1.getFieldOriginId('1');
+        final id22 = obj2.getFieldOriginId('1');
+
+        expect(id11 == id22, isTrue);
+        expect(id11.site, 11111);
+        expect(id22.site, 11111);
 
         expect(obj1['1'], 1);
         expect(obj2['1'], 1);
@@ -269,7 +251,7 @@ void main() {
 
       atoms1.forEach(obj1.applyAtom);
 
-      final clock = obj1.getFieldClock('1');
+      final clock = obj1.getFieldOriginId('1');
       expect(atoms1.length, 3);
 
       // if counter is 0 => 'Hans' was just set, when the milliseconds went up by one
@@ -277,7 +259,7 @@ void main() {
       // if counter is 2 => 'Hans' was set, in the same milliseconds with 'Peter' and 'Pan'
       // 2 is most likly
       // verything else is a fail!
-      expect(clock.counter >= 0 && clock.counter <= 2, isTrue);
+      expect((clock.ts as HybridLogicalClock).counter >= 0 && (clock.ts as HybridLogicalClock).counter <= 2, isTrue);
     });
   });
 
@@ -286,11 +268,11 @@ void main() {
     SyncableObject obj1;
     SyncableObject obj2;
 
-    var atoms1 = <Atom>[];
-    var atoms2 = <Atom>[];
+    var atoms1 = <AtomBase>[];
+    var atoms2 = <AtomBase>[];
 
-    final access1 = TestAccessor(type, 11111, (Atom a) => atoms1.add(a));
-    final access2 = TestAccessor(type, 22222, (Atom a) => atoms2.add(a));
+    final access1 = FakeAccessor(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessor(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object

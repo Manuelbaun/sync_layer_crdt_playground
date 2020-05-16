@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:sync_layer/logger/index.dart';
-import 'package:sync_layer/logical_clocks/index.dart';
+
+import 'package:sync_layer/types/abstract/id_base.dart';
 
 import 'merkle_node.dart';
 
@@ -9,17 +9,19 @@ import 'merkle_node.dart';
 /// on the vm then in the browser. JavaScript uses 32 bits, when doing bit operations
 int convHash(int hash) => (ByteData(4)..setInt32(0, hash)).getInt32(0);
 
+/// For nice feedback, not really need else
 class MergeSkip {
   List merged = [];
   List skipped = [];
 
   @override
   String toString() {
-    JsonEncoder encoder = new JsonEncoder.withIndent('  ');
+    final encoder = JsonEncoder.withIndent('  ');
     return encoder.convert({'merged': merged, 'skipped': skipped});
   }
 }
 
+/// This is designed to work with HLC, dont know about LC
 class MerkleTrie {
   final MerkleNode root;
   final int radix;
@@ -29,18 +31,18 @@ class MerkleTrie {
 
   int get hash => root.hash;
 
-  MergeSkip build(List<Hlc> hlcs) {
+  MergeSkip build(List<IdBase> ts) {
     final ms = MergeSkip();
-    for (var h in hlcs) {
-      final key = h.radixTime(radix);
+    for (var t in ts) {
+      final key = t.ts.radixTime(radix);
 
-      if (!keys.contains(h.hashCode)) {
-        _insert(root, key, h.hashCode, 0);
-        root.hash = convHash(root.hash ^ h.hashCode);
-        ms.merged.add(h.toStringHuman());
-        keys.add(h.hashCode);
+      if (!keys.contains(t.hashCode)) {
+        _insert(root, key, t.hashCode, 0);
+        root.hash = convHash(root.hash ^ t.hashCode);
+        ms.merged.add(t.toString());
+        keys.add(t.hashCode);
       } else {
-        ms.skipped.add(h.toString());
+        ms.skipped.add(t.toString());
       }
     }
     return ms;
@@ -72,15 +74,6 @@ class MerkleTrie {
     return node;
   }
 
-  /// this returns the first timestamp, which is not equal
-  String diff(MerkleTrie remote) {
-    // if (hashCode == remote.hashCode) return null;
-
-    final kl = getDifferences(remote);
-    logger.verbose(kl.toString());
-    return _diff(root, remote.root);
-  }
-
   List<int> _keys(MerkleNode node) {
     if (node == null || node.children == null) return [];
 
@@ -95,6 +88,9 @@ class MerkleTrie {
   Iterable<int> _getNodeKeys(MerkleNode local, MerkleNode remote) {
     return Set<int>.from(_keys(local))..addAll(_keys(remote));
   }
+
+  /// this returns the first timestamp, which is not equal
+  String diff(MerkleTrie remote) => _diff(root, remote.root);
 
   // add set to the nodes
   String _diff(MerkleNode local, MerkleNode remote) {

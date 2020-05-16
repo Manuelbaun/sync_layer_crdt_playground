@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/types/index.dart';
+
+/// This CRDT map is currently not working!
 
 class AtomMapValue<K, V> {
   final String objId;
@@ -19,18 +20,19 @@ class AtomMapValue<K, V> {
 ///
 class CRDTMap<K, V> {
   final String objId;
+  int site;
 
   // stores the value
   final Map<K, V> _obj = <K, V>{};
   // stores the Hlc for each Key
-  final Map<K, Hlc> _objHlc = <K, Hlc>{};
+  final Map<K, HybridLogicalClock> _objHlc = <K, HybridLogicalClock>{};
 
   final history = <Atom>[];
   final historySet = <int>{};
 
   // the highes of all _clocks!!
-  Hlc _timestamp;
-  Hlc get hlc => _timestamp;
+  HybridLogicalClock _timestamp;
+  HybridLogicalClock get hlc => _timestamp;
 
   CRDTMap([String objId]) : objId = objId ?? newCuid();
 
@@ -46,13 +48,14 @@ class CRDTMap<K, V> {
 
   Atom set(K key, V value) {
     // Todo: form Atom
-    _timestamp = Hlc.send(_timestamp);
+    _timestamp = HybridLogicalClock.send(_timestamp);
     _obj[key] = value;
     _objHlc[key] = _timestamp;
 
     final v = AtomMapValue<K, V>(objId, key, value);
 
-    return Atom(_timestamp, v);
+    /// TODO: Fix me !! 
+    return Atom(Id(_timestamp, 0000000), data: v);
   }
 
   /// get value by key. Same property as the underlaying map
@@ -66,20 +69,20 @@ class CRDTMap<K, V> {
         history.add(atom);
 
         /// only merge if Atom of remote > then local
-        _timestamp = Hlc.recv(_timestamp, atom.clock);
+        _timestamp = HybridLogicalClock.recv(_timestamp, atom.id.ts);
 
         final key = atom.data.key as K;
         final value = atom.data;
 
         // if localtime is smaller..
-        if (_objHlc[key] < atom.clock) {
+        if (_objHlc[key] < atom.id.ts) {
           _obj[key] = value;
-          _objHlc[key] = atom.clock;
+          _objHlc[key] = atom.id.ts;
         } else if (_obj[key] == null) {
           // if no local entry exist
           _obj[key] = value;
-          _objHlc[key] = atom.clock;
-        } else if (_objHlc[key] == atom.clock) {
+          _objHlc[key] = atom.id.ts;
+        } else if (_objHlc[key] == atom.id.ts) {
           // TODO: sort by nodeid
 
         } // else ignore

@@ -6,12 +6,9 @@ abstract class LogicalClockBase<T> implements Comparable<T> {
   external factory LogicalClockBase.parse(String ts);
   external factory LogicalClockBase.fromLogicalTimestamp(int ts);
 
-  // radix time in minutes!
+  /// radix time from [minutes] in Case of [HLC] implementation
+  /// otherwise from [logicalTime]
   String radixTime(int radix);
-
-  /// This compares **without** site!
-  @override
-  int compareTo(T other);
 
   @override
   bool operator ==(other);

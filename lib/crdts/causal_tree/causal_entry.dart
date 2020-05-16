@@ -1,6 +1,7 @@
 import 'package:sync_layer/basic/hashing.dart';
+import 'package:sync_layer/types/abstract/id_base.dart';
+import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'causal_entry_base.dart';
-import 'package:sync_layer/crdts/id/index.dart';
 
 /// for a causal atom to work, the clock must be from the same type,
 /// no mix of Hlc and logicaltime
@@ -17,7 +18,7 @@ class CausalEntry<T> implements CausalEntryBase {
 
   /// the [id] of this entry, is also its logical lock
   @override
-  final Id id;
+  final IdBase id;
 
   @override
   LogicalClockBase get ts => id.ts;
@@ -26,7 +27,7 @@ class CausalEntry<T> implements CausalEntryBase {
   int get site => id.site;
 
   @override
-  final Id cause;
+  final IdBase cause;
 
   @override
   LogicalClockBase get causeTs => cause.ts;
@@ -78,7 +79,7 @@ class CausalEntry<T> implements CausalEntryBase {
   bool isLeftOf(CausalEntryBase o) => id.ts == o.id.ts ? id.site > o.id.site : id.ts > o.id.ts;
 
   @override
-  String toString() => '${id.toRON()}->${cause?.toRON()} : ${data}';
+  String toString() => '${id.toRONString()}->${cause?.toRONString()} : ${data}';
 
   @override
   int get hashCode => _hashcode;

@@ -1,4 +1,4 @@
-import 'logical_clock_base.dart';
+import 'abstract/logical_clock_base.dart';
 
 class LogicalClock implements LogicalClockBase<LogicalClock> {
   /// to be compatible to js, only 32 bits!
@@ -54,6 +54,7 @@ class LogicalClock implements LogicalClockBase<LogicalClock> {
     return logicalTime - o.logicalTime;
   }
 
+  /// TODO: who should logical clock be printed! ??
   @override
   String toString() => '$logicalTime';
 }

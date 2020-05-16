@@ -6,7 +6,7 @@ import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/sync/abstract/index.dart';
 import 'package:sync_layer/types/index.dart';
 
-import 'package:sync_layer/encoding_extent/endecode.dart';
+import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/logger/index.dart';
 
 import 'logger/index.dart';

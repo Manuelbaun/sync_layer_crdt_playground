@@ -1,4 +1,5 @@
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/types/hybrid_logical_clock.dart';
+import 'package:sync_layer/types/id.dart';
 
 const TS = [
   '2020-04-23T07:16:20.605Z-0000-9543e0e1f9d5ee5b',
@@ -59,50 +60,33 @@ const TS = [
   '2020-04-24T10:57:49.198Z-0002-97f6c8ef1e121379',
 ];
 
-class FakeDb {
-  List<Hlc> _db;
+class FakeDbForIds {
+  List<Id> _db;
 
-  List<Hlc> getHlcs() {
-    _db ??= TS.map((ts) {
+  List<Id> getHlcs() {
+    _db ??= TS.map<Id>((ts) {
       final parts = ts.split('-');
       final dateobj = parts.sublist(0, 3).join('-');
       var ms = DateTime.parse(dateobj).millisecondsSinceEpoch;
       var counter = int.parse(parts[3], radix: 16);
       var site = int.parse(parts[4].substring(0, 5), radix: 16);
 
-      return Hlc(ms, counter, site);
+      return Id(HybridLogicalClock(ms, counter), site);
     }).toList();
-    return _db;
-  }
-
-  List<Hlc> getHlcs2() {
-    if (_db == null) {
-      final startDate = DateTime(2020, 2, 25);
-      final endDate = DateTime(2020, 4, 26);
-      var ts = startDate.millisecondsSinceEpoch;
-      final hlcs = <Hlc>[];
-
-      /// sorted_list for lookup;s
-      while (ts < endDate.millisecondsSinceEpoch) {
-        hlcs.add(Hlc(ts, 0));
-        ts += 10000;
-      }
-      _db = hlcs;
-    }
 
     return _db;
   }
 
-  List<Hlc> getByTime(int tsInMinutes) {
-    return _db.where((h) => h.minutes == tsInMinutes).toList();
+  List<Id> getByTime(int tsInMinutes) {
+    return _db.where((h) => (h.ts as HybridLogicalClock).minutes == tsInMinutes).toList();
   }
 
-  List<Hlc> filterAfterTime(int tsInMinutes) {
-    return _db.where((h) => tsInMinutes <= h.minutes).toList();
+  List<Id> filterAfterTime(int tsInMinutes) {
+    return _db.where((h) => tsInMinutes <= (h.ts as HybridLogicalClock).minutes).toList();
   }
 
-  List<Hlc> filterByKeyStrings(List<String> keyStrings, int radix) {
-    final diffs = <Hlc>[];
+  List<Id> filterByKeyStrings(List<String> keyStrings, int radix) {
+    final diffs = <Id>[];
 
     for (var k in keyStrings) {
       var tsInMinutes = int.parse(k, radix: radix);

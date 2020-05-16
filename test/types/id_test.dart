@@ -1,4 +1,5 @@
-import 'package:sync_layer/crdts/id/index.dart';
+import 'package:sync_layer/types/id.dart';
+import 'package:sync_layer/types/logical_clock.dart';
 import 'package:test/test.dart';
 
 void main() {

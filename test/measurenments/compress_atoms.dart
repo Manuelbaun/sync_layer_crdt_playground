@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:sync_layer/encoding_extent/endecode.dart';
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/encoding_extent/index.dart';
+
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 
@@ -17,6 +17,7 @@ int getType() => r1.nextInt(20);
 int getKey() => r2.nextInt(20);
 int getSiteId() => r3.nextBool() ? 1111 : 2222;
 String getObjectID() => r4.nextInt(20).toRadixString(3);
+
 final base = DateTime(2020, 4, 1);
 final min = base.millisecondsSinceEpoch;
 final max = base.millisecondsSinceEpoch + 1000;
@@ -71,8 +72,8 @@ void main() {
 
   for (var i = 0; i < 10; i++) {
     final a = Atom<Value>(
-      Hlc(0, 1, getSiteId()),
-      Value(getType(), getObjectID(), getKey(), 'test  $i'),
+      Id(HybridLogicalClock(0, 1), getSiteId()),
+      data: Value(getType(), getObjectID(), getKey(), 'test  $i'),
     );
 
     atoms.add(a);

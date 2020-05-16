@@ -1,11 +1,20 @@
 import 'dart:convert';
 
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/types/abstract/atom_base.dart';
+import 'package:sync_layer/types/abstract/logical_clock_base.dart';
+import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/types/index.dart';
 
 import 'abstract/index.dart';
 
 const String _TOMBSTONE = '_tombstone_';
+
+class ObjectEntry<T> {
+  ObjectEntry(this.site, this.ts, this.data);
+  final int site;
+  final LogicalClockBase ts;
+  final T data;
+}
 
 class SyncableObjectImpl implements SyncableObject {
   /// **Important**
@@ -19,7 +28,7 @@ class SyncableObjectImpl implements SyncableObject {
         assert(accessor != null, 'Accessor prop cannot be null'),
         _id = id ?? accessor.generateID() {
     // define and set tombstone to false;
-    _obj[_TOMBSTONE] = false;
+    _internalObject[_TOMBSTONE] = false;
   }
   final Accessor _accessor;
 
@@ -39,8 +48,8 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Stores the key /values of the fields, specify by the user.
   /// in case of a synable object, it stores the type and id
-  final Map<String, dynamic> _obj = {};
-  final Map<String, Hlc> _objClock = {};
+  final Map<String, dynamic> _internalObject = {};
+  final Map<String, Id> _objFieldOriginIds = {};
 
   // var keyCounter = 0;
   // final Map<String, int> keyNumMap = {};
@@ -56,12 +65,12 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Returns the timestamp for that field
   @override
-  Hlc getFieldClock(String field) => _objClock[field];
+  Id getFieldOriginId(String field) => _objFieldOriginIds[field];
 
   /// TODO: could be set with [applyAtoms]
   @override
-  Hlc get lastUpdated {
-    if (_objClock.isNotEmpty) return _objClock.values?.reduce((a, b) => a > b ? a : b);
+  LogicalClockBase get lastUpdated {
+    if (_objFieldOriginIds.isNotEmpty) return _objFieldOriginIds.values.reduce((a, b) => a.ts > b.ts ? a : b).ts;
     return null;
   }
 
@@ -74,40 +83,46 @@ class SyncableObjectImpl implements SyncableObject {
   ///
   /// TODO: should case of Atom beeing 'null' be handeled?
   /// TODO: Think, what should happen, if atom exist here?
+  ///
   /// normally Synclayer is filtering it out!
   @override
-  int applyAtom(Atom atom) {
-    final fieldClock = getFieldClock(atom.data.key);
+  int applyAtom(AtomBase atom) {
+    final originId = getFieldOriginId(atom.data.key);
 
+    /// what todo with history
     _history.add(atom);
-    // if field was not set or the local time happend before [hb] to new Atom
 
-    // fieldClock < atom.clock ||
-    // fieldClock == atom.clock && fieldClock.site < atom.clock.site
-    if (fieldClock == null || fieldClock.isLessWithSite(atom.clock)) {
+    // if field was not set or the local time happend before [hb] to new Atom
+    if (originId == null || (originId < atom.id)) {
       _setField(atom);
       return 2;
     }
 
-    if (fieldClock.deepEqual(atom.clock)) return 1;
+    // the same atom should not happen, this will only happen, if
+    // the atom is not filtered out
+    if (originId == atom.id) return 1;
 
     // if fieldClock > atom.clock
     return 0;
   }
 
   /// somewhat redundent ?
-  /// should be sorted?
+  /// should be sorted only by LogicalClockBase [DESC]
+  /// TODO AtomBase
   @override
   List<Atom> get history => _history.toList()..sort();
   final Set<Atom> _history = {};
 
   void _setField(Atom atom) {
-    _obj[atom.data.key] = atom.data.value;
-    _objClock[atom.data.key] = atom.clock;
+    final key = atom.data.key;
+    final value = atom.data.value;
+
+    _internalObject[key] = value;
+    _objFieldOriginIds[key] = atom.id;
 
     // lookup if it is on object reference
-    if (atom.data.value is ObjectReference) {
-      _syncableObjects[atom.data.key] = _accessor.objectLookup(atom.data.value);
+    if (value is ObjectReference) {
+      _syncableObjects[key] = _accessor.objectLookup(value);
     }
   }
 
@@ -115,7 +130,7 @@ class SyncableObjectImpl implements SyncableObject {
   /// regular object by this key
   @override
   dynamic operator [](key) {
-    return _syncableObjects[key] ?? _obj[key];
+    return _syncableObjects[key] ?? _internalObject[key];
   }
 
   /// sets the values
@@ -124,7 +139,7 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// once a field gets set, this will send the update action via
   /// [container.update]. This will create an Atom and sends it back to
-  /// apply to the [_obj] through the synclayer
+  /// apply to the [_internalObject] through the synclayer
   ///
   /// THINK: maybe a short cut could be created?
   void _sendToSyncLayer(String field, value) {
@@ -139,15 +154,16 @@ class SyncableObjectImpl implements SyncableObject {
     _accessor.onUpdate([Value(type, id, field, val)]);
   }
 
-  /// lexographical sort by ID
+  /// lexographical sort by Object ID
   @override
   int compareTo(SyncableObject other) {
     for (var i = 0; i < id.length; i++) {
       final lc = id.codeUnitAt(i);
       final oc = other.id.codeUnitAt(i);
 
-      if (lc > oc) return 1;
-      if (lc < oc) return -1;
+      // if (lc > oc) return 1;
+      // if (lc < oc) return -1;
+      if (lc != oc) return lc - oc;
     }
 
     return 0;
@@ -156,10 +172,10 @@ class SyncableObjectImpl implements SyncableObject {
   @override
   String toString() {
     final obj = {};
-    for (final key in _obj.keys) {
+    for (final key in _internalObject.keys) {
       obj[key] = {
-        'v': _obj[key],
-        'c': _objClock[key]?.toStringHuman(),
+        'v': _internalObject[key],
+        'c': _objFieldOriginIds[key]?.toString(),
       };
     }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:sync_layer/crdts/id/index.dart';
+import 'package:sync_layer/types/abstract/logical_clock_base.dart';
+import 'package:sync_layer/types/id.dart';
+import 'package:sync_layer/types/logical_clock.dart';
 
 import 'causal_entry.dart';
 
@@ -9,9 +11,6 @@ enum FilterSemantic { AND, OR }
 class CausalTree<T> {
   CausalTree(this.site) : localClock = LogicalClock(0);
   int site;
-
-  //! this Atom array has to be the same on all other sides.
-  List<CausalEntry<T>> sequence = <CausalEntry<T>>[];
 
   /// TODO: sync is true
   final _controller = StreamController<CausalEntry>(sync: true);
@@ -28,7 +27,10 @@ class CausalTree<T> {
   int get deleteAtomsLength => _deletedAtoms.length;
   int get allAtomsLength => _cache.length;
 
-  //! the local site cache, does not need to be the same in the cloud
+  /// this sequence will be the same on all synced sites
+  List<CausalEntry<T>> sequence = <CausalEntry<T>>[];
+
+  // the local site cache, does not need to be the same in the cloud
   final yarns = <int, List<CausalEntry>>{};
 
   /// SiteId -> TimeStamp, Kind of Version vector

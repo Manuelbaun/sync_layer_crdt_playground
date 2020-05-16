@@ -1,15 +1,14 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 
-import 'fake_db.dart';
+import '../utils/fake_db.dart';
 
 void main() {
-  final db = FakeDb();
+  final db = FakeDbForIds();
   final hlcs = db.getHlcs();
 
   test('Merging two merkle tries', () {
@@ -48,12 +47,12 @@ void main() {
 
         var ts = int.parse(diffs, radix: radix);
 
-        var localdiffs = <Hlc>[];
+        var localdiffs = <Id>[];
         measureExecution('find local diffs', () {
           localdiffs = db.filterAfterTime(ts);
         });
 
-        var remotediffs = <Hlc>[];
+        var remotediffs = <Id>[];
         measureExecution('find remote diffs', () {
           remotediffs = db.filterAfterTime(ts);
         });
@@ -89,22 +88,10 @@ void main() {
       expect(rl2.remote.length, 0);
       print(rl);
 
-      // measureExecution('Remote toJson', () {
-      //   remoteMap = remoteTree.toJson();
-      // });
-
-      // print(localMap.length);
-      // print(remoteMap.length);
-
-      // var lcoalPretty = localTree.toJsonPretty();
-      // var remotePretty = remoteTree.toJsonPretty();
-      // // print(lcoalPretty);
-
       measureExecution('Local toMap', () {
         localMap = localTree.toMap();
       });
 
-      // final map = json.decode(localMap);
       var trie;
 
       measureExecution('from json local tree', () {

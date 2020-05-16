@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:sync_layer/basic/cuid.dart';
-import 'package:sync_layer/basic/merkle_tire_node.dart';
-import 'package:sync_layer/logical_clocks/index.dart';
+import 'package:sync_layer/basic/merkle_tire.dart';
+
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
 import 'abstract/index.dart';
+import 'sync_clock_impl.dart';
 import 'syncable_object_container_impl.dart';
 
 class SynclayerAccessor implements Accessor {
@@ -174,7 +175,7 @@ class SyncLayerImpl implements SyncLayer {
           }
           // in any case,
           atomCache.add(atom);
-          trie.build([atom.clock]);
+          trie.build([atom.id]);
         } else {
           logger.error('Table does not exist');
         }
@@ -189,7 +190,8 @@ class SyncLayerImpl implements SyncLayer {
 
   @override
   Atom createAtom(dynamic value) {
-    return Atom(clock.getForSend(), value);
+    final id = Id(clock.getForSend(), site);
+    return Atom(id, data: value);
   }
 
   /// [applyAtoms] should only be called from the local application.
@@ -229,13 +231,13 @@ class SyncLayerImpl implements SyncLayer {
   @override
   void receiveAtoms(List<Atom> atoms) {
     for (var atom in atoms) {
-      clock.fromReveive(atom.clock);
+      clock.fromReceive(atom.id.ts);
     }
 
     _applyAtoms(atoms);
   }
 
-  List<Atom> getAtomsSinceMs(Hlc clock) {
+  List<Atom> getAtomsSinceMs(HybridLogicalClock clock) {
     return atomCache.getSince(clock);
   }
 
@@ -247,7 +249,7 @@ class SyncLayerImpl implements SyncLayer {
     final tsKey = trie.diff(remoteState);
     if (tsKey != null) {
       final ms = clock.getClockFromTSKey(tsKey, 0);
-      logger.verbose(ms.toStringHuman());
+      logger.verbose(ms.toString());
       return getAtomsSinceMs(ms);
     }
     // send empty

@@ -1,11 +1,12 @@
-import 'package:sync_layer/crdts/id/index.dart';
+import 'package:sync_layer/types/abstract/id_base.dart';
+import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 
 enum RelationShip { Sibling, CausalLeft, CausalRight, Unknown, Identical }
 
 abstract class CausalEntryBase<T> {
   CausalEntryBase(this.id, {this.data, this.cause});
-  final Id id;
-  final Id cause;
+  final IdBase id;
+  final IdBase cause;
   final T data;
 
   LogicalClockBase get ts;

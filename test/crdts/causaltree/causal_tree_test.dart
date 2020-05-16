@@ -1,5 +1,5 @@
 import 'package:sync_layer/crdts/causal_tree/index.dart';
-import 'package:sync_layer/crdts/id/index.dart';
+import 'package:sync_layer/types/logical_clock.dart';
 import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 

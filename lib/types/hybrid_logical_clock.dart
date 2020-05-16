@@ -1,5 +1,6 @@
 import 'dart:math';
-import 'logical_clock_base.dart';
+
+import 'abstract/logical_clock_base.dart';
 
 const _COUNTER_MASK = 0xFFFF;
 const _MAX_COUNTER = _COUNTER_MASK;
@@ -27,7 +28,9 @@ const RESOLUTION = 60000;
 /// it always converts it to 32 bits. So a 64 bit logical time, when used with bit shift, will lose the upper 32 bits!
 ///
 
-class Hlc implements LogicalClockBase<Hlc> {
+/// Rethink HLC, maybe the logicalTime should be a getter??
+/// so that it can also work in the browser??
+class HybridLogicalClock implements LogicalClockBase<HybridLogicalClock> {
   @override
   final int logicalTime;
 
@@ -35,7 +38,7 @@ class Hlc implements LogicalClockBase<Hlc> {
   final int counter;
   final int minutes;
 
-  Hlc([int ms_, this.counter = 0])
+  HybridLogicalClock([int ms_, this.counter = 0])
       : assert(counter < _MAX_COUNTER && counter >= 0),
         ms = ms_ ??= DateTime.now().millisecondsSinceEpoch,
         assert(ms_ >= 0),
@@ -47,7 +50,7 @@ class Hlc implements LogicalClockBase<Hlc> {
   String radixTime(int radix) => minutes.toRadixString(radix);
 
   // remove node complety
-  factory Hlc.parse(String timestamp) {
+  factory HybridLogicalClock.parse(String timestamp) {
     // throw AssertionError('not ready to parse ...');
     final parts = timestamp.split('-');
     assert(parts.length == 2, 'Time format does not match');
@@ -55,13 +58,13 @@ class Hlc implements LogicalClockBase<Hlc> {
     var ms = int.parse(parts[0], radix: 16);
     var counter = int.parse(parts[1], radix: 16);
 
-    return Hlc(ms, counter);
+    return HybridLogicalClock(ms, counter);
   }
 
   /// Generates a unique, monotonic timestamp suitable for transmission to
   /// another system in string format. Local wall time will be used if [milliseconds]
   /// isn't supplied, useful for testing.
-  factory Hlc.send(Hlc clock, [int ms]) {
+  factory HybridLogicalClock.send(HybridLogicalClock clock, [int ms]) {
     // Retrieve the local wall time if micros is null
     ms = (ms ?? DateTime.now().millisecondsSinceEpoch);
 
@@ -83,17 +86,17 @@ class Hlc implements LogicalClockBase<Hlc> {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(msNew, counterNew);
+    return HybridLogicalClock(msNew, counterNew);
   }
 
   @override
-  factory Hlc.fromLogical(int ts) => Hlc(ts >> 16, ts & 0xffff);
+  factory HybridLogicalClock.fromLogical(int ts) => HybridLogicalClock(ts >> 16, ts & 0xffff);
 
   /// Parses and merges a timestamp from a remote system with the local
   /// canonical timestamp to preserve monotonicity. Returns an updated canonical
   /// timestamp instance. Local wall time will be used if [ms] isn't
   /// supplied, useful for testing.
-  factory Hlc.recv(Hlc local, Hlc remote, [int ms]) {
+  factory HybridLogicalClock.recv(HybridLogicalClock local, HybridLogicalClock remote, [int ms]) {
     // Retrieve the local wall time if micros is null
     ms = (ms ?? DateTime.now().millisecondsSinceEpoch);
 
@@ -129,14 +132,13 @@ class Hlc implements LogicalClockBase<Hlc> {
       throw OverflowException(counterNew);
     }
 
-    return Hlc(msNew, counterNew);
+    return HybridLogicalClock(msNew, counterNew);
   }
 
   /// use hashcode  if compare to another HLC to check if they are really equal!
   /// this uses the murmurhashv3 and hashes [milliseconds], [counter] and [site]
   @override
-  int get hashCode => _hashCode;
-  int _hashCode;
+  int get hashCode => logicalTime;
 
   // @override
   // bool operator ==(other) => other is Hlc && ms == other.ms && counter == other.counter;
@@ -150,35 +152,33 @@ class Hlc implements LogicalClockBase<Hlc> {
   // bool operator >=(o) => o is Hlc && (ms == o.ms ? counter >= o.counter : ms >= o.ms);
 
   @override
-  bool operator ==(other) => other is Hlc && logicalTime == other.logicalTime;
+  bool operator ==(other) => other is HybridLogicalClock && logicalTime == other.logicalTime;
   @override
-  bool operator <(o) => o is Hlc && logicalTime < o.logicalTime;
+  bool operator <(o) => o is HybridLogicalClock && logicalTime < o.logicalTime;
   @override
-  bool operator <=(o) => o is Hlc && logicalTime < o.logicalTime;
+  bool operator <=(o) => o is HybridLogicalClock && logicalTime < o.logicalTime;
   @override
-  bool operator >(o) => o is Hlc && logicalTime > o.logicalTime;
+  bool operator >(o) => o is HybridLogicalClock && logicalTime > o.logicalTime;
   @override
-  bool operator >=(o) => o is Hlc && logicalTime >= o.logicalTime;
+  bool operator >=(o) => o is HybridLogicalClock && logicalTime >= o.logicalTime;
 
   /// calculates the diffes of the [logicaltime] difference
   @override
   int operator -(other) {
-    final o = other as Hlc;
+    final o = other as HybridLogicalClock;
     return logicalTime - o.logicalTime;
   }
 
-  String toStringNice() =>
+  @override
+  String toString() =>
       '${DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true)}-${counter.toRadixString(16).padLeft(4, '0')}';
 
-  @override
-  String toString() => '${ms.toRadixString(16)}-${counter.toRadixString(16)}';
+  /// TODO abstract method..
+  String toStringCompact() => '${ms.toRadixString(16)}-${counter.toRadixString(16)}';
 
+  /// TODO: baseclase needs it?
   @override
-  int compareTo(Hlc other) {
-    final res = ms.compareTo(other.ms);
-    if (res == 0) return counter.compareTo(other.counter);
-    return res;
-  }
+  int compareTo(HybridLogicalClock other) => logicalTime.compareTo(other.logicalTime);
 }
 
 class ClockDriftException implements Exception {
