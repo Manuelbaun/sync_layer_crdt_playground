@@ -1,52 +1,3 @@
-// void main() {
-//   final tree = CausalTree(111);
-//   final root = tree.push('root');
-
-//   final tree2 = CausalTree(222);
-//   tree2.mergeRemoteAtoms([root]);
-
-//   final h1 = tree.push(1);
-//   final h2 = tree.push(2);
-//   final h3 = tree.push(3);
-
-//   final b = h1.toBytes();
-//   print(b);
-//   final a = CausalAtom.fromBytes(b);
-//   print(a);
-
-//   tree.insert(h1, 4);
-//   tree.insert(h2, 5);
-
-//   tree.atoms.forEach(print);
-//   print('-----------');
-
-//   final p1 = tree2.push('B');
-//   final p2 = tree2.push('B');
-//   final p3 = tree2.push('C');
-
-//   tree2.atoms.forEach(print);
-
-//   // merge 1
-
-//   print('-----------');
-//   tree2.mergeRemoteAtoms(tree.atoms);
-//   tree2.atoms.forEach(print);
-
-//   print('-----------');
-
-//   tree.mergeRemoteAtoms(tree2.atoms);
-//   tree.atoms.forEach(print);
-
-//   print('----------------');
-
-//   final bytes = tree.atoms.map((a) => a.toBytes());
-//   bytes.forEach((b) => print(b.length));
-//   // print(bytes);
-//   final allAtoms = bytes.map((b) => CausalAtom.fromBytes(b));
-
-//   allAtoms.forEach((a) => print(a));
-// }
-
 import 'package:sync_layer/logical_clocks/index.dart';
 import 'package:sync_layer/sync/syncable_causal_tree_imple.dart';
 import 'package:sync_layer/types/index.dart';
@@ -92,40 +43,42 @@ void main() {
       c.mergeRemoteAtoms([atom]);
     });
 
-    final a1 = a.insert(null, 'C');
-    final a2 = a.insert(a1, 'M');
-    final a3 = a.insert(a2, 'D');
+    measureExecution('add and merge', () {
+      final a1 = a.insert(null, 'C');
+      final a2 = a.insert(a1, 'M');
+      final a3 = a.insert(a2, 'D');
 
-    a.localClock = LogicalTime(5, a.site);
-    final a6 = a.delete(a2);
-    final a7 = a.delete(a3);
-    final a8 = a.insert(a1, 'T');
-    final a9 = a.insert(a8, 'R');
-    final aA = a.insert(a9, 'L');
+      a.localClock = LogicalTime(5, a.site);
+      final a6 = a.delete(a2);
+      final a7 = a.delete(a3);
+      final a8 = a.insert(a1, 'T');
+      final a9 = a.insert(a8, 'R');
+      final aA = a.insert(a9, 'L');
 
-    // ------------- B
-    b.localClock = LogicalTime(5, b.site);
-    final b6 = b.insert(a3, 'D');
-    final b7 = b.insert(b6, 'E');
-    final b8 = b.insert(b7, 'L');
+      // ------------- B
+      b.localClock = LogicalTime(5, b.site);
+      final b6 = b.insert(a3, 'D');
+      final b7 = b.insert(b6, 'E');
+      final b8 = b.insert(b7, 'L');
 
-    final b9 = b.insert(b8, 'A');
-    final bA = b.insert(b9, 'C');
-    final bB = b.insert(bA, 'T');
+      final b9 = b.insert(b8, 'A');
+      final bA = b.insert(b9, 'C');
+      final bB = b.insert(bA, 'T');
 
-    // ------------- C
-    c.localClock = LogicalTime(6, c.site);
-    final c7 = c.insert(a3, 'A');
-    final c8 = c.insert(c7, 'L');
-    final c9 = c.insert(c8, 'T');
+      // ------------- C
+      c.localClock = LogicalTime(6, c.site);
+      final c7 = c.insert(a3, 'A');
+      final c8 = c.insert(c7, 'L');
+      final c9 = c.insert(c8, 'T');
 
-    // ------------- D
-    d.localClock = LogicalTime(10, d.site);
-    final d10 = d.insert(aA, 'S');
-    final d11 = d.insert(d10, 'P');
-    final d12 = d.insert(d11, 'A');
-    final d13 = d.insert(d12, 'C');
-    final d14 = d.insert(d13, 'E');
+      // ------------- D
+      d.localClock = LogicalTime(10, d.site);
+      final d10 = d.insert(aA, 'S');
+      final d11 = d.insert(d10, 'P');
+      final d12 = d.insert(d11, 'A');
+      final d13 = d.insert(d12, 'C');
+      final d14 = d.insert(d13, 'E');
+    });
   });
 
   test('subscription Merge', () {
