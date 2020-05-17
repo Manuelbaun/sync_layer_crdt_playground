@@ -20,8 +20,11 @@ void main(List<String> arguments) {
   final protocol = SyncLayerProtocol(syn);
 
   // create first container by type
-  final daoTodo = syn.registerObjectType<Todo>('todos', (c, id) => Todo(c, id: id));
-  final daoAss = syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
+  final todoFactory = (Accessor acc, String id) => Todo(acc, id: id);
+  final assigneeFactory = (Accessor acc, String id) => Assignee(acc, id: id);
+
+  final daoTodo = syn.registerObjectType<Todo>('todos', todoFactory);
+  final daoAss = syn.registerObjectType<Assignee>('assignee', assigneeFactory);
 
   daoTodo.changeStream.listen((objs) {
     objs.forEach((o) => logger.info(o.toString()));

@@ -1,19 +1,24 @@
 import 'dart:convert';
 
+import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
-import 'package:sync_layer/types/object_entry.dart';
-import 'package:sync_layer/types/object_reference.dart';
 
+import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/index.dart';
 
 /// Meta fixed key numbers!
-const int _TOMBSTONE = 0xFF00;
+const _TOMBSTONE = 0xFF00 as Object;
 
-/// TODO Tombstone, revert option
-
-class Entry {
-  Entry(this.id, this.value);
+/// TODO:
+/// * Think about Tombstone
+/// * Think about Meta data
+/// * revert option
+/// * change List to Map!
+/// * add stream listener
+///
+class _Entry {
+  _Entry(this.id, this.value);
   final IdBase id;
   final dynamic value;
 
@@ -24,39 +29,44 @@ class Entry {
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is Entry && o.id == id && o.value == value;
+    return o is _Entry && o.id == id && o.value == value;
   }
 
   @override
   int get hashCode => id.hashCode ^ value.hashCode;
 }
 
-class SyncableObjectImpl implements SyncableObject {
+/// Specify the [Key] as [String] or [int] or dynamic to use both types of key
+/// number and strings
+class SyncableObjectImpl<Key> implements SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
   /// this function is provided by the sync layer, therefore the synclayer
   /// deceides which the form of the id
 
-  SyncableObjectImpl(String id, Accessor accessor, {this.notify})
-      : _accessor = accessor,
-        assert(accessor != null, 'Accessor prop cannot be null'),
-        _id = id ?? accessor.generateID() {
+  SyncableObjectImpl(String id, this._accessor, {this.notify})
+      : assert(_accessor != null, 'Accessor prop cannot be null'),
+        _id = id ?? _accessor.generateID() {
     /// direct set! no Id/Ts
-    _internal[_TOMBSTONE] = Entry(null, false);
+    // if (Key is int) if (Key is String) ;
+
+    _internal[_TOMBSTONE] = _Entry(null, false);
   }
 
+  // @override
+  // Accessor get accessor => _accessor;
   final Accessor _accessor;
 
-  Function(int key, Entry entry) notify;
+  Function(Key key, _Entry entry) notify;
 
   /// Stores the key /values of the keys, specify by the user.
   /// in case of a synable object, it stores the type and id
-  final Map<int, Entry> _internal = {};
+  final Map<Key, _Entry> _internal = {};
 
   /// Stores the reference to the syncable Object, once it gets called, not present if not called
   /// => lazy
-  final Map<int, SyncableObject> _syncableObjectsRefs = {};
+  final Map<Key, SyncableObject> _syncableObjectsRefs = {};
 
   /// Getter Setter
 
@@ -76,22 +86,22 @@ class SyncableObjectImpl implements SyncableObject {
 
   /// Internal get and setter
   @pragma('vm:prefer-inline')
-  SyncableObject _getSyncableObjectRef(int key) => _syncableObjectsRefs[key];
+  SyncableObject _getSyncableObjectRef(Key key) => _syncableObjectsRefs[key];
 
   @pragma('vm:prefer-inline')
-  void _setSyncableObjectRef(int key, SyncableObject obj) => _syncableObjectsRefs[key] = obj;
+  void _setSyncableObjectRef(Key key, SyncableObject obj) => _syncableObjectsRefs[key] = obj;
 
   @pragma('vm:prefer-inline')
-  dynamic _getValue(int key) => _internal[key]?.value;
+  dynamic _getValue(Key key) => _internal[key]?.value;
 
   /// gets the Id base as timestamp and site id
   @pragma('vm:prefer-inline')
-  IdBase _getIdTs(int key) => _internal[key]?.id;
+  IdBase _getIdTs(Key key) => _internal[key]?.id;
 
   /// set value should only be used by apply atom,
   /// since this sets the _internal object with the object entry
   @pragma('vm:prefer-inline')
-  void __setInternalValue(int key, Entry entry) {
+  void __setInternalValue(Key key, _Entry entry) {
     _internal[key] = entry;
 
     if (notify != null) notify(key, entry);
@@ -103,25 +113,19 @@ class SyncableObjectImpl implements SyncableObject {
   ///
   /// THINK: maybe a short cut could be created?
   ///
-  void _setValue(int key, dynamic value) {
+  void _setValue(Key key, dynamic value) {
     /// check if value is [SyncableObject] and if so create Ref to object of type
     if (value is SyncableObject) {
       value = ObjectReference(value.type, value.objectId);
     }
 
-    final atom = _accessor.onUpdate(objectId, SyncableEntry(key, value));
+    final atom = _accessor.onUpdate(objectId, {key: value});
 
     /// Todo: set atom entry now?....
   }
 
-  // @pragma('vm:prefer-inline')
-  // dynamic _getMeta(int key) => _internalMeta[key];
-
-  // @pragma('vm:prefer-inline')
-  // void _setMeta(int key, value) => _internalMeta[key] = value;
-
   @override
-  IdBase getFieldOriginId(int key) => _getIdTs(key);
+  IdBase getFieldOriginId(Key key) => _getIdTs(key);
 
   /// TODO: what should we do?
   @override
@@ -136,13 +140,16 @@ class SyncableObjectImpl implements SyncableObject {
   /// looks up first if something is in synable object else in the
   /// regular object by this key
   @override
-  dynamic operator [](int key) => _getSyncableObjectRef(key) ?? _getValue(key);
+  dynamic operator [](Key key) => _getSyncableObjectRef(key) ?? _getValue(key);
 
   /// sets the value, send [FIRST] to sync layer, create atom, and then apply
   @override
-  operator []=(int key, dynamic value) => _setValue(key, value);
+  operator []=(Key key, dynamic value) => _setValue(key, value);
 
   /// applies atom and returns
+  ///
+  ///! * implementation changed: .... below is wrong !
+  ///
   /// * returns [ 2] : if apply successfull
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
@@ -156,23 +163,29 @@ class SyncableObjectImpl implements SyncableObject {
   @override
   int applyAtom(AtomBase atom) {
     /// use
-    final originId = _getIdTs(atom.data.key);
+    // the same atom should not happen, this will only happen, if
+    // the atom is not filtered out
+
+    // if key was not set or the local time happend before [hb] to new Atom
+
+    var ret = 0;
+    for (final e in (atom.data as Map).entries) {
+      final originId = _getIdTs(e.key);
+
+      if (originId == null || (originId < atom.id)) {
+        _applyUpdate(atom);
+        ret = 2;
+      }
+
+      if (originId == atom.id && ret < 1) ret = 1;
+    }
 
     /// TODO: what todo with history
     final isSet = _history.add(atom);
 
-    // the same atom should not happen, this will only happen, if
-    // the atom is not filtered out
-    if (originId == atom.id) return 1;
-
-    // if key was not set or the local time happend before [hb] to new Atom
-    if (originId == null || (originId < atom.id)) {
-      _applyUpdate(atom);
-      return 2;
-    }
-
+    logger.debug('Appy Atom needs a revisit!');
     // if keyClock > atom.clock
-    return 0;
+    return ret;
   }
 
   void _applyUpdate(AtomBase atom) {
@@ -181,14 +194,18 @@ class SyncableObjectImpl implements SyncableObject {
       _lastUpdated = atom.id;
     }
 
-    final data = atom.data as SyncableEntry<int, dynamic>;
+    /// data is only two long
+    for (final e in (atom.data as Map).entries) {
+      final key = e.key as Key;
+      final value = e.value;
 
-    __setInternalValue(data.key, Entry(atom.id, data.value));
+      __setInternalValue(key, _Entry(atom.id, value));
 
-    // lookup if it is on object reference
-    if (data.value is ObjectReference) {
-      final obj = _accessor.objectLookup(data.value);
-      _setSyncableObjectRef(data.key, obj);
+      // lookup if it is on object reference
+      if (value is ObjectReference) {
+        final obj = _accessor.objectLookup(value);
+        _setSyncableObjectRef(key, obj);
+      }
     }
   }
 

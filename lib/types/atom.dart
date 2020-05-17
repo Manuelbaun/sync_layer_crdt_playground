@@ -1,7 +1,7 @@
 import 'abstract/atom_base.dart';
 import 'id_atom.dart';
 
-class Atom<D> implements AtomBase<D> {
+class Atom<T> implements AtomBase<T> {
   Atom(this.id, this.typeId, this.objectId, this.data);
 
   /// depending on the atom type, the id the hashcode of the atom or the clock
@@ -16,7 +16,7 @@ class Atom<D> implements AtomBase<D> {
   final String objectId;
 
   @override
-  final D data;
+  final T data;
 
   @override
   int compareTo(AtomBase other) => id.ts - other.id.ts;

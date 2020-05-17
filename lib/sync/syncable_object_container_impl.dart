@@ -1,22 +1,20 @@
 import 'dart:async';
 
-import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/logger/index.dart';
 
 import 'abstract/index.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
   final Map<String, T> _objects = {}; // the real elements
+
   final SynableObjectFactory<T> _objectFactory;
+
   final _controller = StreamController<Set<T>>.broadcast();
   final _updatedObjects = <T>{};
 
   /// this returns the length of the container **with** delted Objects!
-  /// TODO: filter out tombstoned objects
   @override
-  int get length {
-    return _objects.length;
-  }
+  int get length => _objects.length;
 
   @override
   // final SyncLayer syn;
@@ -105,8 +103,13 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   /// updates an object ???
   // gets called from the sync object
   @override
-  void update(String objectId, String field, dynamic value) {
-    accessor.onUpdate(objectId, SyncableEntry(field, value));
+  @deprecated
+  void update(String objectId, dynamic key, dynamic value) {
+    final obj = _get(objectId);
+    obj[key] ??= value;
+
+    /// maybe access ???
+    // accessor.onUpdate<List>(objectId, [key, value]);
   }
 
   ///

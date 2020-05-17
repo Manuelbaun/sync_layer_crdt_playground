@@ -31,14 +31,13 @@ void main() {
 
       print(cl);
 
-      final a1 = Atom<Map>(AtomId(HybridLogicalClock(0, 1), 1020), 0, 'someidvalues1234', {1: 'data'});
+      final a1 = Atom(AtomId(HybridLogicalClock(0, 1), 1020), 0, 'someidvalues1234', {1: 'data'});
 
       final b1 = msgpackEncode(a1);
       final a2 = msgpackDecode(b1);
       print(b1);
       print(b1.length);
       print(a2);
-
 
       expect(a1, a2);
     });

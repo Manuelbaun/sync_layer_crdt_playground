@@ -1,10 +1,15 @@
+import 'package:sync_layer/sync/abstract/accessors.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
 
-abstract class SyncableObject extends Comparable<SyncableObject> {
+/// Specify the type [D] of the atoms data here
+/// could be list, or map, this type will be used to transport
+abstract class SyncableObject<Key> extends Comparable<SyncableObject> {
   /// Marks if the object is deleted!
-  bool get tombstone;
-  set tombstone(bool v);
+  bool tombstone;
+
+  /// Should this be part of the public api?
+  // Accessor get accessor;
 
   int get type;
 
@@ -18,7 +23,7 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
   List<AtomBase> get history;
 
   /// Returns the timestamp for that field
-  IdBase getFieldOriginId(int key);
+  IdBase getFieldOriginId(Key key);
 
   /// applies atom and returns
   /// * returns [ 2] : if apply successfull
@@ -27,8 +32,8 @@ abstract class SyncableObject extends Comparable<SyncableObject> {
   /// * returns [-1] : if nothing applied => should never happen
   int applyAtom(AtomBase atom);
 
-  dynamic operator [](int key);
+  dynamic operator [](Key key);
 
   /// set operator field value
-  operator []=(int key, dynamic value);
+  operator []=(Key key, dynamic value);
 }

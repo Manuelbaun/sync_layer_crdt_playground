@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
-import 'package:sync_layer/types/abstract/sync_entry.dart';
 import 'package:sync_layer/types/id_atom.dart';
 
 import 'package:sync_layer/types/index.dart';
@@ -94,15 +93,14 @@ class SyncLayerImpl implements SyncLayer {
 
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
-    String typeName,
-    SynableObjectFactory<T> objectFactory, [
-    int customNumberId,
-  ]) {
+      String typeName, SynableObjectFactory<T> objectFactory,
+      [int customNumberId]) {
     SyncableObjectContainer container;
 
     if (!mapper.containsTypeName(typeName)) {
       final typeNumber = mapper.registerNewTypeName(typeName);
-      final accessor = SynclayerAccessor(this, typeNumber);
+
+      Accessor accessor = SynclayerAccessor(this, typeNumber);
 
       container = SyncableObjectContainerImpl<T>(
         accessor,

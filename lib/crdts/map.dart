@@ -56,7 +56,8 @@ class CRDTMap<K, V> {
     final v = AtomMapValue<K, V>(objId, key, value);
 
     /// TODO: Fix me !!
-    return Atom(AtomId(_timestamp, 0000000), 0, '???????????????????', v);
+    // return Atom(AtomId(_timestamp, 0000000), 0, '???????????????????', v);
+    throw AssertionError('Fix me');
   }
 
   /// get value by key. Same property as the underlaying map
@@ -72,21 +73,23 @@ class CRDTMap<K, V> {
         /// only merge if Atom of remote > then local
         _timestamp = HybridLogicalClock.recv(_timestamp, atom.id.ts);
 
-        final key = atom.data.key as K;
-        final value = atom.data;
+        for (var e in atom.data.entries) {
+          final key = e.key as K;
+          final value = e.value;
 
-        // if localtime is smaller..
-        if (_objHlc[key] < atom.id.ts) {
-          _obj[key] = value;
-          _objHlc[key] = atom.id.ts;
-        } else if (_obj[key] == null) {
-          // if no local entry exist
-          _obj[key] = value;
-          _objHlc[key] = atom.id.ts;
-        } else if (_objHlc[key] == atom.id.ts) {
-          // TODO: sort by nodeid
+          // if localtime is smaller..
+          if (_objHlc[key] < atom.id.ts) {
+            _obj[key] = value;
+            _objHlc[key] = atom.id.ts;
+          } else if (_obj[key] == null) {
+            // if no local entry exist
+            _obj[key] = value;
+            _objHlc[key] = atom.id.ts;
+          } else if (_objHlc[key] == atom.id.ts) {
+            // TODO: sort by nodeid
 
-        } // else ignore
+          } // else ignore
+        }
       }
     }
 

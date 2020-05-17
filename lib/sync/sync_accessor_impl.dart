@@ -14,7 +14,7 @@ class SynclayerAccessor implements Accessor {
   final int type;
 
   @override
-  AtomBase onUpdate<V>(String objectId, V data) {
+  AtomBase onUpdate(String objectId, dynamic data) {
     final atom = synclayer.createAtom(objectId, type, data);
     synclayer.applyAtoms([atom]);
     return atom;

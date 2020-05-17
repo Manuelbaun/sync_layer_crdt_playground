@@ -17,7 +17,8 @@ void main() {
 
   group('complex Atom en/decode', () {
     test('HLC', () {
-      final a = Atom<SyncableEntry>(AtomId(HybridLogicalClock(0, 1), 1020), 0, 'someidvalues1234', SyncableEntry(1, 40));
+      final a =
+          Atom<SyncableEntry>(AtomId(HybridLogicalClock(0, 1), 1020), 0, 'someidvalues1234', SyncableEntry(1, 40));
       final b = msgpackEncode(a);
       final c = msgpackDecode(b);
 

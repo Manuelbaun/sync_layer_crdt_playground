@@ -22,7 +22,7 @@ class _ExtendetEncoder implements ExtEncoder {
   int extTypeForObject(dynamic o) {
     if (o is LogicalClock) return 1;
     if (o is HybridLogicalClock) return 2;
-    if (o is SyncableEntry) return 3;
+    // if (o is SyncableEntry) return 3;
     if (o is Atom) return 4;
     // if (o is CausalAtom) return 5;
     if (o is ObjectReference) return 6;
@@ -37,7 +37,7 @@ class _ExtendetEncoder implements ExtEncoder {
   Uint8List encodeObject(dynamic o) {
     if (o is LogicalClock) return msgpackEncode(o.logicalTime);
     if (o is HybridLogicalClock) return msgpackEncode([o.ms, o.counter]);
-    if (o is SyncableEntry) return msgpackEncode([o.key, o.value]);
+    // if (o is SyncableEntry) return msgpackEncode([o.key, o.value]);
     if (o is Atom) {
       return msgpackEncode([o.id.ts.ms, o.id.ts.counter, o.id.site, o.typeId, o.objectId, o.data]);
     }
@@ -63,10 +63,10 @@ class _ExtendetDecoder implements ExtDecoder {
       return HybridLogicalClock(v[0], v[1]);
     }
 
-    if (extType == 3) {
-      final v = msgpackDecode(data);
-      return SyncableEntry(v[0], v[1]);
-    }
+    // if (extType == 3) {
+    //   final v = msgpackDecode(data);
+    //   return SyncableEntry(v[0], v[1]);
+    // }
 
     if (extType == 4) {
       final v = msgpackDecode(data);

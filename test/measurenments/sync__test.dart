@@ -1,40 +1,12 @@
 import 'dart:io';
 
 import 'package:sync_layer/encoding_extent/index.dart';
-import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/types/id_atom.dart';
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 
-// Prototype, if nested object should be used...
-
-class _SyncContEntry<T> {
-  _SyncContEntry(this.typeId, this.objId, this.data);
-  final int typeId;
-  final String objId;
-  final T data;
-}
-
-class _SyncEntry<K, V> {
-  _SyncEntry(this.id, this.key, this.value);
-
-  /// Time of Creation ID
-  final Id id;
-  final K key;
-  final V value;
-}
-
-class _SyncMessage<T> {
-  _SyncMessage(this.id, this.data);
-
-  final Id id;
-  final T data;
-}
-
 void main() {
-  // final syncEntry = _SyncEntry(id, 2, 'Hallo world');
-  // final sce = _SyncContEntry(2, 'objectId', syncEntry);
-  // final a = _SyncMessage(id, sce);
+  test1();
 
   /// 5, 1, 2, 2, 10, 1, 19 = 40
   final msg = [154825538227, 0, 2020, 77, '1asdf-5675', 2, 'Hallo mein Name ist'];
@@ -96,4 +68,16 @@ void main() {
   }
   print('${time1 / 1000} ms ');
   print('${time2 / 1000} ms ');
+}
+
+void test1() {
+  final list = [2, 'Hallo mein Name ist'];
+  final map = {2: 'Hallo mein Name ist'};
+  final snyc = SyncableEntry(list[0], list[1]);
+
+  final b1 = msgpackEncode(list);
+  final b2 = msgpackEncode(map);
+  final b3 = msgpackEncode(snyc);
+
+  print('done');
 }

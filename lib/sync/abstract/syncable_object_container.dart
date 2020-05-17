@@ -1,7 +1,7 @@
 import 'accessors.dart';
 import 'syncable_object.dart';
 
-typedef SynableObjectFactory<T> = T Function(Accessor container, String id);
+typedef SynableObjectFactory<T> = T Function(Accessor accessor, String id);
 
 abstract class SyncableObjectContainer<T extends SyncableObject> {
   int get type;
@@ -29,7 +29,7 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
   T read(String objectId);
 
   /// updates an object field with value by id
-  void update(String objectId, String field, dynamic value);
+  void update(String objectId, int key, dynamic value);
 
   ///
   bool delete(String objectId);
