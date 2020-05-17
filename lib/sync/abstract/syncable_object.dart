@@ -18,6 +18,14 @@ abstract class SyncableObject<Key> extends Comparable<SyncableObject> {
   /// gets the last Updated TS and also site!
   IdBase get lastUpdated;
 
+  /// With subtransaction, assigning multiple values to the object,
+  /// no update is triggered until function is finished
+  /// then all changes as send in one Atom
+  ///
+  /// *Note: Changes are stored in a Map, therefor, appling the same Key, will result in the
+  /// last writer wins
+  void transact(void Function(SyncableObject ref) func);
+
   /// contains all Atoms received and inserted
   List<AtomBase> get history;
 

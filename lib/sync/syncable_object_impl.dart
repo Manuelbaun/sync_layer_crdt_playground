@@ -38,7 +38,7 @@ class _Entry {
 
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
-class SyncableObjectImpl<Key> implements SyncableObject<Key> {
+class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
@@ -113,13 +113,41 @@ class SyncableObjectImpl<Key> implements SyncableObject<Key> {
   ///
   /// THINK: maybe a short cut could be created?
   ///
+  bool _subTransaction = false;
+  final _subTransactionMap = <Key, dynamic>{};
+
+  /// With subtransaction, assigning multiple values to the object,
+  /// no update is triggered until function is finished
+  /// then all changes as send in one Atom
+  ///
+  /// *Note: Changes are stored in a Map, therefor, appling the same Key, will result in the
+  /// last writer wins
+  @override
+  void transact(void Function(Type ref) func) {
+    // start changes
+    _subTransaction = true;
+    func(this as Type);
+    // Stop changes
+    _subTransaction = false;
+    // send atom
+
+    final copy = {..._subTransactionMap};
+    final atom = _accessor.onUpdate(id, copy);
+    // creates new map for next
+    _subTransactionMap.clear();
+  }
+
   void _setValue(Key key, dynamic value) {
     /// check if value is [SyncableObject] and if so create Ref to object of type
     if (value is SyncableObject) {
       value = ObjectReference(value.type, value.id);
     }
 
-    final atom = _accessor.onUpdate(id, {key: value});
+    if (_subTransaction) {
+      _subTransactionMap[key] = value;
+    } else {
+      final atom = _accessor.onUpdate(id, {key: value});
+    }
 
     /// Todo: set atom entry now?....
   }
