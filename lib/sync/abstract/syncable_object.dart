@@ -1,4 +1,3 @@
-import 'package:sync_layer/sync/abstract/accessors.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
 
