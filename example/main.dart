@@ -45,7 +45,7 @@ void main(List<String> arguments) {
 
   // apply changes
   final tt = daoTodo.create();
-  final id = tt.objectId;
+  final id = tt.id;
   tt.title = 'init Title';
 
   Timer.periodic(Duration(seconds: 2), (tt) {

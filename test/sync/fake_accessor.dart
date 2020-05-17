@@ -26,9 +26,9 @@ class FakeAccessor implements Accessor {
   }
 
   @override
-  AtomBase onUpdate<V>(String objId, V data) {
+  AtomBase onUpdate(String objId, dynamic data) {
     final tsId = _getNextTimeId();
-    final a = Atom<V>(tsId, type, objId, data);
+    final a = Atom(tsId, type, objId, data);
     update(a);
     return a;
   }

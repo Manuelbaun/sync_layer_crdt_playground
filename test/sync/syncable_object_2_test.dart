@@ -30,7 +30,7 @@ void main() {
   group('Basic: ', () {
     final type = 'todo'.hashCode;
     SyncableObject obj1;
-    var atoms1 = <AtomBase<SyncableEntry<int, dynamic>>>[];
+    var atoms1 = <AtomBase>[];
     final access1 = FakeAccessor(type, 22222, (AtomBase a) => atoms1.add(a));
 
     setUp(() {
@@ -49,7 +49,7 @@ void main() {
     });
 
     test('Setup Syncable object', () {
-      expect(obj1.objectId, '__hello_world__');
+      expect(obj1.id, '__hello_world__');
       expect(obj1.tombstone, isFalse);
       expect(obj1.type, type);
     });
@@ -177,7 +177,7 @@ void main() {
     });
 
     test('Compare same Id', () {
-      expect(obj1.objectId == obj2.objectId, isTrue);
+      expect(obj1.id == obj2.id, isTrue);
     });
 
     test('apply same fields', () {

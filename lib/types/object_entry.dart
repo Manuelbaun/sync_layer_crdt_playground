@@ -5,20 +5,20 @@ import 'abstract/sync_entry.dart';
 /// in the  encoding_extent classes
 ///
 
-class SyncableEntry2<K, V> implements SyncEntry {
+class SyncableEntry<K, V> implements SyncEntry {
   /// In context ob a Db it is the **[column]**
   final K key;
 
   /// In context of a Db its the **[value]** of the column
   final V value;
 
-  SyncableEntry2(this.key, this.value);
+  SyncableEntry(this.key, this.value);
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is SyncableEntry2 && o.key == key && o.value == value;
+    return o is SyncableEntry && o.key == key && o.value == value;
   }
 
   @override

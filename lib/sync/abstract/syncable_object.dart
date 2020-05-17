@@ -13,7 +13,7 @@ abstract class SyncableObject<Key> extends Comparable<SyncableObject> {
   int get type;
 
   /// Object Id, Like RowId or Index in a Database, etc..
-  String get objectId;
+  String get id;
 
   /// gets the last Updated TS and also site!
   IdBase get lastUpdated;

@@ -74,7 +74,7 @@ class SyncableObjectImpl<Key> implements SyncableObject<Key> {
   int get type => _accessor.type;
 
   @override
-  String get objectId => _id;
+  String get id => _id;
   final String _id;
 
   /// Marks if the object is deleted!
@@ -116,10 +116,10 @@ class SyncableObjectImpl<Key> implements SyncableObject<Key> {
   void _setValue(Key key, dynamic value) {
     /// check if value is [SyncableObject] and if so create Ref to object of type
     if (value is SyncableObject) {
-      value = ObjectReference(value.type, value.objectId);
+      value = ObjectReference(value.type, value.id);
     }
 
-    final atom = _accessor.onUpdate(objectId, {key: value});
+    final atom = _accessor.onUpdate(id, {key: value});
 
     /// Todo: set atom entry now?....
   }
@@ -212,9 +212,9 @@ class SyncableObjectImpl<Key> implements SyncableObject<Key> {
   /// lexographical sort by Object ID
   @override
   int compareTo(SyncableObject other) {
-    for (var i = 0; i < objectId.length; i++) {
-      final lc = objectId.codeUnitAt(i);
-      final oc = other.objectId.codeUnitAt(i);
+    for (var i = 0; i < id.length; i++) {
+      final lc = id.codeUnitAt(i);
+      final oc = other.id.codeUnitAt(i);
       final res = lc.compareTo(oc);
       if (res != 0) return res;
     }

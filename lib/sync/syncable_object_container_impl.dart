@@ -82,8 +82,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   }
 
   SyncableObject _set(SyncableObject obj) {
-    _objects[obj.objectId] = obj;
-    return _objects[obj.objectId];
+    _objects[obj.id] = obj;
+    return _objects[obj.id];
   }
 
   SyncableObject _get(String id) {
