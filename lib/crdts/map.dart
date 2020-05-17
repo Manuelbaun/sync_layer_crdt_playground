@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/types/id_atom.dart';
 import 'package:sync_layer/types/index.dart';
 
 /// This CRDT map is currently not working!
@@ -54,8 +55,8 @@ class CRDTMap<K, V> {
 
     final v = AtomMapValue<K, V>(objId, key, value);
 
-    /// TODO: Fix me !! 
-    return Atom(Id(_timestamp, 0000000), data: v);
+    /// TODO: Fix me !!
+    return Atom(AtomId(_timestamp, 0000000), 0, '???????????????????', v);
   }
 
   /// get value by key. Same property as the underlaying map

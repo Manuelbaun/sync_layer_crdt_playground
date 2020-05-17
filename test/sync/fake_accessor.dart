@@ -5,7 +5,7 @@ import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'package:sync_layer/types/atom.dart';
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
 
-import 'package:sync_layer/types/id.dart';
+import 'package:sync_layer/types/id_atom.dart';
 
 import 'package:sync_layer/types/object_reference.dart';
 
@@ -20,17 +20,17 @@ class FakeAccessor implements Accessor {
   @override
   int type;
 
-  @override
-  void onUpdate<V>(List<V> data) {
-    final atoms = data.map((d) {
-      // creates new baseClock
-      baseClock = HybridLogicalClock.send(baseClock);
-      // send atom with that baseClock
-      return Atom(Id(baseClock, site), data: d);
-    });
+  AtomId _getNextTimeId() {
+    baseClock = HybridLogicalClock.send(baseClock);
+    return AtomId(baseClock, site);
+  }
 
-    atoms.forEach(update);
-    // so.applyAtom(a);
+  @override
+  AtomBase onUpdate<V>(String objId, V data) {
+    final tsId = _getNextTimeId();
+    final a = Atom<V>(tsId, type, objId, data);
+    update(a);
+    return a;
   }
 
   @override

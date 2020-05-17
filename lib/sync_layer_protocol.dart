@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/sync/abstract/index.dart';
-import 'package:sync_layer/types/index.dart';
+import 'package:sync_layer/types/abstract/atom_base.dart';
 
 import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/logger/index.dart';
@@ -14,18 +14,18 @@ import 'logger/index.dart';
 enum MessageEnum { STATE, STATE_REQUEST, STATE_RESPONSE, ATOMS, NODE_NAME, NO_ATOMS }
 
 class _EnDecoder {
-  static Uint8List encodeAtoms(List<Atom> atoms) {
+  static Uint8List encodeAtoms(List<AtomBase> atoms) {
     final buff = msgpackEncode(atoms);
     final zipped = zlib.encode(buff);
     logger.verbose('⏫ send Atoms::: ${atoms.length} ::  b:${buff.length} => z:${zipped.length}');
     return zipped;
   }
 
-  static List<Atom> decodeAtoms(Uint8List buff) {
+  static List<AtomBase> decodeAtoms(Uint8List buff) {
     final unzipped = zlib.decode(buff);
     final atoms = msgpackDecode(unzipped);
     logger.verbose('🔻 recv Atom: ${atoms.length}:: z:${buff.length} =>  b:${unzipped.length}');
-    return List<Atom>.from(atoms);
+    return List<AtomBase>.from(atoms);
   }
 
   static Uint8List encodeState(MerkleTrie state) {
@@ -98,7 +98,7 @@ class SyncLayerProtocol {
     websockets.clear();
   }
 
-  void broadCastAtoms(List<Atom> atoms) {
+  void broadCastAtoms(List<AtomBase> atoms) {
     final data = _EnDecoder.encodeAtoms(atoms);
     logger.info('send:MessageEnum.ATOMS Broadcast');
 

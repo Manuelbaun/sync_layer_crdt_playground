@@ -84,8 +84,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   }
 
   SyncableObject _set(SyncableObject obj) {
-    _objects[obj.id] = obj;
-    return _objects[obj.id];
+    _objects[obj.objectId] = obj;
+    return _objects[obj.objectId];
   }
 
   SyncableObject _get(String id) {
@@ -105,8 +105,8 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   /// updates an object ???
   // gets called from the sync object
   @override
-  void update(String id, String field, dynamic value) {
-    accessor.onUpdate([Value(type, id, field, value)]);
+  void update(String objectId, String field, dynamic value) {
+    accessor.onUpdate(objectId, SyncableEntry(field, value));
   }
 
   ///

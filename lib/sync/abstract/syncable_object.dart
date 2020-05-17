@@ -1,9 +1,7 @@
 import 'package:sync_layer/types/abstract/atom_base.dart';
-import 'package:sync_layer/types/abstract/logical_clock_base.dart';
-import 'package:sync_layer/types/id.dart';
-import 'package:sync_layer/types/index.dart';
+import 'package:sync_layer/types/abstract/id_base.dart';
 
-abstract class SyncableObject<T> extends Comparable<SyncableObject> {
+abstract class SyncableObject extends Comparable<SyncableObject> {
   /// Marks if the object is deleted!
   bool get tombstone;
   set tombstone(bool v);
@@ -11,26 +9,26 @@ abstract class SyncableObject<T> extends Comparable<SyncableObject> {
   int get type;
 
   /// Object Id, Like RowId or Index in a Database, etc..
-  String get id;
+  String get objectId;
 
-  /// gets the last Updated TS
-  LogicalClockBase get lastUpdated;
+  /// gets the last Updated TS and also site!
+  IdBase get lastUpdated;
 
   /// contains all Atoms received and inserted
-  List<AtomBase<T>> get history;
+  List<AtomBase> get history;
 
   /// Returns the timestamp for that field
-  Id getFieldOriginId(String key);
+  IdBase getFieldOriginId(int key);
 
   /// applies atom and returns
   /// * returns [ 2] : if apply successfull
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
   /// * returns [-1] : if nothing applied => should never happen
-  int applyAtom(AtomBase<T> atom);
+  int applyAtom(AtomBase atom);
 
-  dynamic operator [](key);
+  dynamic operator [](int key);
 
   /// set operator field value
-  operator []=(key, value);
+  operator []=(int key, dynamic value);
 }

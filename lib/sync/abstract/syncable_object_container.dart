@@ -23,14 +23,14 @@ abstract class SyncableObjectContainer<T extends SyncableObject> {
   /// CRUD Ops Public API
 
   /// creates new object if id is null it created a new cuid
-  T create([String id]);
+  T create([String objectId]);
 
   /// returns null if not exist or deleted
-  T read(String id);
+  T read(String objectId);
 
   /// updates an object field with value by id
-  void update(String id, String field, dynamic value);
+  void update(String objectId, String field, dynamic value);
 
   ///
-  bool delete(String id);
+  bool delete(String objectId);
 }

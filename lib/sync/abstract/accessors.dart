@@ -1,3 +1,4 @@
+import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/index.dart';
 
 import 'syncable_object.dart';
@@ -8,7 +9,7 @@ abstract class Accessor {
   Accessor(this.type);
   final int type;
 
-  void onUpdate<V>(List<V> value);
+  AtomBase onUpdate<V>(String id, V value);
   String generateID();
   SyncableObject objectLookup(ObjectReference ref);
 }

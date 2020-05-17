@@ -6,18 +6,19 @@ import 'abstract/logical_clock_base.dart';
 /// Id has < >  == operator, they compare first te logical Clock
 /// and then the site!
 class Id implements IdBase, Comparable<Id> {
-  @override
-  final LogicalClockBase ts;
-
-  @override
-  final int site;
-  final int _hashCode;
   Id(this.ts, this.site)
       : assert(ts != null, 'ts cant be null'),
         assert(site != null, 'site cant be null'),
         // ensure only 32 bits, ts hashcode is 32 bits
         // TODO: radixtime? or maybe just hashCode are enough?
         _hashCode = MurmurHashV3('${ts.logicalTime}-${site}');
+
+  @override
+  final LogicalClockBase ts;
+
+  @override
+  final int site;
+  final int _hashCode;
 
   @override
   String toString() => 'Id(ts: $ts, site: $site)';

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:sync_layer/encoding_extent/index.dart';
+import 'package:sync_layer/types/id_atom.dart';
 
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/utils/measure.dart';
@@ -71,9 +72,11 @@ void main() {
   final atoms = <Atom>[];
 
   for (var i = 0; i < 10; i++) {
-    final a = Atom<Value>(
-      Id(HybridLogicalClock(0, 1), getSiteId()),
-      data: Value(getType(), getObjectID(), getKey(), 'test  $i'),
+    final a = Atom<SyncableEntry>(
+      AtomId(HybridLogicalClock(0, 1), getSiteId()),
+      getType(),
+      getObjectID(),
+      SyncableEntry(getKey(), 'test  $i'),
     );
 
     atoms.add(a);

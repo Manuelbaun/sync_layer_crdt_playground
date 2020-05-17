@@ -2,47 +2,18 @@ import 'dart:async';
 
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire.dart';
+import 'package:sync_layer/types/abstract/atom_base.dart';
+import 'package:sync_layer/types/abstract/sync_entry.dart';
+import 'package:sync_layer/types/id_atom.dart';
 
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
 import 'abstract/index.dart';
+import 'sync_accessor_impl.dart';
 import 'sync_clock_impl.dart';
 import 'syncable_object_container_impl.dart';
-
-class SynclayerAccessor implements Accessor {
-  SynclayerAccessor(this.synclayer, this.type);
-
-  final SyncLayer synclayer;
-
-  @override
-  final int type;
-
-  @override
-  void onUpdate<V>(List<V> values) {
-    final atoms = values.map((v) => synclayer.createAtom(v)).toList();
-    synclayer.applyAtoms(atoms);
-  }
-
-  @override
-  String generateID() {
-    return synclayer.generateID();
-  }
-
-  @override
-  SyncableObject objectLookup(ObjectReference ref, [bool shouldCreateIfNull = true]) {
-    final container = synclayer.getObjectContainer(typeNumber: ref.type);
-
-    // TODO: check if container Exists
-    var obj = container.read(ref.id);
-
-    if (shouldCreateIfNull && obj == null) {
-      obj = container.create(ref.id);
-    }
-    return obj;
-  }
-}
 
 class StringNumberMapper {
   final type2Id = <String, int>{};
@@ -86,10 +57,10 @@ class SyncLayerImpl implements SyncLayer {
   final MerkleTrie trie;
 
   /// only for sending Atoms => Network, not internally!
-  final _atomStreamController = StreamController<List<Atom>>.broadcast();
+  final _atomStreamController = StreamController<List<AtomBase>>.broadcast();
 
   @override
-  Stream<List<Atom>> get atomStream => _atomStreamController.stream;
+  Stream<List<AtomBase>> get atomStream => _atomStreamController.stream;
 
   @override
   MerkleTrie getState() => trie;
@@ -152,18 +123,19 @@ class SyncLayerImpl implements SyncLayer {
 
   /// Work with Atoms
   ///
-  void _applyAtoms(List<Atom> atoms) {
+  void _applyAtoms(List<AtomBase> atoms) {
     final changedContainer = <SyncableObjectContainer>{};
 
     for (final atom in atoms) {
+      /// can just add to cache and returns true/false depending if exist or not
       if (!atomCache.exist(atom)) {
         // test if table exits
-        final container = getObjectContainer(typeNumber: atom.data.typeId);
+        final container = getObjectContainer(typeNumber: atom.typeId);
 
         if (container != null) {
           // if row does not exist, new row will be added
-          var obj = container.read(atom.data.clock);
-          obj ??= container.create(atom.data.clock);
+          var obj = container.read(atom.objectId);
+          obj ??= container.create(atom.objectId);
 
           final res = obj.applyAtom(atom);
 
@@ -189,9 +161,9 @@ class SyncLayerImpl implements SyncLayer {
   }
 
   @override
-  Atom createAtom(dynamic value) {
-    final id = Id(clock.getForSend(), site);
-    return Atom(id, data: value);
+  AtomBase createAtom(String objectId, int typeId, dynamic data) {
+    final id = AtomId(clock.getForSend(), site);
+    return Atom(id, typeId, objectId, data);
   }
 
   /// [applyAtoms] should only be called from the local application.
@@ -199,7 +171,7 @@ class SyncLayerImpl implements SyncLayer {
   /// use Transaction to apply first, which then applies all made changes and
   /// sends via network
   @override
-  void applyAtoms(List<Atom> atoms) {
+  void applyAtoms(List<AtomBase> atoms) {
     if (transactionActive) {
       transationList.addAll(atoms);
     } else {
@@ -210,8 +182,9 @@ class SyncLayerImpl implements SyncLayer {
   }
 
   // Optimizers
-  final transationList = <Atom>[];
+  final transationList = <AtomBase>[];
   bool transactionActive = false;
+
   @override
   void transaction(Function func) {
     transactionActive = true;
@@ -229,7 +202,7 @@ class SyncLayerImpl implements SyncLayer {
 
   /// update local clock and apply atoms
   @override
-  void receiveAtoms(List<Atom> atoms) {
+  void receiveAtoms(List<AtomBase> atoms) {
     for (var atom in atoms) {
       clock.fromReceive(atom.id.ts);
     }
@@ -237,7 +210,7 @@ class SyncLayerImpl implements SyncLayer {
     _applyAtoms(atoms);
   }
 
-  List<Atom> getAtomsSinceMs(HybridLogicalClock clock) {
+  List<AtomBase> getAtomsSinceMs(HybridLogicalClock clock) {
     return atomCache.getSince(clock);
   }
 
@@ -245,7 +218,7 @@ class SyncLayerImpl implements SyncLayer {
   /// get ts diff and send it back to requestee
   /// TODO: check siteid of '0' => what site idee should be there?
   @override
-  List<Atom> getAtomsByReceivingState(MerkleTrie remoteState) {
+  List<AtomBase> getAtomsByReceivingState(MerkleTrie remoteState) {
     final tsKey = trie.diff(remoteState);
     if (tsKey != null) {
       final ms = clock.getClockFromTSKey(tsKey, 0);

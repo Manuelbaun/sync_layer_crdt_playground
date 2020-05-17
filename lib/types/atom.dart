@@ -1,40 +1,31 @@
-import 'package:meta/meta.dart';
-import 'package:sync_layer/basic/hashing.dart';
-
 import 'abstract/atom_base.dart';
-import 'id.dart';
+import 'id_atom.dart';
 
-/// The [data] must be either an encodeable, which can be en/de coded by messagepack
-/// or must be provided by the value en/decoder extension classes [ValueDecoder] [ValueEncoder]
-///
-/// if check for [==] equality, the value hashcode must be the same for the same copied value
-/// Map/List etc do not have deep equality by default, hence two maps with the exact same values
-/// do not have the same hashcode. To get the same hashcode loop over every entry and calculate the hashcode
+class Atom<D> implements AtomBase<D> {
+  Atom(this.id, this.typeId, this.objectId, this.data);
 
-/// This atom is used to transport the Data
-class Atom<T> implements AtomBase<T> {
-  Atom(this.id, {@required this.data})
-      : assert(id != null),
-        assert(data != null) {
-    _hashCode = id.hashCode ^ nestedHashing(data);
-  }
+  /// depending on the atom type, the id the hashcode of the atom or the clock
+  // final IdBase id;
+  @override
+  final AtomId id;
 
   @override
-  final Id id;
+  final int typeId;
 
   @override
-  final T data;
-  int _hashCode;
-
-  /// TODO Test if it works as expected!
-  @override
-  int compareTo(AtomBase<T> other) => id.ts - other.id.ts;
+  final String objectId;
 
   @override
-  int compareToDESC(AtomBase<T> other) => -(id.ts - other.id.ts);
+  final D data;
 
   @override
-  String toString() => 'Atom(id: $id, data: $data)';
+  int compareTo(AtomBase other) => id.ts - other.id.ts;
+
+  @override
+  int compareToDESC(AtomBase other) => -(id.ts - other.id.ts);
+
+  @override
+  String toString() => 'Atom($id, type: $typeId, objectId: $objectId, data: $data)';
 
   @override
   bool operator ==(Object o) {
@@ -43,5 +34,7 @@ class Atom<T> implements AtomBase<T> {
   }
 
   @override
-  int get hashCode => _hashCode;
+  // should be enough!, since id, should be as unique as possible!
+  // otherwise implement use objectType, etc
+  int get hashCode => id.hashCode;
 }
