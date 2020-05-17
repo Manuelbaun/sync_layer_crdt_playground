@@ -94,6 +94,8 @@ void main() {
                 }
               }),
           isTrue);
+
+      print(obj1.toString());
     });
 
     test('CRDT Properties Last Writer Wins', () {

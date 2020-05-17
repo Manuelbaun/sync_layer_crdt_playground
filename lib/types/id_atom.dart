@@ -21,10 +21,10 @@ class AtomId implements IdBase, Comparable<AtomId> {
   final int _hashCode;
 
   @override
-  String toString() => 'Id(ts: $ts, site: $site)';
+  String toString() => 'AtomId(ts: $ts, site: $site)';
 
   @override
-  String toRONString() => 'S$site@T${ts}';
+  String toRONString() => 'S$site@T$ts';
 
   /// Id compares first LogicalClock and then Site
   @override

@@ -16,4 +16,7 @@ abstract class IdBase {
 
   /// Id compares first LogicalClock and then Site
   bool operator >(Object o);
+
+  @override
+  String toString() => 'IdBase(c: $ts, s:$site)';
 }

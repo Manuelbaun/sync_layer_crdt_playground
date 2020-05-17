@@ -23,7 +23,7 @@ class _Entry {
   final dynamic value;
 
   @override
-  String toString() => 'Entry(id: $id, value: $value)';
+  String toString() => 'Entry(c: $id, v: $value)';
 
   @override
   bool operator ==(Object o) {
@@ -226,15 +226,38 @@ class SyncableObjectImpl<Key> implements SyncableObject<Key> {
 
   @override
   String toString() {
-    final obj = {};
+    final obj = <String, dynamic>{};
+    final encoder = JsonEncoder.withIndent('  ');
+
     for (final key in _internal.keys) {
-      obj[key] = {
-        'v': _internal[key].value,
-        'c': _internal[key].id,
-      };
+      final c = _internal[key].id?.toString();
+      var v = _internal[key].value;
+
+      final res = {'v': v, 'c': '$c'};
+      obj['$key'] = res;
     }
 
-    final encoder = JsonEncoder.withIndent('  ');
-    return encoder.convert(obj);
+    final res = encoder.convert({'id': id, 'type': type, 'obj': obj.toString()});
+
+    return res;
   }
 }
+
+// dynamic convert2Json(dynamic m) {
+//   final mm = <String, dynamic>{};
+
+//   if (m is Map) {
+//     for (var e in m.entries) {
+//       var value = e.value;
+//       if (e.value is Map) value = convert2Json(value);
+//       if (m is Set) value = e.value.toList();
+//       mm['${e.key}'] = value;
+//     }
+//   } else if (m is Set) {
+//     return m.toList();
+//   } else {
+//     return m;
+//   }
+
+//   return mm;
+// }
