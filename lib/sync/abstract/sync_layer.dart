@@ -1,21 +1,21 @@
 import 'dart:async';
 
 import 'package:sync_layer/basic/index.dart';
+import 'package:sync_layer/sync/abstract/syncable_base.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 
-import 'syncable_object.dart';
 import 'syncable_object_container.dart';
 
 /// This is the abstract [SyncLayer].
 abstract class SyncLayer {
   int site;
 
-  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>({
+  SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({
     String typeName,
     int typeNumber,
   });
 
-  SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
+  SyncableObjectContainer<T> registerObjectType<T extends SyncableBase>(
       String typeId, SynableObjectFactory<T> objectFactory);
 
   /// This Stream sends only changes/Atoms made locally, and does not contain any remote recieved

@@ -1,9 +1,9 @@
 import 'accessors.dart';
-import 'syncable_object.dart';
+import 'syncable_base.dart';
 
 typedef SynableObjectFactory<T> = T Function(Accessor accessor, String id);
 
-abstract class SyncableObjectContainer<T extends SyncableObject> {
+abstract class SyncableObjectContainer<T extends SyncableBase> {
   int get type;
   int get length;
 
