@@ -6,8 +6,8 @@ import 'package:sync_layer/types/hybrid_logical_clock.dart';
 import 'package:sync_layer/types/id_atom.dart';
 import 'package:sync_layer/types/object_reference.dart';
 
-class FakeAccessorHLC implements AcessProxy {
-  FakeAccessorHLC(this.type, this.site, this.onUpdate) {
+class FakeAccessProxyHLC implements AccessProxy {
+  FakeAccessProxyHLC(this.type, this.site, this.onUpdate) {
     baseClock = HybridLogicalClock(DateTime(2020).millisecondsSinceEpoch, 0);
   }
 
@@ -36,9 +36,7 @@ class FakeAccessorHLC implements AcessProxy {
   }
 
   @override
-  String generateID() {
-    return '__hello_world__';
-  }
+  String generateID() => '__hello_world__';
 
   @override
   SyncableObject objectLookup(ObjectReference ref) {

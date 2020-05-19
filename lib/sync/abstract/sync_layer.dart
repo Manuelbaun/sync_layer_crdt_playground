@@ -17,7 +17,9 @@ abstract class SyncLayer {
   });
 
   SyncableObjectContainer<T> registerObjectType<T extends SyncableBase>(
-      String typeId, SynableObjectFactory<T> objectFactory);
+    String typeId,
+    SynableObjectFactory<T> objectFactory,
+  );
 
   /// This Stream sends only changes/Atoms made locally, and does not contain any remote recieved
   /// changes or Atoms. This prevents from broadcast loops

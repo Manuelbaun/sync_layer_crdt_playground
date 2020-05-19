@@ -6,7 +6,7 @@ import 'package:sync_layer/sync/syncable_causal_tree.dart';
 import 'package:sync_layer/sync/syncable_object_impl.dart';
 
 class Todo extends SyncableObjectImpl<int, Todo> {
-  Todo(AcessProxy accessor, {String id, String title}) : super(id, accessor);
+  Todo(AccessProxy proxy, {String id, String title}) : super(proxy, id);
 
   String get title => super[0];
   set title(String v) => super[0] = v;
@@ -22,10 +22,24 @@ class Todo extends SyncableObjectImpl<int, Todo> {
     if (tombstone) return 'Todo($id, deleted: $tombstone)';
     return 'Todo($id, $title : $lastUpdated)';
   }
+
+  Map toJson() {
+    return {
+      '_meta_': {
+        'id': id,
+        'tombstone': tombstone,
+        'lastUpdated': lastUpdated,
+      },
+      'title': super[0],
+      'status': super[1],
+      // issue with hidden object ref!
+      // 'assignee': super[2].toJson(),
+    };
+  }
 }
 
 class Assignee extends SyncableObjectImpl<int, Assignee> {
-  Assignee(AcessProxy accessor, {String id, String title}) : super(id, accessor);
+  Assignee(AccessProxy proxy, {String id}) : super(proxy, id);
 
   String get firstName => super[0];
   set firstName(String v) => super[0] = v;
@@ -46,11 +60,11 @@ class Assignee extends SyncableObjectImpl<int, Assignee> {
 }
 
 class SyncArray extends SyncableCausalTree {
-  SyncArray(AcessProxy accessor, {String id}) : super(accessor, id);
+  SyncArray(AccessProxy accessor, {String id}) : super(accessor, id);
 }
 
 class SyncText extends SyncableCausalTree {
-  SyncText(AcessProxy accessor, {String id}) : super(accessor, id);
+  SyncText(AccessProxy accessor, {String id}) : super(accessor, id);
 }
 
 class SyncDao {

@@ -17,11 +17,11 @@ void main() {
     final type = 'todo'.hashCode;
     SyncableObject obj1;
     var atoms1 = <AtomBase>[];
-    final access1 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms1.add(a));
+    final access1 = FakeAccessProxyHLC(type, 22222, (AtomBase a) => atoms1.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, access1);
+      obj1 = SyncableObjectImpl(access1, null);
       atoms1 = [];
     });
 
@@ -142,13 +142,13 @@ void main() {
     var atoms1 = <AtomBase>[];
     var atoms2 = <AtomBase>[];
 
-    final access1 = FakeAccessorHLC(type, 11111, (AtomBase a) => atoms1.add(a));
-    final access2 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms2.add(a));
+    final access1 = FakeAccessProxyHLC(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessProxyHLC(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, access1);
-      obj2 = SyncableObjectImpl(null, access2);
+      obj1 = SyncableObjectImpl(access1, null);
+      obj2 = SyncableObjectImpl(access2, null);
       atoms1 = [];
       atoms2 = [];
     });
@@ -164,8 +164,8 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      final id1 = obj1.getFieldOriginId('1');
-      final id2 = obj2.getFieldOriginId('1');
+      final id1 = obj1.getOriginIdOfKey('1');
+      final id2 = obj2.getOriginIdOfKey('1');
 
       expect(id1 == id2, isFalse);
       expect(id1.site, 11111);
@@ -185,8 +185,8 @@ void main() {
       atoms1.forEach(obj1.applyAtom);
       atoms2.forEach(obj2.applyAtom);
 
-      final id1 = obj1.getFieldOriginId('1');
-      final id2 = obj2.getFieldOriginId('1');
+      final id1 = obj1.getOriginIdOfKey('1');
+      final id2 = obj2.getOriginIdOfKey('1');
 
       expect(id1 == id2, isFalse);
       expect(id1.site, 11111);
@@ -198,8 +198,8 @@ void main() {
       atoms2.forEach(obj1.applyAtom);
       atoms1.forEach(obj2.applyAtom);
 
-      final id11 = obj1.getFieldOriginId('1');
-      final id22 = obj2.getFieldOriginId('1');
+      final id11 = obj1.getOriginIdOfKey('1');
+      final id22 = obj2.getOriginIdOfKey('1');
 
       expect(id11 == id22, isTrue);
       expect(id11.site, 22222);
@@ -219,8 +219,8 @@ void main() {
         atoms1.forEach(obj1.applyAtom);
         atoms2.forEach(obj2.applyAtom);
 
-        final id1 = obj1.getFieldOriginId('1');
-        final id2 = obj2.getFieldOriginId('1');
+        final id1 = obj1.getOriginIdOfKey('1');
+        final id2 = obj2.getOriginIdOfKey('1');
 
         expect(id1 == id2, isFalse);
         expect(id1.site, 11111);
@@ -232,8 +232,8 @@ void main() {
         atoms2.forEach(obj1.applyAtom);
         atoms1.forEach(obj2.applyAtom);
 
-        final id11 = obj1.getFieldOriginId('1');
-        final id22 = obj2.getFieldOriginId('1');
+        final id11 = obj1.getOriginIdOfKey('1');
+        final id22 = obj2.getOriginIdOfKey('1');
 
         expect(id11 == id22, isTrue);
         expect(id11.site, 11111);
@@ -251,7 +251,7 @@ void main() {
 
       atoms1.forEach(obj1.applyAtom);
 
-      final clock = obj1.getFieldOriginId('1');
+      final clock = obj1.getOriginIdOfKey('1');
       expect(atoms1.length, 3);
 
       // if counter is 0 => 'Hans' was just set, when the milliseconds went up by one
@@ -271,13 +271,13 @@ void main() {
     var atoms1 = <AtomBase>[];
     var atoms2 = <AtomBase>[];
 
-    final access1 = FakeAccessorHLC(type, 11111, (AtomBase a) => atoms1.add(a));
-    final access2 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms2.add(a));
+    final access1 = FakeAccessProxyHLC(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessProxyHLC(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(null, access1);
-      obj2 = SyncableObjectImpl(null, access2);
+      obj1 = SyncableObjectImpl(access1, null);
+      obj2 = SyncableObjectImpl(access2, null);
       atoms1 = [];
       atoms2 = [];
     });

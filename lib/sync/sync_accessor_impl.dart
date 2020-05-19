@@ -5,7 +5,7 @@ import 'abstract/acess_proxy.dart';
 import 'abstract/sync_layer.dart';
 import 'abstract/syncable_object.dart';
 
-class SynclayerAccessor implements AcessProxy {
+class SynclayerAccessor implements AccessProxy {
   SynclayerAccessor(this.synclayer, int type)
       : _type = type,
         assert(synclayer != null),

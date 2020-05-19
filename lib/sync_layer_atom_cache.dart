@@ -11,12 +11,14 @@ class SyncLayerAtomCache {
   // remembers if atom already exits
   final Set<int> _allAtomsHashcodes = {};
 
-  void add(AtomBase atom) {
-    _allAtoms.add(atom);
-    _allAtomsHashcodes.add(atom.hashCode);
-
-    // _allAtoms.sort((a, b) => b.clock.counter - a.clock.counter); // DESC
-    _allAtoms.sort((a, b) => a.compareToDESC(b)); // DESC
+  /// returns true, if atom did not exist in the cache
+  bool add(AtomBase atom) {
+    if (_allAtomsHashcodes.add(atom.hashCode)) {
+      _allAtoms.add(atom);
+      _allAtoms.sort((a, b) => a.compareToDESC(b)); // DESC
+      return true;
+    }
+    return false;
   }
 
   bool exist(AtomBase atom) => _allAtomsHashcodes.contains(atom.hashCode);

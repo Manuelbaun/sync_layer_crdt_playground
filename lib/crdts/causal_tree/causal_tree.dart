@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/types/logical_clock.dart';
@@ -14,12 +12,13 @@ import 'causal_entry.dart';
 enum FilterSemantic { AND, OR }
 
 class CausalTree<T> {
-  CausalTree(this.site) : localClock = LogicalClock(0);
+  CausalTree(this.site, {onChange})
+      : localClock = LogicalClock(0),
+        _onChange = onChange;
+
   int site;
 
-  /// * synchron is true!
-  final _controller = StreamController<CausalEntry>.broadcast(sync: true);
-  Stream<CausalEntry> get stream => _controller.stream;
+  final void Function(CausalEntry<T> entry) _onChange;
 
   // should we use deltedAtoms?
   final Set<Id> _deletedIds = {};
@@ -34,13 +33,13 @@ class CausalTree<T> {
   int get fullLength => _allIds.length;
 
   // if atoms could not find the cause in this tree, but belong to this one
-  final pending = <CausalEntry>[];
+  final pending = <CausalEntry<T>>[];
 
   /// this sequence will be the same on all synced sites
   List<CausalEntry<T>> sequence = <CausalEntry<T>>[];
 
   // the local site cache, does not need to be the same in the cloud
-  final yarns = <int, List<CausalEntry>>{};
+  final yarns = <int, List<CausalEntry<T>>>{};
 
   /// SiteId -> TimeStamp, Kind of Version vector
   final weft = <int, int>{};
@@ -54,7 +53,7 @@ class CausalTree<T> {
     return Id(localClock, site);
   }
 
-  void _insert(CausalEntry entry, {int index, sequenceRun = true}) {
+  void _insert(CausalEntry<T> entry, {int index, bool sequenceRun = true}) {
     if (_allIds.contains(entry.id)) return;
 
     _allIds.add(entry.id);
@@ -93,22 +92,20 @@ class CausalTree<T> {
     yarns[entry.site] ??= <CausalEntry<T>>[];
     yarns[entry.site].add(entry);
 
-    _controller.add(entry);
+    if (_onChange != null) _onChange(entry);
   }
 
   // Add to deletedAtoms set
-  void _delete(CausalEntry entry, [int index]) {
+  void _delete(CausalEntry<T> entry, [int index]) {
     _deletedIds.add(entry.cause);
     _deletedIds.add(entry.id);
     _insert(entry, index: index);
   }
 
-  void mergeRemoteAtoms(List<CausalEntry<T>> entries, [recvActive = true]) {
+  void mergeRemoteEntriees(List<CausalEntry<T>> entries, [recvActive = true]) {
     for (final entry in entries) {
-      /// TEST: Update local time!!
-      /// make work online/offline possible
+      /// normally
       if (recvActive) {
-        final old = localClock;
         localClock = LogicalClock.recv(localClock, entry.id.ts);
       }
 
@@ -120,45 +117,45 @@ class CausalTree<T> {
     }
   }
 
-  CausalEntry<T> insert(CausalEntry parent, T value) {
-    final atom = CausalEntry<T>(
+  CausalEntry<T> insert(CausalEntry<T> parent, T value) {
+    final entry = CausalEntry<T>(
       _newID(),
       cause: parent?.id,
       data: value,
     );
 
-    _insert(atom);
-    return atom;
+    _insert(entry);
+    return entry;
   }
 
   CausalEntry<T> push(T value) {
-    final atom = CausalEntry<T>(
+    final entry = CausalEntry<T>(
       _newID(),
       cause: sequence.isNotEmpty ? sequence.last.id : null,
       data: value,
     );
 
-    _insert(atom, index: sequence.length);
+    _insert(entry, index: sequence.length);
     // maybe just add here?
-    return atom;
+    return entry;
   }
 
   void pop() {
     _delete(sequence.last, sequence.length);
   }
 
-  CausalEntry<T> delete(CausalEntry entry) {
-    final atom = CausalEntry<T>(
+  CausalEntry<T> delete(CausalEntry<T> deleteEntry) {
+    final entry = CausalEntry<T>(
       _newID(),
-      cause: entry?.id,
+      cause: deleteEntry?.id,
       data: null,
     );
 
-    _delete(atom);
-    return atom;
+    _delete(entry);
+    return entry;
   }
 
-  /// [semantic] is set to [OR] by default, means either [logicalTime] or [siteid] will be filterd by
+  /// [semantic] is set to [OR] by default, means either [logicalTime] or [siteIds] will be filterd by
   ///
   /// if set to **AND**: it is expected to use one or both [tsMin, tsMax] **and** the [siteid/s]
   ///
@@ -169,12 +166,12 @@ class CausalTree<T> {
   List<CausalEntry> filtering({
     LogicalClockBase tsMin,
     LogicalClockBase tsMax,
-    Set<int> siteid,
+    Set<int> siteIds,
     bool containsDeleted = false,
     semantic = FilterSemantic.OR,
   }) {
     assert(
-      !(tsMax == null && tsMin == null && siteid == null),
+      !(tsMax == null && tsMin == null && siteIds == null),
       'all filter are null, cannot filter by something',
     );
 
@@ -187,7 +184,7 @@ class CausalTree<T> {
 
     for (var entry in sequence) {
       var hasTs = _filterTimestamp(entry, tsMin, tsMax);
-      var hasId = _filterSiteIds(entry, siteid);
+      var hasId = _filterSiteIds(entry, siteIds);
       var isDeleted = _filterIsDelete(entry);
 
       var should = false;
@@ -204,7 +201,7 @@ class CausalTree<T> {
   }
 
   /// returns [false] if tsMin [AND] tsMax is [null], else check the time cases
-  bool _filterTimestamp(CausalEntry entry, LogicalClockBase tsMin, LogicalClockBase tsMax) {
+  bool _filterTimestamp(CausalEntry<T> entry, LogicalClockBase tsMin, LogicalClockBase tsMax) {
     if (tsMin == null && tsMax == null) return false;
 
     if (tsMin != null && tsMax != null) {
@@ -218,12 +215,12 @@ class CausalTree<T> {
   }
 
   /// returns true if data is null or the atom is deleted
-  bool _filterIsDelete(CausalEntry entry) {
+  bool _filterIsDelete(CausalEntry<T> entry) {
     return entry.data == null || _deletedIds.contains(entry.id);
   }
 
   /// returns false if siteid is null or does not contain the id
-  bool _filterSiteIds(CausalEntry entry, Set<int> siteid) {
+  bool _filterSiteIds(CausalEntry<T> entry, Set<int> siteid) {
     return siteid == null ? false : siteid.contains(entry.site);
   }
 

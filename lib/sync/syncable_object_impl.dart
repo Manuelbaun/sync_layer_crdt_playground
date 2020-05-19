@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:sync_layer/logger/index.dart';
@@ -20,24 +21,6 @@ const _TOMBSTONE_NUM = 0xff as Object;
 ///
 ///
 ///
-class _Entry {
-  _Entry(this.id, this.value);
-  final IdBase id;
-  final dynamic value;
-
-  @override
-  String toString() => 'Entry(c: $id, v: $value)';
-
-  @override
-  bool operator ==(Object o) {
-    if (identical(this, o)) return true;
-
-    return o is _Entry && o.id == id && o.value == value;
-  }
-
-  @override
-  int get hashCode => id.hashCode ^ value.hashCode;
-}
 
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
@@ -48,24 +31,27 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
   /// this function is provided by the sync layer, therefore the synclayer
   /// deceides which the form of the id
 
-  SyncableObjectImpl(String id, this._accessor, {this.notify})
-      : assert(_accessor != null, 'Accessor prop cannot be null'),
-        _id = id ?? _accessor.generateID() {
+  SyncableObjectImpl(this._proxy, String _id)
+      : assert(_proxy != null, 'AccessProxy prop cannot be null'),
+        // TODO: remove me laster!
+        id = _id ?? _proxy.generateID() {
     /// direct set! no Id/Ts
     // if (Key is int) if (Key is String) ;
 
-    _internal[_TOMBSTONE_NUM] = _Entry(null, false);
+    _internal[_TOMBSTONE_NUM] = IdValuePair(null, false);
   }
 
-  // @override
-  // Accessor get accessor => _accessor;
-  final AcessProxy _accessor;
+  // fires when the object got updated!
+  final _controller = StreamController<MapEntry<Key, dynamic>>.broadcast();
 
-  Function(Key key, _Entry entry) notify;
+  @override
+  Stream<MapEntry<Key, dynamic>> get stream => _controller.stream;
+
+  final AccessProxy _proxy;
 
   /// Stores the key /values of the keys, specify by the user.
   /// in case of a synable object, it stores the type and id
-  final Map<Key, _Entry> _internal = {};
+  final Map<Key, IdValuePair> _internal = {};
 
   /// Stores the reference to the syncable Object, once it gets called, not present if not called
   /// => lazy
@@ -74,11 +60,10 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
   /// Getter Setter
 
   @override
-  int get type => _accessor.type;
+  int get type => _proxy.type;
 
   @override
-  String get id => _id;
-  final String _id;
+  final String id;
 
   /// Marks if the object is deleted!
   @override
@@ -104,10 +89,15 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
   /// set value should only be used by apply atom,
   /// since this sets the _internal object with the object entry
   @pragma('vm:prefer-inline')
-  void __setInternalValue(Key key, _Entry entry) {
-    _internal[key] = entry;
+  void __setInternalValue(Key key, IdBase id, dynamic value) {
+    final pair = IdValuePair(id, value);
+    _internal[key] = pair;
 
-    if (notify != null) notify(key, entry);
+    /// * notifies all listerners of this object that changes happend
+    /// and which key...
+    ///
+
+    _controller.add(MapEntry(key, pair));
   }
 
   /// once a key gets set, this will send the update action via
@@ -135,7 +125,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
     // send atom
 
     final copy = {..._subTransactionMap};
-    final atom = _accessor.update(id, copy);
+    final atom = _proxy.update(id, copy);
     // creates new map for next
     _subTransactionMap.clear();
   }
@@ -149,18 +139,18 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
     if (_subTransaction) {
       _subTransactionMap[key] = value;
     } else {
-      final atom = _accessor.update(id, {key: value});
+      final atom = _proxy.update(id, {key: value});
     }
 
     /// Todo: set atom entry now?....
   }
 
   @override
-  IdBase getFieldOriginId(Key key) => _getIdTs(key);
+  IdBase getOriginIdOfKey(Key key) => _getIdTs(key);
 
   /// TODO: what should we do?
   @override
-  List<AtomBase> get history => _history.toList()..sort();
+  List<AtomBase> get history => _history.toList(growable: false)..sort();
   final Set<AtomBase> _history = {};
 
   /// Returns the timestamp for that key
@@ -230,11 +220,11 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
       final key = e.key as Key;
       final value = e.value;
 
-      __setInternalValue(key, _Entry(atom.id, value));
+      __setInternalValue(key, atom.id, value);
 
       // lookup if it is on object reference
       if (value is ObjectReference) {
-        final obj = _accessor.objectLookup(value);
+        final obj = _proxy.objectLookup(value);
         _setSyncableObjectRef(key, obj);
       }
     }
@@ -254,7 +244,6 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
   }
 
   /// TODO: compare by lastUpdated
-
   @override
   String toString() {
     final obj = <String, dynamic>{};

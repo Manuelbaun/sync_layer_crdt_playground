@@ -4,7 +4,7 @@ import 'package:sync_layer/types/index.dart';
 import 'syncable_object.dart';
 
 /// TODO: Rename to proxy ??
-abstract class AcessProxy {
+abstract class AccessProxy {
   int get type;
   int get site;
 

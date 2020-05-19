@@ -5,11 +5,11 @@ abstract class SyncableBase {
   /// Marks if the object is deleted!
   bool tombstone;
 
-  /// The object type
-  int get type;
-
   /// Object Id, Like RowId or Index in a Database, etc..
   String get id;
+
+  /// The object type
+  int get type;
 
   /// gets the last Updated TS and also site!
   IdBase get lastUpdated;

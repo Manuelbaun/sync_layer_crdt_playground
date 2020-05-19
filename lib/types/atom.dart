@@ -19,10 +19,10 @@ class Atom<T> implements AtomBase<T> {
   final T data;
 
   @override
-  int compareTo(AtomBase other) => id.ts - other.id.ts;
+  int compareTo(AtomBase other) => id.compareTo(other.id);
 
   @override
-  int compareToDESC(AtomBase other) => -(id.ts - other.id.ts);
+  int compareToDESC(AtomBase other) => -id.compareTo(other.id);
 
   @override
   String toString() => 'Atom($id, type: $typeId, objectId: $objectId, data: $data)';

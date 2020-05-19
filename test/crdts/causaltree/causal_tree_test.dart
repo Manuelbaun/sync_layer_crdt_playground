@@ -10,36 +10,28 @@ void main() {
   CausalTree<String> d;
 
   setUp(() {
-    a = CausalTree<String>(1);
-    b = CausalTree<String>(2);
-    c = CausalTree<String>(3);
-    d = CausalTree<String>(4);
-
-    // final stop = Stopwatch();
-    // stop.start();
-
-    final unsubscribeA = a.stream.listen((atom) {
-      b.mergeRemoteAtoms([atom]);
-      c.mergeRemoteAtoms([atom]);
-      d.mergeRemoteAtoms([atom]);
+    a = CausalTree<String>(1, onChange: (atom) {
+      b.mergeRemoteEntriees([atom]);
+      c.mergeRemoteEntriees([atom]);
+      d.mergeRemoteEntriees([atom]);
     });
 
-    final unsubscribeB = b.stream.listen((atom) {
-      a.mergeRemoteAtoms([atom]);
-      c.mergeRemoteAtoms([atom]);
-      d.mergeRemoteAtoms([atom]);
+    b = CausalTree<String>(2, onChange: (atom) {
+      a.mergeRemoteEntriees([atom]);
+      c.mergeRemoteEntriees([atom]);
+      d.mergeRemoteEntriees([atom]);
     });
 
-    final unsubscribeC = c.stream.listen((atom) {
-      a.mergeRemoteAtoms([atom]);
-      b.mergeRemoteAtoms([atom]);
-      d.mergeRemoteAtoms([atom]);
+    c = CausalTree<String>(3, onChange: (atom) {
+      a.mergeRemoteEntriees([atom]);
+      b.mergeRemoteEntriees([atom]);
+      d.mergeRemoteEntriees([atom]);
     });
 
-    final unsubscribeD = d.stream.listen((atom) {
-      a.mergeRemoteAtoms([atom]);
-      b.mergeRemoteAtoms([atom]);
-      c.mergeRemoteAtoms([atom]);
+    d = CausalTree<String>(4, onChange: (atom) {
+      a.mergeRemoteEntriees([atom]);
+      b.mergeRemoteEntriees([atom]);
+      c.mergeRemoteEntriees([atom]);
     });
 
     measureExecution('add and merge', () {
@@ -135,7 +127,7 @@ void main() {
       measureExecution('filter by timestamp', () {
         filteredAtoms = a.filtering(
           tsMin: LogicalClock(10),
-          siteid: {4},
+          siteIds: {4},
           semantic: FilterSemantic.AND,
         );
       });
@@ -146,7 +138,7 @@ void main() {
     test('filter by one siteid', () {
       List<CausalEntry> filteredAtoms;
       measureExecution('filter by one siteid', () {
-        filteredAtoms = a.filtering(siteid: {2});
+        filteredAtoms = a.filtering(siteIds: {2});
       });
 
       final res = filteredAtoms.map((a) => a.data).join('');
@@ -156,7 +148,7 @@ void main() {
     test('filter by two siteids', () {
       List<CausalEntry> filteredAtoms;
       measureExecution('filter by two siteids', () {
-        filteredAtoms = a.filtering(siteid: {4, 2});
+        filteredAtoms = a.filtering(siteIds: {4, 2});
       });
 
       final res = filteredAtoms.map((a) => a.data).join('');
@@ -167,7 +159,7 @@ void main() {
       List<CausalEntry> filteredAtoms;
       measureExecution('filter by one siteids and timestamp', () {
         filteredAtoms = a.filtering(
-          siteid: {2},
+          siteIds: {2},
           tsMin: LogicalClock(6),
           tsMax: LogicalClock(9),
           semantic: FilterSemantic.AND,

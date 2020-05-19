@@ -52,7 +52,7 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
       : assert(accessor != null),
         assert(_objectFactory != null);
 
-  final AcessProxy accessor;
+  final AccessProxy accessor;
 
   ///
   /// CRUD Ops

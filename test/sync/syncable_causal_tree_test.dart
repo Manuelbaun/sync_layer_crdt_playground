@@ -1,10 +1,6 @@
-import 'dart:async';
-
 import 'package:sync_layer/crdts/causal_tree/index.dart';
 import 'package:sync_layer/encoding_extent/index.dart';
-import 'package:sync_layer/sync/abstract/index.dart';
 import 'package:sync_layer/sync/abstract/syncable_base.dart';
-
 import 'package:sync_layer/sync/syncable_causal_tree.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/logical_clock.dart';
@@ -36,8 +32,8 @@ class FakeNetwork {
 
 void main() {
   final network = FakeNetwork();
-  final acc1 = FakeAccessorHLC('CausalTree'.hashCode, 0xa, network.add);
-  final acc2 = FakeAccessorHLC('CausalTree'.hashCode, 0xb, network.add);
+  final acc1 = FakeAccessProxyHLC('CausalTree'.hashCode, 0xa, network.add);
+  final acc2 = FakeAccessProxyHLC('CausalTree'.hashCode, 0xb, network.add);
 
   final list1 = SyncableCausalTree(acc1, 'line1');
   final list2 = SyncableCausalTree(acc2, 'line1');
@@ -67,19 +63,16 @@ void causalTree() {
   CausalTree<String> a;
   CausalTree<String> b;
 
-  setUp(() {
-    a = CausalTree<String>(1);
-    b = CausalTree<String>(2);
-  });
+  ;
 
   test('Merge CTRLDEL Merge', () {
-    final unsubscribeA = a.stream.listen((atom) {
-      b.mergeRemoteAtoms([atom]);
+    a = CausalTree<String>(1, onChange: (atom) {
+      b.mergeRemoteEntriees([atom]);
+    });
+    b = CausalTree<String>(2, onChange: (atom) {
+      a.mergeRemoteEntriees([atom]);
     });
 
-    final unsubscribeB = b.stream.listen((atom) {
-      a.mergeRemoteAtoms([atom]);
-    });
     measureExecution('add and merge', () {
       final a1 = a.insert(null, 'C');
       final a2 = a.insert(a1, 'M');
@@ -130,7 +123,7 @@ void causalTree() {
     all.add(a.push('L'));
     all.add(a.push(' '));
 
-    b.mergeRemoteAtoms(all);
+    b.mergeRemoteEntriees(all);
     print(a.toString());
     print(b.toString());
     print('................');
@@ -146,9 +139,9 @@ void causalTree() {
     print(b.toString());
     // all.add();
 
-    a.mergeRemoteAtoms([b.insert(all[2], 'L')]);
+    a.mergeRemoteEntriees([b.insert(all[2], 'L')]);
 
-    b.mergeRemoteAtoms(a.sequence);
+    b.mergeRemoteEntriees(a.sequence);
     print(a.toString());
     print(b.toString());
   });

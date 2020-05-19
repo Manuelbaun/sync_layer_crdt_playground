@@ -89,7 +89,6 @@ class SyncLayerImpl implements SyncLayer {
 
   /// this registers a syncable type and returns the container for it
   /// which provides basic crud
-  ///
   StringNumberMapper mapper = StringNumberMapper();
 
   @override
@@ -101,10 +100,10 @@ class SyncLayerImpl implements SyncLayer {
     if (!mapper.containsTypeName(typeName)) {
       final typeNumber = mapper.registerNewTypeName(typeName);
 
-      AcessProxy accessor = SynclayerAccessor(this, typeNumber);
+      AccessProxy proxy = SynclayerAccessor(this, typeNumber);
 
       container = SyncableObjectContainerImpl<T>(
-        accessor,
+        proxy,
         objectFactory,
       );
 
@@ -159,6 +158,32 @@ class SyncLayerImpl implements SyncLayer {
     }
   }
 
+  /// Todo: think again: Work with local Atoms
+  ///
+  // void _applyLocalAtom(List<AtomBase> atoms) {
+  //   final changedContainer = <SyncableObjectContainer>{};
+
+  //   for (final atom in atoms) {
+  //     /// can just add to cache and returns true/false depending if exist or not
+  //     if (atomCache.add(atom)) {
+  //       // test if table exits
+  //       // final container = getObjectContainer(typeNumber: atom.typeId);
+  //       trie.build([atom.id]);
+  //       // if (res == 2) {
+  //       //   // todo trigger! container /object update
+  //       //   container.setUpdatedObject(obj);
+  //       //   changedContainer.add(container);
+  //       // }
+
+  //     } // else skip that message
+  //   }
+
+  //   // Tigger the changed happend in synclayer
+  //   for (final con in changedContainer) {
+  //     con.triggerUpdateChange();
+  //   }
+  // }
+
   @override
   AtomBase createAtom(String objectId, int typeId, dynamic data) {
     final id = AtomId(clock.getForSend(), site);
@@ -171,8 +196,8 @@ class SyncLayerImpl implements SyncLayer {
   /// sends via network
   @override
   void applyAtoms(List<AtomBase> atoms) {
-    if (transactionActive) {
-      transationList.addAll(atoms);
+    if (_transactionActive) {
+      _transationList.addAll(atoms);
     } else {
       // could be changed?
       _applyAtoms(atoms);
@@ -181,19 +206,19 @@ class SyncLayerImpl implements SyncLayer {
   }
 
   // Optimizers
-  final transationList = <AtomBase>[];
-  bool transactionActive = false;
+  final _transationList = <AtomBase>[];
+  bool _transactionActive = false;
 
   @override
   void transaction(Function func) {
-    transactionActive = true;
+    _transactionActive = true;
     func();
     // send transationList
-    transactionActive = false;
+    _transactionActive = false;
 
     /// TODO: should it be copying the refs
-    applyAtoms([...transationList]);
-    transationList.clear();
+    _applyAtoms([..._transationList]);
+    _transationList.clear();
   }
 
   /// Network communication
