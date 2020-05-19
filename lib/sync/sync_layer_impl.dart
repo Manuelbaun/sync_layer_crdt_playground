@@ -128,7 +128,7 @@ class SyncLayerImpl implements SyncLayer {
       /// can just add to cache and returns true/false depending if exist or not
       if (!atomCache.exist(atom)) {
         // test if table exits
-        final container = getObjectContainer(typeNumber: atom.typeId);
+        final container = getObjectContainer(typeNumber: atom.type);
 
         if (container != null) {
           // if row does not exist, new row will be added
@@ -247,7 +247,7 @@ class SyncLayerImpl implements SyncLayer {
     if (tsKey != null) {
       final ms = clock.getClockFromTSKey(tsKey, 0);
       logger.verbose(ms.toString());
-      return getAtomsSinceMs(ms);
+      return atomCache.getSince(ms);
     }
     // send empty
     return [];

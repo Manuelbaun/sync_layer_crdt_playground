@@ -27,6 +27,10 @@ class SyncLayerAtomCache {
   List<AtomBase> getSince(HybridLogicalClock clock) {
     final index = _allAtoms.indexWhere((atom) => atom.id.ts < clock);
     final endIndex = index < 0 ? _allAtoms.length : index;
-    return _allAtoms.sublist(0, endIndex);
+
+    ///  get from DESC and sort ACS
+    final atoms = _allAtoms.sublist(0, endIndex);
+    atoms.sort();
+    return atoms;
   }
 }

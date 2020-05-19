@@ -4,6 +4,7 @@ import 'package:sync_layer/crdts/causal_tree/causal_entry.dart';
 import 'package:sync_layer/crdts/causal_tree/causal_tree.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
+import 'package:sync_layer/types/object_reference.dart';
 
 import 'abstract/acess_proxy.dart';
 import 'abstract/syncable_base.dart';
@@ -23,15 +24,17 @@ import 'abstract/syncable_base.dart';
 /// * tombstone
 /// * abstract causal tree
 /// * rename in ordered list?
-class SyncableCausalTree<T> implements SyncableBase {
+class SyncableCausalTree<T> extends SyncableBase {
   SyncableCausalTree(this.proxy, this.id)
       : assert(proxy != null, 'Accessor prop cannot be null'),
         assert(id != null, 'Id cannot be null') {
     tombstone = false;
+
     _internal = CausalTree(proxy.site, onChange: _onTreeChange);
   }
 
   void _onTreeChange(CausalEntry<T> entry) {
+    /// get the values,which are note delete.
     _filteredEntries = _internal.value();
 
     /// THis here needs a revisit!!!
@@ -46,9 +49,15 @@ class SyncableCausalTree<T> implements SyncableBase {
 
   /// this is a workaround to get index and entries mapped
   List<CausalEntry<T>> _filteredEntries = <CausalEntry<T>>[];
-  List<CausalEntry<T>> get entries => _filteredEntries;
-  List<T> get values => _filteredEntries.map((e) => e.data).toList();
 
+  /// gets the real tree entries,  [map],[list], a [primitives] or [objectReference]
+  /// try using values
+  List<CausalEntry<T>> get entries => _filteredEntries;
+
+  /// if called, all [ObjectReference] will be looked up and return Syncable Objects
+  List<T> get values => _filteredEntries.map(_convertEntry2Data).toList();
+
+  @override
   final AccessProxy proxy;
 
   /// The object type
@@ -63,10 +72,45 @@ class SyncableCausalTree<T> implements SyncableBase {
   @override
   final String id;
 
+  @override
+  String toString() => 'SyncableCausalTree(id: $id, site: ${proxy.site}, values: $values)';
+
   /// gets the last Updated TS and also site!
   @override
   IdBase get lastUpdated => _lastUpdated;
   IdBase _lastUpdated;
+
+  final Map<IdBase, SyncableBase> _syncableObjectsRefs = {};
+
+  /// Internal get and setter
+  @pragma('vm:prefer-inline')
+  SyncableBase _getSyncableRef(IdBase key) => _syncableObjectsRefs[key];
+
+  @pragma('vm:prefer-inline')
+  void _setSyncableRef(IdBase key, SyncableBase obj) => _syncableObjectsRefs[key] = obj;
+
+  @pragma('vm:prefer-inline')
+  dynamic _syncableBaseCheck(dynamic value) {
+    if (value is SyncableBase) {
+      return (value as SyncableBase).toObjectRef();
+    }
+
+    return value;
+  }
+
+  @pragma('vm:prefer-inline')
+  dynamic _convertEntry2Data(CausalEntry e) {
+    var data = e.data;
+
+    if (_syncableObjectsRefs.containsKey(e.id)) {
+      data = _getSyncableRef(e.id);
+    } else if (data is ObjectReference) {
+      data = proxy.objectLookup(e.data);
+      _setSyncableRef(e.id, data);
+    }
+
+    return data;
+  }
 
   /// will use an list
   @override
@@ -85,7 +129,6 @@ class SyncableCausalTree<T> implements SyncableBase {
 
   @override
   int applyAtom(AtomBase atom) {
-    print(id);
     final entries = (atom.data is List) ? atom.data as List<CausalEntry<T>> : <CausalEntry<T>>[atom.data];
 
     // if atom did not exist, add and merge
@@ -101,25 +144,28 @@ class SyncableCausalTree<T> implements SyncableBase {
 
   /// main functionality
   /// TODO: think
-  bool insert(int index, value) {
-    print(id);
+  bool insert(int index, dynamic value) {
     assert(index >= 0, 'cant insert negative index');
-    assert(index <= _filteredEntries.length, 'greater then length ${_filteredEntries.length}');
+
+    /// check if it is syncable object
+    value = _syncableBaseCheck(value);
 
     if (index <= 0) {
       _internal.insert(null, value);
-    } else if (index == _filteredEntries.length) {
+    } else if (index >= _filteredEntries.length) {
       _internal.push(value);
     } else {
       final parent = _filteredEntries[index - 1];
       _internal.insert(parent, value);
     }
 
-    return false;
+    return true;
   }
 
   bool add(dynamic value) {
-    print(id);
+    /// check if it is syncable object
+    value = _syncableBaseCheck(value);
+
     _internal.push(value);
     return false;
   }
@@ -129,14 +175,12 @@ class SyncableCausalTree<T> implements SyncableBase {
   }
 
   bool removeAt(int index) {
-    print(id);
     final cause = _filteredEntries[index];
     _internal.delete(cause);
     return false;
   }
 
   dynamic getAtIndex(int index) {
-    print(id);
     return _filteredEntries[index];
   }
 }

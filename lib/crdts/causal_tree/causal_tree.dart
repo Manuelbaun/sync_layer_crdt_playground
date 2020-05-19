@@ -136,7 +136,7 @@ class CausalTree<T> {
   CausalEntry<T> push(T value) {
     final entry = CausalEntry<T>(
       _newID(),
-      cause: sequence.isNotEmpty ? sequence.last.id : null,
+      cause: sequence.isNotEmpty ? sequence.last.id : root.id,
       data: value,
     );
 

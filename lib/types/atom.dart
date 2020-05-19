@@ -1,8 +1,10 @@
+import 'package:sync_layer/basic/hashing.dart';
+
 import 'abstract/atom_base.dart';
 import 'id_atom.dart';
 
 class Atom<T> implements AtomBase<T> {
-  Atom(this.id, this.typeId, this.objectId, this.data);
+  Atom(this.id, this.type, this.objectId, this.data);
 
   /// depending on the atom type, the id the hashcode of the atom or the clock
   // final IdBase id;
@@ -10,7 +12,7 @@ class Atom<T> implements AtomBase<T> {
   final AtomId id;
 
   @override
-  final int typeId;
+  final int type;
 
   @override
   final String objectId;
@@ -25,7 +27,7 @@ class Atom<T> implements AtomBase<T> {
   int compareToDESC(AtomBase other) => -id.compareTo(other.id);
 
   @override
-  String toString() => 'Atom($id, type: $typeId, objectId: $objectId, data: $data)';
+  String toString() => 'Atom($id, type: $type, objectId: $objectId, data: $data)';
 
   @override
   bool operator ==(Object o) {
@@ -36,5 +38,5 @@ class Atom<T> implements AtomBase<T> {
   @override
   // should be enough!, since id, should be as unique as possible!
   // otherwise implement use objectType, etc
-  int get hashCode => id.hashCode ^ objectId.hashCode ^ data.hashCode ^ typeId;
+  int get hashCode => id.hashCode ^ objectId.hashCode ^ type ^ nestedHashing(data);
 }

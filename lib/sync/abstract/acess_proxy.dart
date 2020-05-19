@@ -1,3 +1,4 @@
+import 'package:sync_layer/sync/abstract/syncable_base.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/index.dart';
 
@@ -10,5 +11,5 @@ abstract class AccessProxy {
 
   AtomBase update(String id, dynamic value);
   String generateID();
-  SyncableObject objectLookup(ObjectReference ref);
+  SyncableBase objectLookup(ObjectReference ref);
 }

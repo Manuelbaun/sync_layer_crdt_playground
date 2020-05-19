@@ -43,7 +43,7 @@ class _ExtendetEncoder implements ExtEncoder {
         o.id.ts.ms,
         o.id.ts.counter,
         o.id.site,
-        o.typeId,
+        o.type,
         o.objectId,
         o.data,
       ]);

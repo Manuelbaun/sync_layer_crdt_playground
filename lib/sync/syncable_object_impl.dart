@@ -7,6 +7,7 @@ import 'package:sync_layer/types/abstract/id_base.dart';
 
 import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/index.dart';
+import 'abstract/syncable_base.dart';
 
 /// Meta fixed key numbers!
 const _TOMBSTONE = '__tombstone';
@@ -24,7 +25,7 @@ const _TOMBSTONE_NUM = 0xff as Object;
 
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
-class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableObject<Key> {
+class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
@@ -49,13 +50,16 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
 
   final AccessProxy _proxy;
 
+  @override
+  AccessProxy get proxy => _proxy;
+
   /// Stores the key /values of the keys, specify by the user.
   /// in case of a synable object, it stores the type and id
   final Map<Key, IdValuePair> _internal = {};
 
   /// Stores the reference to the syncable Object, once it gets called, not present if not called
   /// => lazy
-  final Map<Key, SyncableObject> _syncableObjectsRefs = {};
+  final Map<Key, SyncableBase> _syncableObjectsRefs = {};
 
   /// Getter Setter
 
@@ -74,10 +78,10 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
 
   /// Internal get and setter
   @pragma('vm:prefer-inline')
-  SyncableObject _getSyncableObjectRef(Key key) => _syncableObjectsRefs[key];
+  SyncableBase _getSyncableObjectRef(Key key) => _syncableObjectsRefs[key];
 
   @pragma('vm:prefer-inline')
-  void _setSyncableObjectRef(Key key, SyncableObject obj) => _syncableObjectsRefs[key] = obj;
+  void _setSyncableObjectRef(Key key, SyncableBase obj) => _syncableObjectsRefs[key] = obj;
 
   @pragma('vm:prefer-inline')
   dynamic _getValue(Key key) => _internal[key]?.value;
@@ -132,8 +136,8 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
 
   void _setValue(Key key, dynamic value) {
     /// check if value is [SyncableObject] and if so create Ref to object of type
-    if (value is SyncableObject) {
-      value = ObjectReference(value.type, value.id);
+    if (value is SyncableBase) {
+      value = (value as SyncableBase).toObjectRef();
     }
 
     if (_subTransaction) {
@@ -232,7 +236,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
 
   /// lexographical sort by Object ID
   @override
-  int compareTo(SyncableObject other) {
+  int compareTo(SyncableBase other) {
     for (var i = 0; i < id.length; i++) {
       final lc = id.codeUnitAt(i);
       final oc = other.id.codeUnitAt(i);
@@ -244,6 +248,9 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
   }
 
   /// TODO: compare by lastUpdated
+  ///
+  /// TO string will return the internal values and only object reference
+  /// to prefent circlue to string calls!!!
   @override
   String toString() {
     final obj = <String, dynamic>{};
@@ -253,31 +260,18 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
       final c = _internal[key].id?.toString();
       var v = _internal[key].value;
 
-      final res = {'v': v, 'c': '$c'};
+      if (v is ObjectReference) {
+        /// do not try to lookup the actuall object and print
+        /// might result in circular dependency, if nested incorectly
+        v = v.toString();
+      }
+
+      final res = {'id': '$c', 'value': v};
       obj['$key'] = res;
     }
 
-    final res = encoder.convert({'id': id, 'type': type, 'obj': obj.toString()});
+    final res = encoder.convert({'key-value': obj});
 
-    return res;
+    return 'SyncableObjectImpl(id: "$id", type: "$type", $res';
   }
 }
-
-// dynamic convert2Json(dynamic m) {
-//   final mm = <String, dynamic>{};
-
-//   if (m is Map) {
-//     for (var e in m.entries) {
-//       var value = e.value;
-//       if (e.value is Map) value = convert2Json(value);
-//       if (m is Set) value = e.value.toList();
-//       mm['${e.key}'] = value;
-//     }
-//   } else if (m is Set) {
-//     return m.toList();
-//   } else {
-//     return m;
-//   }
-
-//   return mm;
-// }

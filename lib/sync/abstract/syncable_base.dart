@@ -1,7 +1,10 @@
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
+import 'package:sync_layer/types/object_reference.dart';
 
-abstract class SyncableBase {
+import 'acess_proxy.dart';
+
+abstract class SyncableBase extends Comparable<SyncableBase> {
   /// Marks if the object is deleted!
   bool tombstone;
 
@@ -13,6 +16,13 @@ abstract class SyncableBase {
 
   /// gets the last Updated TS and also site!
   IdBase get lastUpdated;
+
+  AccessProxy get proxy;
+
+  ObjectReference toObjectRef() => ObjectReference(type, id);
+
+  @override
+  int compareTo(SyncableBase other) => id.compareTo(other.id);
 
   /// With subtransaction, assigning multiple values to the object,
   /// no update is triggered until function is finished
