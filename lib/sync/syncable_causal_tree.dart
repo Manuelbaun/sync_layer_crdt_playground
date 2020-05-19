@@ -39,7 +39,7 @@ class SyncableCausalTree<T> implements SyncableBase {
     _controller.add(values);
   }
 
-  final StreamController _controller = StreamController();
+  final _controller = StreamController<List<T>>();
   Stream<List<T>> get stream => _controller.stream;
 
   CausalTree<T> _internal;
