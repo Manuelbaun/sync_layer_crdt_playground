@@ -24,7 +24,7 @@ class Id implements IdBase, Comparable<Id> {
   String toString() => 'Id(ts: $ts, site: $site)';
 
   @override
-  String toRONString() => 'S$site@T${ts}';
+  String toRONString() => 'S' + '$site'.padLeft(2, '0') + '@T' + '$ts'.padLeft(2, '0');
 
   /// Id compares first LogicalClock and then Site
   @override

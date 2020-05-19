@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+/// Contains only the type and id of the object, to search if needed
+/// this is used to transmit, instead of the syncable objects
 class ObjectReference {
   ObjectReference(this.type, this.id);
 
