@@ -1,4 +1,5 @@
 import 'package:sync_layer/sync/abstract/index.dart';
+import 'package:sync_layer/sync/abstract/syncable_base.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'package:sync_layer/types/atom.dart';
@@ -38,8 +39,11 @@ class FakeAccessProxyHLC implements AccessProxy {
   @override
   String generateID() => '__hello_world__';
 
+  var db = <String, SyncableBase>{};
+
   @override
-  SyncableObject objectLookup(ObjectReference ref) {
-    return null;
+  SyncableBase objectLookup(ObjectReference ref) {
+    
+    return db[ref.id];
   }
 }
