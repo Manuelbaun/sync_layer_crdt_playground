@@ -14,10 +14,12 @@ enum FilterSemantic { AND, OR }
 class CausalTree<T> {
   CausalTree(this.site, {onChange})
       : localClock = LogicalClock(0),
-        _onChange = onChange;
+        _onChange = onChange {
+    root = CausalEntry(Id(localClock, -1), data: null, cause: null);
+  }
 
   int site;
-
+  CausalEntry root;
   final void Function(CausalEntry<T> entry) _onChange;
 
   // should we use deltedAtoms?
@@ -36,7 +38,7 @@ class CausalTree<T> {
   final pending = <CausalEntry<T>>[];
 
   /// this sequence will be the same on all synced sites
-  List<CausalEntry<T>> sequence = <CausalEntry<T>>[];
+  final List<CausalEntry<T>> sequence = <CausalEntry<T>>[];
 
   // the local site cache, does not need to be the same in the cloud
   final yarns = <int, List<CausalEntry<T>>>{};
@@ -62,21 +64,24 @@ class CausalTree<T> {
     var causeIndex = index;
     causeIndex ??= sequence.indexWhere((e) => e.id == entry.cause);
 
-    if (sequence.isEmpty || causeIndex >= sequence.length - 1) {
+    /// if remote entry gets here, needs to check wheter cause is root
+    if (entry.cause == root.id) causeIndex = 0;
+
+    // with root in sequence isEmpty is never true
+    if (causeIndex >= sequence.length - 1 || sequence.isEmpty) {
       sequence.add(entry);
     } else
 
     /// insert after cause
     if (causeIndex >= 0) {
-      causeIndex += 1;
+      /// if entrys cause is root id, then dont increate causeIndex
+      if (entry.cause != root.id) causeIndex += 1;
 
-      /// checks if atom to insert and atom at causeIndex are siblings
-      if (entry.cause == sequence[causeIndex].cause) {
-        if (sequenceRun) {
-          /// increase causeIndex and check if atom at causeIndex is left of current atom
-          while (causeIndex < sequence.length && sequence[causeIndex].isLeftOf(entry)) {
-            causeIndex++;
-          }
+      /// checks if the next entry is a sibling to the current entry
+      if (entry.isSibling(sequence[causeIndex])) {
+        /// increase causeIndex and check if atom at causeIndex is left of current atom
+        while (causeIndex < sequence.length && sequence[causeIndex].isLeftOf(entry)) {
+          causeIndex++;
         }
       }
 
@@ -120,11 +125,11 @@ class CausalTree<T> {
   CausalEntry<T> insert(CausalEntry<T> parent, T value) {
     final entry = CausalEntry<T>(
       _newID(),
-      cause: parent?.id,
+      cause: parent?.id ?? root.id,
       data: value,
     );
 
-    _insert(entry);
+    _insert(entry, index: parent == null ? 0 : null);
     return entry;
   }
 

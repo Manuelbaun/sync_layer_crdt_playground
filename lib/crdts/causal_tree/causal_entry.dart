@@ -78,8 +78,12 @@ class CausalEntry<T> implements CausalEntryBase {
   @override
   bool isLeftOf(CausalEntryBase o) => id.ts == o.id.ts ? id.site > o.id.site : id.ts > o.id.ts;
 
+  bool operator <(o) => (o is CausalEntryBase) && id.ts == o.id.ts ? id.site < o.id.site : id.ts < o.ts;
+
+  bool operator >(o) => (o is CausalEntryBase) && id.ts == o.id.ts ? id.site > o.id.site : id.ts > o.ts;
+
   @override
-  String toString() => '${id.toRONString()}->${cause?.toRONString()} : ${data}';
+  String toString() => '${id.toRONString()}->${cause?.toRONString()}:' + '$data'.padLeft(4, ' ');
 
   @override
   int get hashCode => _hashcode;
