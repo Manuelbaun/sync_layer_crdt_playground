@@ -11,7 +11,14 @@ import 'package:sync_layer/logger/index.dart';
 
 import 'logger/index.dart';
 
-enum MessageEnum { STATE, STATE_REQUEST, STATE_RESPONSE, ATOMS, NODE_NAME, NO_ATOMS }
+enum _ProtocolHeaders {
+  STATE,
+  STATE_REQUEST,
+  STATE_RESPONSE,
+  ATOMS,
+  NODE_NAME,
+  NO_ATOMS,
+}
 
 class _EnDecoder {
   static Uint8List encodeAtoms(List<AtomBase> atoms) {
@@ -75,12 +82,12 @@ class SyncLayerProtocol {
 
     // Start sync process => send local State
     logger.info('send:MessageEnum.NODE_NAME');
-    ws.add(Uint8List.fromList([MessageEnum.NODE_NAME.index, syn.site]));
+    ws.add(Uint8List.fromList([_ProtocolHeaders.NODE_NAME.index, syn.site]));
 
     logger.info('send:MessageEnum.STATE');
 
     final buff = _EnDecoder.encodeState(syn.getState());
-    ws.add([MessageEnum.STATE.index, ...buff]);
+    ws.add([_ProtocolHeaders.STATE.index, ...buff]);
   }
 
   void unregisterConnection(WebSocket ws) {
@@ -103,8 +110,7 @@ class SyncLayerProtocol {
     logger.info('send:MessageEnum.ATOMS Broadcast');
 
     for (final ws in websockets) {
-      // Uint8List.fromList([msg.index, ...zipped])
-      ws.add([MessageEnum.ATOMS.index, ...data]);
+      ws.add([_ProtocolHeaders.ATOMS.index, ...data]);
     }
   }
 
@@ -118,31 +124,31 @@ class SyncLayerProtocol {
 
   void receiveBuffer(dynamic rawData, WebSocket ws) {
     if (rawData is Uint8List) {
-      final msgType = MessageEnum.values[rawData[0]];
-      logger.info('🔻 ${msgType}');
+      final header = _ProtocolHeaders.values[rawData[0]];
+      logger.info('🔻 ${header}');
 
       final data = rawData.sublist(1);
 
-      switch (msgType) {
-        case MessageEnum.STATE:
+      switch (header) {
+        case _ProtocolHeaders.STATE:
           final state = _EnDecoder.decodeState(data);
           final atoms = syn.getAtomsByReceivingState(state);
 
           if (atoms.isNotEmpty) {
             logger.info('⏫ :MessageEnum.STATE_RESPONSE');
-            final msg = [MessageEnum.STATE_RESPONSE.index, ..._EnDecoder.encodeAtoms(atoms)];
+            final msg = [_ProtocolHeaders.STATE_RESPONSE.index, ..._EnDecoder.encodeAtoms(atoms)];
             ws.add(msg);
           } else {
             logger.info('⏫ MessageEnum.NO_ATOMS');
-            ws.add([MessageEnum.NO_ATOMS.index]);
+            ws.add([_ProtocolHeaders.NO_ATOMS.index]);
           }
           break;
-        case MessageEnum.STATE_REQUEST:
+        case _ProtocolHeaders.STATE_REQUEST:
           final buff = _EnDecoder.encodeState(syn.getState());
           logger.info('⏫ MessageEnum.STATE');
-          ws.add([MessageEnum.STATE.index, ...buff]);
+          ws.add([_ProtocolHeaders.STATE.index, ...buff]);
           break;
-        case MessageEnum.STATE_RESPONSE:
+        case _ProtocolHeaders.STATE_RESPONSE:
           final atoms = _EnDecoder.decodeAtoms(data);
           syn.receiveAtoms(atoms);
 
@@ -150,20 +156,20 @@ class SyncLayerProtocol {
           /// send to all online people, there are news online!
           relayMessage(rawData, ws);
           break;
-        case MessageEnum.ATOMS:
+        case _ProtocolHeaders.ATOMS:
           final atoms = _EnDecoder.decodeAtoms(data);
           syn.receiveAtoms(atoms);
           logger.info('⏫ MessageEnum.ATOMS relay');
           relayMessage(rawData, ws);
           break;
-        case MessageEnum.NODE_NAME:
+        case _ProtocolHeaders.NODE_NAME:
           websocketsNames[ws] = String.fromCharCodes(rawData.sublist(1));
           break;
-        case MessageEnum.NO_ATOMS:
+        case _ProtocolHeaders.NO_ATOMS:
           // todo?
           break;
         default:
-          logger.error('UNKOWN type $msgType');
+          logger.error('UNKOWN type $header');
       }
     } else {
       logger.error('incorrect type');

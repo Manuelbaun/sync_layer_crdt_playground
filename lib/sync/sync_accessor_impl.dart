@@ -1,40 +1,46 @@
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/object_reference.dart';
 
-import 'abstract/accessors.dart';
+import 'abstract/acess_proxy.dart';
 import 'abstract/sync_layer.dart';
 import 'abstract/syncable_object.dart';
 
-class SynclayerAccessor implements Accessor {
-  SynclayerAccessor(this.synclayer, this.type);
+class SynclayerAccessor implements AcessProxy {
+  SynclayerAccessor(this.synclayer, int type)
+      : _type = type,
+        assert(synclayer != null),
+        assert(type != null);
 
   final SyncLayer synclayer;
 
+  final int _type;
   @override
-  final int type;
+  int get type => _type;
 
   @override
-  AtomBase onUpdate(String objectId, dynamic data) {
+  int get site => synclayer.site;
+
+  @override
+  AtomBase update(String objectId, dynamic data) {
     final atom = synclayer.createAtom(objectId, type, data);
     synclayer.applyAtoms([atom]);
     return atom;
   }
 
   @override
-  String generateID() {
-    return synclayer.generateID();
-  }
+  String generateID() => synclayer.generateID();
 
   @override
   SyncableObject objectLookup(ObjectReference ref, [bool shouldCreateIfNull = true]) {
     final container = synclayer.getObjectContainer(typeNumber: ref.type);
 
-    // TODO: check if container Exists
-    var obj = container.read(ref.id);
+    if (container != null) {
+      var obj = container.read(ref.id);
 
-    if (shouldCreateIfNull && obj == null) {
-      obj = container.create(ref.id);
+      if (shouldCreateIfNull && obj == null) obj = container.create(ref.id);
+
+      return obj;
     }
-    return obj;
+    throw AssertionError('Container  could not be found');
   }
 }

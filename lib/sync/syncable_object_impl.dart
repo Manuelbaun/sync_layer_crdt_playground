@@ -8,7 +8,8 @@ import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/index.dart';
 
 /// Meta fixed key numbers!
-const _TOMBSTONE = 0xFF00 as Object;
+const _TOMBSTONE = '__tombstone';
+const _TOMBSTONE_NUM = 0xff as Object;
 
 /// TODO:
 /// * Think about Tombstone
@@ -16,6 +17,8 @@ const _TOMBSTONE = 0xFF00 as Object;
 /// * revert option
 /// * change List to Map!
 /// * add stream listener
+///
+///
 ///
 class _Entry {
   _Entry(this.id, this.value);
@@ -51,12 +54,12 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
     /// direct set! no Id/Ts
     // if (Key is int) if (Key is String) ;
 
-    _internal[_TOMBSTONE] = _Entry(null, false);
+    _internal[_TOMBSTONE_NUM] = _Entry(null, false);
   }
 
   // @override
   // Accessor get accessor => _accessor;
-  final Accessor _accessor;
+  final AcessProxy _accessor;
 
   Function(Key key, _Entry entry) notify;
 
@@ -79,10 +82,10 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
 
   /// Marks if the object is deleted!
   @override
-  bool get tombstone => _getValue(_TOMBSTONE);
+  bool get tombstone => _getValue(_TOMBSTONE_NUM);
 
   @override
-  set tombstone(bool v) => _setValue(_TOMBSTONE, v);
+  set tombstone(bool v) => _setValue(_TOMBSTONE_NUM, v);
 
   /// Internal get and setter
   @pragma('vm:prefer-inline')
@@ -132,7 +135,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
     // send atom
 
     final copy = {..._subTransactionMap};
-    final atom = _accessor.onUpdate(id, copy);
+    final atom = _accessor.update(id, copy);
     // creates new map for next
     _subTransactionMap.clear();
   }
@@ -146,7 +149,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> implements SyncableOb
     if (_subTransaction) {
       _subTransactionMap[key] = value;
     } else {
-      final atom = _accessor.onUpdate(id, {key: value});
+      final atom = _accessor.update(id, {key: value});
     }
 
     /// Todo: set atom entry now?....

@@ -28,3 +28,10 @@ value: encoded value in bytes
      | ts : id : table : row : field : value
 Bytes|  8 :  4 :     4 :   16 :     4 : any
 ```
+
+
+# CRDTs
+https://www.youtube.com/watch?v=B5NULPSiOGw&feature=emb_title
+video: 31:56 Convergence definition
+
+https://doi.org/10.1145/3133933

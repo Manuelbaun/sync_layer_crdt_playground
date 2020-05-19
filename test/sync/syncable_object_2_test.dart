@@ -5,10 +5,10 @@ import 'package:sync_layer/sync/abstract/syncable_object.dart';
 import 'package:sync_layer/sync/syncable_object_impl.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
-import 'package:sync_layer/types/object_entry.dart';
 
 import 'package:test/test.dart';
-import 'fake_accessor.dart';
+
+import '../utils/fake_accessor.dart';
 
 // TODO: Test accessing syncable object
 // todo: subtye syncable object!
@@ -31,7 +31,7 @@ void main() {
     final type = 'todo'.hashCode;
     SyncableObject obj1;
     var atoms1 = <AtomBase>[];
-    final access1 = FakeAccessor(type, 22222, (AtomBase a) => atoms1.add(a));
+    final access1 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms1.add(a));
 
     setUp(() {
       // create test object
@@ -167,8 +167,8 @@ void main() {
     var atoms1 = <AtomBase>[];
     var atoms2 = <AtomBase>[];
 
-    final access1 = FakeAccessor(type, 11111, (AtomBase a) => atoms1.add(a));
-    final access2 = FakeAccessor(type, 22222, (AtomBase a) => atoms2.add(a));
+    final access1 = FakeAccessorHLC(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object
@@ -296,8 +296,8 @@ void main() {
     var atoms1 = <AtomBase>[];
     var atoms2 = <AtomBase>[];
 
-    final access1 = FakeAccessor(type, 11111, (AtomBase a) => atoms1.add(a));
-    final access2 = FakeAccessor(type, 22222, (AtomBase a) => atoms2.add(a));
+    final access1 = FakeAccessorHLC(type, 11111, (AtomBase a) => atoms1.add(a));
+    final access2 = FakeAccessorHLC(type, 22222, (AtomBase a) => atoms2.add(a));
 
     setUp(() {
       // create test object

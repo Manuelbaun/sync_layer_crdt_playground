@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:sync_layer/logger/index.dart';
 
 import 'abstract/index.dart';
+import 'abstract/syncable_base.dart';
 
-class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableObjectContainer<T> {
+class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObjectContainer<T> {
   final Map<String, T> _objects = {}; // the real elements
 
   final SynableObjectFactory<T> _objectFactory;
@@ -51,7 +52,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
       : assert(accessor != null),
         assert(_objectFactory != null);
 
-  final Accessor accessor;
+  final AcessProxy accessor;
 
   ///
   /// CRUD Ops
@@ -65,7 +66,7 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
 
     if (obj == null) {
       // creates new object with provided ID
-      obj = _objectFactory(accessor, id);
+      obj = _objectFactory(accessor, id ?? accessor.generateID());
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
@@ -81,12 +82,12 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
     throw AssertionError('This should never happen: Some missing cases when create Object is called. Debug me!');
   }
 
-  SyncableObject _set(SyncableObject obj) {
+  SyncableBase _set(SyncableBase obj) {
     _objects[obj.id] = obj;
     return _objects[obj.id];
   }
 
-  SyncableObject _get(String id) {
+  SyncableBase _get(String id) {
     return _objects[id];
   }
 
@@ -105,11 +106,12 @@ class SyncableObjectContainerImpl<T extends SyncableObject> implements SyncableO
   @override
   @deprecated
   void update(String objectId, dynamic key, dynamic value) {
-    final obj = _get(objectId);
-    obj[key] ??= value;
+    // final obj = _get(objectId);
+    // obj[key] ??= value;
 
     /// maybe access ???
     // accessor.onUpdate<List>(objectId, [key, value]);
+    throw AssertionError('Do not use this function yet');
   }
 
   ///

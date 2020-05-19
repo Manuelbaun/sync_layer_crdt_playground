@@ -7,12 +7,12 @@ void main() {
     test('Factories', () {
       final lc = LogicalClock(0);
       final lc2 = LogicalClock.send(lc);
-      final lc3 = LogicalClock.recv(lc2);
+      final lc3 = LogicalClock.recv(lc2, lc);
       final lc4 = LogicalClock.fromLogical(5);
 
       expect(lc.logicalTime, 0);
       expect(lc2.logicalTime, 1);
-      expect(lc3.logicalTime, 2);
+      expect(lc3.logicalTime, 1);
       expect(lc4.logicalTime, 5);
     });
 
@@ -20,17 +20,17 @@ void main() {
       final lc = LogicalClock(0);
       final other = LogicalClock(0);
       final lc2 = LogicalClock.send(lc);
-      final lc3 = LogicalClock.recv(lc2);
+      final lc3 = LogicalClock.recv(other, lc2);
 
       expect(lc < lc2, isTrue);
       expect(lc < lc3, isTrue);
-      expect(lc2 < lc3, isTrue);
+      expect(lc2 < lc3, isFalse);
 
       expect(lc <= lc2, isTrue);
       expect(lc <= lc3, isTrue);
       expect(lc2 <= lc3, isTrue);
 
-      expect(lc3 > lc2, isTrue);
+      expect(lc3 > lc2, isFalse);
       expect(lc3 > lc, isTrue);
       expect(lc2 > lc, isTrue);
 
@@ -42,18 +42,18 @@ void main() {
       expect(lc <= other, isTrue);
       expect(lc >= other, isTrue);
 
-      expect(lc2 == lc3, isFalse);
+      expect(lc2 == lc3, isTrue);
     });
 
     test('subtract', () {
       final lc = LogicalClock(0);
       final other = LogicalClock(0);
       final lc2 = LogicalClock.send(lc);
-      final lc3 = LogicalClock.recv(lc2);
+      final lc3 = LogicalClock.recv(lc2, lc);
 
       expect(lc - other, 0);
-      expect(lc3 - lc2, 1);
-      expect(lc3 - lc, 2);
+      expect(lc3 - lc2, 0);
+      expect(lc3 - lc, 1);
     });
   });
 

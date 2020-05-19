@@ -1,35 +1,37 @@
-import 'package:sync_layer/sync/abstract/accessors.dart';
-import 'package:sync_layer/sync/abstract/syncable_object.dart';
+import 'package:sync_layer/sync/abstract/index.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'package:sync_layer/types/atom.dart';
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
-
 import 'package:sync_layer/types/id_atom.dart';
-
 import 'package:sync_layer/types/object_reference.dart';
 
-class FakeAccessor implements Accessor {
-  FakeAccessor(this.type, this.site, this.update) {
+class FakeAccessorHLC implements AcessProxy {
+  FakeAccessorHLC(this.type, this.site, this.onUpdate) {
     baseClock = HybridLogicalClock(DateTime(2020).millisecondsSinceEpoch, 0);
   }
 
   LogicalClockBase baseClock;
-  void Function(AtomBase) update;
-  final int site;
-  @override
-  int type;
+  void Function(AtomBase) onUpdate;
 
-  AtomId _getNextTimeId() {
+  // setter not defined?
+  @override
+  final int site;
+
+  // setter not defined?
+  @override
+  final int type;
+
+  AtomId _getNextAtomId() {
     baseClock = HybridLogicalClock.send(baseClock);
     return AtomId(baseClock, site);
   }
 
   @override
-  AtomBase onUpdate(String objId, dynamic data) {
-    final tsId = _getNextTimeId();
+  AtomBase update(String objId, dynamic data) {
+    final tsId = _getNextAtomId();
     final a = Atom(tsId, type, objId, data);
-    update(a);
+    if (update != null) onUpdate(a);
     return a;
   }
 

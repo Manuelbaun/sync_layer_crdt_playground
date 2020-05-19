@@ -85,10 +85,10 @@ void main() {
       final str = a.toString();
     });
 
-    print('$a - ${a.length}: ${a.deleteAtomsLength}');
-    print('$b - ${b.length}: ${b.deleteAtomsLength}');
-    print('$c - ${c.length}: ${c.deleteAtomsLength}');
-    print('$d - ${d.length}: ${d.deleteAtomsLength}');
+    print('$a - ${a.length}: ${a.deletedLength}');
+    print('$b - ${b.length}: ${b.deletedLength}');
+    print('$c - ${c.length}: ${c.deletedLength}');
+    print('$d - ${d.length}: ${d.deletedLength}');
 
     var index = 0;
     final abEqual = a.sequence.every((a) => a == b.sequence[index++]);

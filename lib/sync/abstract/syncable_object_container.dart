@@ -1,7 +1,7 @@
-import 'accessors.dart';
+import 'acess_proxy.dart';
 import 'syncable_base.dart';
 
-typedef SynableObjectFactory<T> = T Function(Accessor accessor, String id);
+typedef SynableObjectFactory<T> = T Function(AcessProxy accessor, String id);
 
 abstract class SyncableObjectContainer<T extends SyncableBase> {
   int get type;

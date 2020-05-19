@@ -1,8 +1,12 @@
+import 'package:sync_layer/index.dart';
+import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync/abstract/index.dart';
+import 'package:sync_layer/sync/index.dart';
+import 'package:sync_layer/sync/syncable_causal_tree.dart';
 import 'package:sync_layer/sync/syncable_object_impl.dart';
 
 class Todo extends SyncableObjectImpl<int, Todo> {
-  Todo(Accessor accessor, {String id, String title}) : super(id, accessor);
+  Todo(AcessProxy accessor, {String id, String title}) : super(id, accessor);
 
   String get title => super[0];
   set title(String v) => super[0] = v;
@@ -21,7 +25,7 @@ class Todo extends SyncableObjectImpl<int, Todo> {
 }
 
 class Assignee extends SyncableObjectImpl<int, Assignee> {
-  Assignee(Accessor accessor, {String id, String title}) : super(id, accessor);
+  Assignee(AcessProxy accessor, {String id, String title}) : super(id, accessor);
 
   String get firstName => super[0];
   set firstName(String v) => super[0] = v;
@@ -41,10 +45,65 @@ class Assignee extends SyncableObjectImpl<int, Assignee> {
   }
 }
 
-void setupDaos(SyncLayer syn) {
-  // final todoFactory = (Accessor<Map<int, dynamic>> c, String id) => Todo(c, id: id);
-  // final assigneeFactory = (Accessor<Map<int, dynamic>> c, String id) => Assignee(c, id: id);
+class SyncArray extends SyncableCausalTree {
+  SyncArray(AcessProxy accessor, {String id}) : super(accessor, id);
+}
 
-  // final daoTodo = syn.registerObjectType<Todo>('todos', todoFactory);
-  // final daoAss = syn.registerObjectType<Assignee>('assignee', assigneeFactory);
+class SyncText extends SyncableCausalTree {
+  SyncText(AcessProxy accessor, {String id}) : super(accessor, id);
+}
+
+class SyncDao {
+  static SyncDao _instance;
+  static SyncDao get instance => _instance;
+
+  static SyncDao getInstance(int nodeId) {
+    _instance ??= SyncDao(nodeId);
+    return _instance;
+  }
+
+  final int nodeID;
+
+  SyncDao(this.nodeID) {
+    if (_instance == null) {
+      _syn = SyncLayerImpl(nodeID);
+      _protocol = SyncLayerProtocol(_syn);
+
+      // create first container by type
+      _todos = _syn.registerObjectType<Todo>('todos', (c, id) => Todo(c, id: id));
+      _assignees = _syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
+      _syncArray = syn.registerObjectType<SyncArray>('syncarray', (c, id) => SyncArray(c, id: id));
+
+      setupListener();
+    } else {
+      throw AssertionError('cant create this class twice?');
+    }
+  }
+
+  void setupListener() {
+    syncArray.changeStream.listen((objs) {
+      objs.forEach((o) => logger.info(o.entries.toString()));
+    });
+
+    todos.changeStream.listen((objs) {
+      objs.forEach((o) => logger.info(o.toString()));
+    });
+
+    assignees.changeStream.listen((objs) => objs.forEach((o) => logger.info(o.toString())));
+  }
+
+  SyncLayerProtocol _protocol;
+  SyncLayerProtocol get protocol => _protocol;
+
+  SyncLayerImpl _syn;
+  SyncLayerImpl get syn => _syn;
+
+  SyncableObjectContainer<Todo> get todos => _todos;
+  SyncableObjectContainer<Todo> _todos;
+
+  SyncableObjectContainer<Assignee> get assignees => _assignees;
+  SyncableObjectContainer<Assignee> _assignees;
+
+  SyncableObjectContainer<SyncArray> get syncArray => _syncArray;
+  SyncableObjectContainer<SyncArray> _syncArray;
 }

@@ -10,6 +10,7 @@ import 'package:sync_layer/errors/index.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync_layer_atom_cache.dart';
 import 'abstract/index.dart';
+import 'abstract/syncable_base.dart';
 import 'sync_accessor_impl.dart';
 import 'sync_clock_impl.dart';
 import 'syncable_object_container_impl.dart';
@@ -72,7 +73,7 @@ class SyncLayerImpl implements SyncLayer {
   /// use either typeName or typeNumber
   /// in case of both, it throws a conflict
   @override
-  SyncableObjectContainer<T> getObjectContainer<T extends SyncableObject>({String typeName, int typeNumber}) {
+  SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({String typeName, int typeNumber}) {
     if (typeName != null && typeName.isNotEmpty && typeNumber != null) {
       throw AssertionError('Unclear intention. TypeName $typeName and TypeNumber $typeNumber are set.');
     }
@@ -92,7 +93,7 @@ class SyncLayerImpl implements SyncLayer {
   StringNumberMapper mapper = StringNumberMapper();
 
   @override
-  SyncableObjectContainer<T> registerObjectType<T extends SyncableObject>(
+  SyncableObjectContainer<T> registerObjectType<T extends SyncableBase>(
       String typeName, SynableObjectFactory<T> objectFactory,
       [int customNumberId]) {
     SyncableObjectContainer container;
@@ -100,7 +101,7 @@ class SyncLayerImpl implements SyncLayer {
     if (!mapper.containsTypeName(typeName)) {
       final typeNumber = mapper.registerNewTypeName(typeName);
 
-      Accessor accessor = SynclayerAccessor(this, typeNumber);
+      AcessProxy accessor = SynclayerAccessor(this, typeNumber);
 
       container = SyncableObjectContainerImpl<T>(
         accessor,

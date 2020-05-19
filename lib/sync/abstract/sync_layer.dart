@@ -8,7 +8,8 @@ import 'syncable_object_container.dart';
 
 /// This is the abstract [SyncLayer].
 abstract class SyncLayer {
-  int site;
+  SyncLayer(this.site);
+  final int site;
 
   SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({
     String typeName,
@@ -36,6 +37,8 @@ abstract class SyncLayer {
   /// this is a workaround, and will be refactored later on
   List<AtomBase> getAtomsByReceivingState(MerkleTrie remoteState);
 
-  void transaction(Function func);
   MerkleTrie getState();
+
+  /// when called, all updates insice [func] will be send once the is done
+  void transaction(Function func);
 }

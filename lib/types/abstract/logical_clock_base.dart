@@ -1,8 +1,9 @@
 abstract class LogicalClockBase<T> implements Comparable<T> {
-  final int logicalTime;
+  int get logicalTime;
+  final int counter;
 
   external factory LogicalClockBase.send(LogicalClockBase lc);
-  external factory LogicalClockBase.recv(LogicalClockBase lc);
+  external factory LogicalClockBase.recv(LogicalClockBase local, LogicalClockBase remote);
   external factory LogicalClockBase.parse(String ts);
   external factory LogicalClockBase.fromLogicalTimestamp(int ts);
 

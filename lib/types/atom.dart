@@ -36,5 +36,5 @@ class Atom<T> implements AtomBase<T> {
   @override
   // should be enough!, since id, should be as unique as possible!
   // otherwise implement use objectType, etc
-  int get hashCode => id.hashCode;
+  int get hashCode => id.hashCode ^ objectId.hashCode ^ data.hashCode ^ typeId;
 }

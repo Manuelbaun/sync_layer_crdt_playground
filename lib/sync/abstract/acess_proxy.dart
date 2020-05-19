@@ -3,11 +3,12 @@ import 'package:sync_layer/types/index.dart';
 
 import 'syncable_object.dart';
 
-abstract class Accessor {
+/// TODO: Rename to proxy ??
+abstract class AcessProxy {
   int get type;
   int get site;
 
-  AtomBase onUpdate(String id, dynamic value);
+  AtomBase update(String id, dynamic value);
   String generateID();
   SyncableObject objectLookup(ObjectReference ref);
 }
