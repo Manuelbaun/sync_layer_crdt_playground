@@ -26,16 +26,17 @@ abstract class SyncLayer {
   /// changes or Atoms. This prevents from broadcast loops
   Stream<List<AtomBase>> get atomStream;
 
-  String generateID();
+  String generateNewObjectIds();
 
-  AtomBase createAtom(String objectId, int typeId, dynamic data);
+  AtomBase createAtom(int typeId, String objectId, dynamic data);
 
   /// Function to add atoms
-  void applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true});
-
   /// This method is used for incoming/receiving atoms
   /// since the clock will be updated based on the incoming atoms
-  void receiveAtoms(List<AtomBase> atoms);
+  void applyRemoteAtoms(List<AtomBase> atoms);
+
+  /// [objRef] is used to trigger table
+  void applyLocalAtoms(List<AtomBase> atoms);
 
   /// this is a workaround, and will be refactored later on
   List<AtomBase> getAtomsByReceivingState(MerkleTrie remoteState);

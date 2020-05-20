@@ -33,8 +33,8 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
   }
 
   @override
-  void setUpdatedObject(T obj) {
-    _updatedObjects.add(obj);
+  void setUpdatedObject(String objectId) {
+    _updatedObjects.add(read(objectId));
   }
 
   @override
@@ -67,6 +67,7 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
     if (obj == null) {
       // creates new object with provided ID
       obj = _objectFactory(accessor, id ?? accessor.generateID());
+
       return _set(obj);
     } else if (obj.tombstone == true) {
       /// Creates new ID for previous deleted object!
@@ -119,7 +120,7 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
   bool delete(String id) {
     final t = read(id);
     if (t != null) {
-      t.tombstone = true;
+      t.delete();
       return true;
     }
     return false;

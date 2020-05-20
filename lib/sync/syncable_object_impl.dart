@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:sync_layer/logger/index.dart';
+import 'package:sync_layer/logger/logger.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
 
@@ -12,6 +12,25 @@ import 'abstract/syncable_base.dart';
 /// Meta fixed key numbers!
 const _TOMBSTONE = '__tombstone';
 const _TOMBSTONE_NUM = 0xff as Object;
+
+class IdValuePair {
+  IdValuePair(this.id, this.value);
+  final IdBase id;
+  final dynamic value;
+
+  @override
+  String toString() => 'Entry(c: $id, v: $value)';
+
+  @override
+  bool operator ==(Object o) {
+    if (identical(this, o)) return true;
+
+    return o is IdValuePair && o.id == id && o.value == value;
+  }
+
+  @override
+  int get hashCode => id.hashCode ^ value.hashCode;
+}
 
 /// TODO:
 /// * Think about Tombstone
@@ -25,7 +44,9 @@ const _TOMBSTONE_NUM = 0xff as Object;
 
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
-class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObject<Key> {
+///
+/// [TypeWrapper] should extends from [SyncableObjectImpl]!
+class SyncableObjectImpl<Key, TypeWrapper extends SyncableObject> extends SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
@@ -35,29 +56,38 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   SyncableObjectImpl(this._proxy, String _id)
       : assert(_proxy != null, 'AccessProxy prop cannot be null'),
         id = _id ?? _proxy.generateID() {
-          
     _internal[_TOMBSTONE_NUM] = IdValuePair(null, false);
   }
 
   // fires when the object got updated!
-  final _controller = StreamController<MapEntry<Key, dynamic>>.broadcast();
+  final _onChangeController = StreamController<void>.broadcast();
 
+  /// notifies, when object changes:
   @override
-  Stream<MapEntry<Key, dynamic>> get stream => _controller.stream;
-
-  final AccessProxy _proxy;
+  Stream<void> get onChange => _onChangeController.stream;
 
   @override
   AccessProxy get proxy => _proxy;
+  final AccessProxy _proxy;
 
   /// Stores the key /values of the keys, specify by the user.
   /// in case of a synable object, it stores the type and id
   final Map<Key, IdValuePair> _internal = {};
 
-  /// Stores the reference to the syncable Object, once it gets called, not present if not called
-  /// => lazy
+  /// Stores the reference to the syncable Object, once it gets called,
+  /// not present if not called => lazy
   final Map<Key, SyncableBase> _syncableObjectsRefs = {};
 
+  /// once a key gets set, this will send the update action via
+  /// [container.update]. This will create an Atom and sends it back to
+  /// apply to the [_internal] through the synclayer
+  ///
+  /// THINK: maybe a short cut could be created?
+  ///
+  bool _subTransaction = false;
+  final _subTransactionMap = <Key, dynamic>{};
+
+  // --------------------------------------------------------------------------->
   /// Getter Setter
 
   @override
@@ -71,7 +101,19 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   bool get tombstone => _getValue(_TOMBSTONE_NUM);
 
   @override
-  set tombstone(bool v) => _setValue(_TOMBSTONE_NUM, v);
+  void delete() => _setValue(_TOMBSTONE_NUM, true);
+
+  /// History contains all received atoms.. usefull for a standalone obj,
+  /// in combination with the sync layer, which filters allready existing
+  /// atoms this is not needed anymore, since it does the same job
+  @override
+  List<AtomBase> get history => _history.toList(growable: false)..sort();
+  final Set<AtomBase> _history = {};
+
+  /// Returns the timestamp for that key
+  @override
+  IdBase get lastUpdated => _lastUpdated;
+  IdBase _lastUpdated;
 
   /// Internal get and setter
   @pragma('vm:prefer-inline')
@@ -87,50 +129,15 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   @pragma('vm:prefer-inline')
   IdBase _getIdTs(Key key) => _internal[key]?.id;
 
-  /// set value should only be used by apply atom,
-  /// since this sets the _internal object with the object entry
-  @pragma('vm:prefer-inline')
-  void __setInternalValue(Key key, IdBase id, dynamic value) {
-    final pair = IdValuePair(id, value);
-    _internal[key] = pair;
-
-    /// * notifies all listerners of this object that changes happend
-    /// and which key...
-    ///
-
-    _controller.add(MapEntry(key, pair));
-  }
-
-  /// once a key gets set, this will send the update action via
-  /// [container.update]. This will create an Atom and sends it back to
-  /// apply to the [_internal] through the synclayer
-  ///
-  /// THINK: maybe a short cut could be created?
-  ///
-  bool _subTransaction = false;
-  final _subTransactionMap = <Key, dynamic>{};
-
-  /// With subtransaction, assigning multiple values to the object,
-  /// no update is triggered until function is finished
-  /// then all changes as send in one Atom
-  ///
-  /// *Note: Changes are stored in a Map, therefor, appling the same Key, will result in the
-  /// last writer wins
   @override
-  void transact(void Function(Type ref) func) {
-    // start changes
-    _subTransaction = true;
-    func(this as Type);
-    // Stop changes
-    _subTransaction = false;
-    // send atom
+  IdBase getOriginIdOfKey(Key key) => _getIdTs(key);
 
-    final copy = {..._subTransactionMap};
-    final atom = _proxy.update(id, copy, true);
-    // creates new map for next
-    _subTransactionMap.clear();
-  }
-
+  /// sets the value
+  ///
+  /// if [_subTransaction] is activated, then all changes are stored todo
+  /// [_subTransactionMap] else change is applied immediately
+  ///
+  /// todo: Change null not supported
   void _setValue(Key key, dynamic value) {
     /// check if value is [SyncableObject] and if so create Ref to object of type
     if (value is SyncableBase) {
@@ -140,25 +147,76 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
     if (_subTransaction) {
       _subTransactionMap[key] = value;
     } else {
-      final atom = _proxy.update(id, {key: value}, true);
+      _updateLocally({key: value});
     }
-
-    /// Todo: set atom entry now?....
   }
 
-  @override
-  IdBase getOriginIdOfKey(Key key) => _getIdTs(key);
+  /// This method will set the key and value to the internal object
+  /// and will trigger the [StreamController]
+  @pragma('vm:prefer-inline')
+  void __setKeyValueInternal(IdBase id, Key key, dynamic value) {
+    final pair = IdValuePair(id, value);
+    _internal[key] = pair;
 
-  /// TODO: what should we do?
-  @override
-  List<AtomBase> get history => _history.toList(growable: false)..sort();
-  final Set<AtomBase> _history = {};
+    // lookup if it is on object reference
+    if (value is SyncableObjectRef) {
+      final obj = _proxy.objectLookup(value);
+      _setSyncableObjectRef(key, obj);
+    }
+  }
 
-  /// Returns the timestamp for that key
-  @override
-  IdBase get lastUpdated => _lastUpdated;
-  IdBase _lastUpdated;
+  // ---------------------------------------------------------------------------
 
+  /// class this function, whenever a change locally should happen:
+  /// * this creates an atom => needs a timestamp
+  /// * sends it to the synclayer for [localAtoms]
+  /// * then applies all changes in the [data]
+  /// * then notifies the Stream, that object changed
+  ///
+  /// TODO: Think, should a time/id comparing happening!
+  void _updateLocally(Map<Key, dynamic> data) {
+    final atom = _proxy.update(id, data);
+    // add to local history
+    _history.add(atom);
+
+    for (var e in data.entries) {
+      __setKeyValueInternal(atom.id, e.key, e.value);
+    }
+
+    /// TODO: apply atom? here or before
+
+    _onChangeController.add(null);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public APIs
+  // ---------------------------------------------------------------------------
+
+  /// ### Transact
+  ///
+  /// With [transact], assigning multiple values to [this] object,
+  /// no update is triggered until function is finished
+  /// then all changes are send as one Atom
+  ///
+  /// *Note: Changes are stored in a Map, therefor, appling the same Key,
+  /// will result in the last writer wins strategy
+  @override
+  void transact(void Function(TypeWrapper ref) func) {
+    // start changes
+    _subTransaction = true;
+    func(this as TypeWrapper);
+    _subTransaction = false;
+
+    // copies the map and sends it
+    _updateLocally({..._subTransactionMap});
+
+    // clears map for next update
+    _subTransactionMap.clear();
+  }
+
+  // ---------------------------------------------------------------------------
+
+  //  Operator for Set Value and get Value
   /// looks up first if something is in synable object else in the
   /// regular object by this key
   @override
@@ -168,7 +226,8 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   @override
   operator []=(Key key, dynamic value) => _setValue(key, value);
 
-  /// applies atom and returns
+  // ---------------------------------------------------------------------------
+  /// ### Apply remote Atom
   /// * TODO fix Me:
   /// * got [isLocalUpdate]
   ///
@@ -177,61 +236,58 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   /// * returns [ 2] : if apply successfull
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
-  /// * returns [-1] : if nothing applied => should never happen
-  /// if -1 it throws an error
+  /// * returns [-1] : if nothing applied => atom was allready added
+  /// * returns [-2] : if nothing applied => atom was allready added
+  /// this should nevel happen, since synclayer filteres
+  ///
   ///
   /// TODO: should case of Atom beeing 'null' be handeled?
-  /// TODO: Think, what should happen, if atom exist here?
   ///
   /// normally Synclayer is filtering it out!
+  /// if key was not set or the local time happend before [hb] to new Atom
   @override
-  int applyAtom(AtomBase atom, {bool isLocalUpdate = true}) {
-    /// use
-    // the same atom should not happen, this will only happen, if
-    // the atom is not filtered out
+  int applyRemoteAtom(AtomBase atom) {
+    if (atom == null) return -2;
 
-    // if key was not set or the local time happend before [hb] to new Atom
-
-    var ret = 0;
-    for (final e in (atom.data as Map).entries) {
-      final originId = _getIdTs(e.key);
-
-      if (originId == null || (originId < atom.id)) {
-        _applyUpdate(atom);
-        ret = 2;
+    if (_history.add(atom)) {
+      // update the lastUpdated key
+      if (_lastUpdated == null || _lastUpdated < atom.id) {
+        _lastUpdated = atom.id;
       }
 
-      if (originId == atom.id && ret < 1) ret = 1;
-    }
+      var result = 0;
 
-    /// TODO: what todo with history
-    final isSet = _history.add(atom);
+      final data = (atom.data as Map).cast<Key, dynamic>();
 
-    logger.debug('Appy Atom needs a revisit!');
-    // if keyClock > atom.clock
-    return ret;
-  }
+      /// test each map entry if the update should apply for that field
+      for (final e in data.entries) {
+        final originId = _getIdTs(e.key);
 
-  void _applyUpdate(AtomBase atom) {
-    // update the lastUpdated key
-    if (_lastUpdated == null || _lastUpdated < atom.id) {
-      _lastUpdated = atom.id;
-    }
+        // update only if originId/Timestamp < then current atom
+        if (originId == null || (originId < atom.id)) {
+          __setKeyValueInternal(atom.id, e.key, e.value);
 
-    /// data is only two long
-    for (final e in (atom.data as Map).entries) {
-      final key = e.key as Key;
-      final value = e.value;
+          result = 2;
+        }
 
-      __setInternalValue(key, atom.id, value);
-
-      // lookup if it is on object reference
-      if (value is ObjectReference) {
-        final obj = _proxy.objectLookup(value);
-        _setSyncableObjectRef(key, obj);
+        if (originId == atom.id && result < 1) result = 1;
       }
+
+      /// update, when value changed
+      if (result > 1) _onChangeController.add(null);
+
+      return result;
+    } else {
+      logger.debug('Atom already received $atom');
+      return -1;
+      // throw AssertionError('received the same atom twice!'
+      // ' todo: fix issue and remove this assertion');
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Utility function
+  // ---------------------------------------------------------------------------
 
   /// lexographical sort by Object ID
   @override
@@ -259,10 +315,12 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
       final c = _internal[key].id?.toString();
       var v = _internal[key].value;
 
-      if (v is ObjectReference) {
-        /// do not try to lookup the actuall object and print
-        /// might result in circular dependency, if nested incorectly
+      if (v is SyncableObjectRef) {
         v = v.toString();
+      } else if (v is Set) {
+        v = v.toString();
+      } else if (v is Map) {
+        v = _toJsonMap(v);
       }
 
       final res = {'id': '$c', 'value': v};
@@ -273,4 +331,18 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
 
     return 'SyncableObjectImpl(id: "$id", type: "$type", $res';
   }
+}
+
+Map<String, dynamic> _toJsonMap(Map m) {
+  print(m);
+
+  final newMap = m.map((k, v) {
+    var value = v is Map ? _toJsonMap(v) : v;
+    value = v is Set ? v.toList() : value;
+
+    return MapEntry(k.toString(), value);
+  });
+
+  print(newMap);
+  return newMap;
 }

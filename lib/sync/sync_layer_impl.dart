@@ -46,66 +46,63 @@ class StringNumberMapper {
 }
 
 class SyncLayerImpl implements SyncLayer {
+  SyncLayerImpl(this.site, [MerkleTrie trie])
+      : _clock = Clock(site),
+        _trie = trie ?? MerkleTrie();
+
   final SyncLayerAtomCache atomCache = SyncLayerAtomCache();
   final Map<int, SyncableObjectContainer> containers = <int, SyncableObjectContainer>{};
 
   @override
-  int site;
-
-  final Clock clock;
-  final MerkleTrie trie;
+  final int site;
+  final Clock _clock;
 
   /// only for sending Atoms => Network, not internally!
+  /// This steams the atoms, to all websockets
+  @override
+  Stream<List<AtomBase>> get atomStream => _atomStreamController.stream;
   final _atomStreamController = StreamController<List<AtomBase>>.broadcast();
 
   @override
-  Stream<List<AtomBase>> get atomStream => _atomStreamController.stream;
-
-  @override
-  MerkleTrie getState() => trie;
-
-  SyncLayerImpl(this.site, [MerkleTrie trie])
-      : clock = Clock(site),
-        trie = trie ?? MerkleTrie();
-
-  /// accessors and utils
-  /// use either typeName or typeNumber
-  /// in case of both, it throws a conflict
-  @override
-  SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({String typeName, int typeNumber}) {
-    if (typeName != null && typeName.isNotEmpty && typeNumber != null) {
-      throw AssertionError('Unclear intention. TypeName $typeName and TypeNumber $typeNumber are set.');
-    }
-
-    var n = typeNumber;
-
-    if (typeName != null && typeName.isNotEmpty) {
-      n = mapper.getTypeNumber(typeName);
-    }
-
-    return containers[n] as SyncableObjectContainer<T>;
-  }
+  MerkleTrie getState() => _trie;
+  final MerkleTrie _trie;
 
   /// this registers a syncable type and returns the container for it
   /// which provides basic crud
   StringNumberMapper mapper = StringNumberMapper();
 
+  /// accessors and utils use either typeName [OR] typeNumber
+  /// in case of both, it throws a conflict
+  @override
+  SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({
+    String typeName,
+    int typeNumber,
+  }) {
+    if (typeName != null && typeName.isNotEmpty && typeNumber != null) {
+      throw AssertionError('Unclear intention. '
+          'TypeName $typeName and TypeNumber $typeNumber are set.');
+    }
+
+    if (typeName != null && typeName.isNotEmpty) {
+      typeNumber = mapper.getTypeNumber(typeName);
+    }
+
+    return containers[typeNumber] as SyncableObjectContainer<T>;
+  }
+
   @override
   SyncableObjectContainer<T> registerObjectType<T extends SyncableBase>(
-      String typeName, SynableObjectFactory<T> objectFactory,
-      [int customNumberId]) {
+    String typeName,
+    SynableObjectFactory<T> objectFactory, [
+    int customNumberId,
+  ]) {
     SyncableObjectContainer container;
 
     if (!mapper.containsTypeName(typeName)) {
       final typeNumber = mapper.registerNewTypeName(typeName);
 
       AccessProxy proxy = SynclayerAccessor(this, typeNumber);
-
-      container = SyncableObjectContainerImpl<T>(
-        proxy,
-        objectFactory,
-      );
-
+      container = SyncableObjectContainerImpl<T>(proxy, objectFactory);
       containers[typeNumber] = container;
     } else {
       throw SyncLayerError('Container with typeName $typeName already exist.');
@@ -114,15 +111,13 @@ class SyncLayerImpl implements SyncLayer {
     return container;
   }
 
-  ///
+  /// generated new Object Ids
+  @pragma('vm:prefer-inline')
   @override
-  String generateID() => newCuid();
+  String generateNewObjectIds() => newCuid();
 
-  /// Work with Atoms
-  ///
-  void _applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true}) {
-    final changedContainer = <SyncableObjectContainer>{};
-
+  /// merge remote Atoms
+  void _applyRemoteAtoms(List<AtomBase> atoms) {
     for (final atom in atoms) {
       /// can just add to cache and returns true/false depending if exist or not
       if (!atomCache.exist(atom)) {
@@ -134,78 +129,96 @@ class SyncLayerImpl implements SyncLayer {
           var obj = container.read(atom.objectId);
           obj ??= container.create(atom.objectId);
 
-          final res = obj.applyAtom(atom, isLocalUpdate: isLocalUpdate);
+          final res = obj.applyRemoteAtom(atom);
 
           // if successfull applied, => trigger!
-          if (res == 2) {
-            // todo trigger! container /object update
-            container.setUpdatedObject(obj);
-            changedContainer.add(container);
-          }
+          if (res == 2) _setContainerEvent(atom.type, atom.objectId);
+
           // in any case,
           atomCache.add(atom);
-          trie.build([atom.id]);
+          _trie.build([atom.id]);
         } else {
-          logger.error('Table does not exist');
+          throw AssertionError('unsupported ObjectContainer of type : ${atom.type}');
         }
       } // else skip that message
     }
 
     // Tigger the changed happend in synclayer
-    for (final con in changedContainer) {
-      con.triggerUpdateChange();
+    _triggerAllEvents();
+  }
+
+  final _toUpdateContainerAndObjId = <int, Set<String>>{};
+
+  void _setContainerEvent(int type, String objectId) {
+    _toUpdateContainerAndObjId[type] ??= <String>{};
+    _toUpdateContainerAndObjId[type].add(objectId);
+  }
+
+  void _triggerAllEvents() {
+    for (final e in _toUpdateContainerAndObjId.entries) {
+      final container = getObjectContainer(typeNumber: e.key);
+
+      for (final id in e.value) {
+        container.setUpdatedObject(id);
+      }
+
+      container.triggerUpdateChange();
     }
+
+    _toUpdateContainerAndObjId.clear();
   }
 
-  /// Todo: think again: Work with local Atoms
+  /// ### [applyLocalAtoms]
   ///
-  // void _applyLocalAtom(List<AtomBase> atoms) {
-  //   final changedContainer = <SyncableObjectContainer>{};
-
-  //   for (final atom in atoms) {
-  //     /// can just add to cache and returns true/false depending if exist or not
-  //     if (atomCache.add(atom)) {
-  //       // test if table exits
-  //       // final container = getObjectContainer(typeNumber: atom.typeId);
-  //       trie.build([atom.id]);
-  //       // if (res == 2) {
-  //       //   // todo trigger! container /object update
-  //       //   container.setUpdatedObject(obj);
-  //       //   changedContainer.add(container);
-  //       // }
-
-  //     } // else skip that message
-  //   }
-
-  //   // Tigger the changed happend in synclayer
-  //   for (final con in changedContainer) {
-  //     con.triggerUpdateChange();
-  //   }
-  // }
-
+  /// Handles local atoms:
+  /// 1. adds the atoms to the atomCache
+  /// 2. and builds the trie
+  /// 3. triggers which tables and OBject ids changed
+  /// 4. sends all atoms via the Stream
+  /// then
   @override
-  AtomBase createAtom(String objectId, int typeId, dynamic data) {
-    final id = Id(clock.getForSend(), site);
-    return Atom(id, typeId, objectId, data);
-  }
-
-  /// [applyAtoms] should only be called from the local application.
-  /// So do changes by adding apply Atoms,
-  /// use Transaction to apply first, which then applies all made changes and
-  /// sends via network
-  @override
-  void applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true}) {
+  void applyLocalAtoms(List<AtomBase> atoms) {
+    // check if transation is active
     if (_transactionActive) {
       _transationList.addAll(atoms);
     } else {
-      // could be changed?
-      _applyAtoms(atoms, isLocalUpdate: isLocalUpdate);
+      for (final atom in atoms) {
+        // can just add to cache and returns true/false depending if exist or not
+        if (atomCache.add(atom)) {
+          _trie.build([atom.id]);
+          _setContainerEvent(atom.type, atom.objectId);
+        } else {
+          logger.error('two messages in apply local Atoms?');
+        }
+      }
 
-      /// local update will be send not remote!!!
-      if (isLocalUpdate) {
+      // Send to the network!
+      _triggerAllEvents();
+
+      if (atoms.isEmpty) {
+        logger.warning(
+            '==> Empty Atom list! This happens, when tranaction function result in no atoms. Sending is not happening');
+      } else {
+        // Send to the network!
         _atomStreamController.add(atoms);
       }
     }
+  }
+
+  @override
+  AtomBase createAtom(int typeId, String objectId, dynamic data) {
+    final atomId = Id(_clock.getForSend(), site);
+    return Atom(atomId, typeId, objectId, data);
+  }
+
+  /// [applyRemoteAtoms] should only be called for the remote incoming atoms
+  @override
+  void applyRemoteAtoms(List<AtomBase> atoms) {
+    for (var atom in atoms) {
+      _clock.fromReceive(atom.id.ts);
+    }
+
+    _applyRemoteAtoms(atoms);
   }
 
   // Optimizers
@@ -216,26 +229,13 @@ class SyncLayerImpl implements SyncLayer {
   void transaction(Function func) {
     _transactionActive = true;
     func();
-    // send transationList
     _transactionActive = false;
 
-    /// TODO: should it be copying the refs
-    _applyAtoms([..._transationList], isLocalUpdate: true);
+    applyLocalAtoms([..._transationList]);
     _transationList.clear();
   }
 
   /// Network communication
-  ///
-
-  /// update local clock and apply atoms
-  @override
-  void receiveAtoms(List<AtomBase> atoms) {
-    for (var atom in atoms) {
-      clock.fromReceive(atom.id.ts);
-    }
-
-    _applyAtoms(atoms, isLocalUpdate: false);
-  }
 
   List<AtomBase> getAtomsSinceMs(HybridLogicalClock clock) {
     return atomCache.getSince(clock);
@@ -246,9 +246,9 @@ class SyncLayerImpl implements SyncLayer {
   /// TODO: check siteid of '0' => what site idee should be there?
   @override
   List<AtomBase> getAtomsByReceivingState(MerkleTrie remoteState) {
-    final tsKey = trie.diff(remoteState);
+    final tsKey = _trie.diff(remoteState);
     if (tsKey != null) {
-      final ms = clock.getClockFromTSKey(tsKey, 0);
+      final ms = _clock.getClockFromTSKey(tsKey, 0);
       logger.verbose(ms.toString());
       return atomCache.getSince(ms);
     }

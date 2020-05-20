@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:sync_layer/basic/hashing.dart';
+import 'package:sync_layer/logger/index.dart';
 import 'package:sync_layer/sync/abstract/syncable_object.dart';
 import 'package:sync_layer/sync/syncable_object_impl.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
+
 import 'package:test/test.dart';
 
 import '../utils/fake_accessor.dart';
@@ -12,17 +14,40 @@ import '../utils/fake_accessor.dart';
 // TODO: Test accessing syncable object
 // todo: subtye syncable object!
 
+class Test<K> {
+  Test() {
+    print(K.hashCode);
+    print(K.runtimeType);
+    print(K); // hashcode 913556373 DateTime
+    print(int); // hashCode 292397006
+    print(String); // hashcode string 247315299
+  }
+}
+
 void main() {
+  // Test<String>();
+  // Test<int>();
+  // Test<DateTime>();
   group('Basic: ', () {
     final type = 'todo'.hashCode;
     SyncableObject obj1;
+    SyncableObject obj2;
+
     var atoms1 = <AtomBase>[];
-    final access1 = FakeAccessProxyHLC(type, 22222, (AtomBase a) => atoms1.add(a));
+    final access1 = FakeAccessProxyHLC(type, 22222, (AtomBase a) {
+      logger.info(a.toString());
+      atoms1.add(a);
+    });
 
     setUp(() {
       // create test object
       obj1 = SyncableObjectImpl(access1, null);
-      atoms1 = [];
+      obj2 = SyncableObjectImpl(access1, null);
+
+      // obj1.onChange.listen((n) => print(obj1));
+
+      // obj1[null] = 'hallo';
+      atoms1.clear();
     });
 
     test('Setup Syncable object', () {
@@ -32,105 +57,80 @@ void main() {
     });
 
     test('Set simple fields ', () {
-      obj1['1'] = 'Hans';
-      obj1['2'] = 123;
-      obj1['3'] = {2, 3};
-      obj1['4'] = {2: 3};
-      obj1['5'] = {'2': 'some string'};
-      obj1['6'] = {'2': 1234};
+      obj1[1] = 'Hans';
+      obj1[2] = 123;
+      obj1[3] = {2, 3};
+      obj1[4] = {2: 3};
+      obj1[5] = {2: 'some string'};
+      obj1[6] = {2: 1234};
       // nested map
-      obj1['7'] = {
-        '2': {
-          '3': {5: 'hello'}
+      obj1[7] = {
+        2: {
+          3: {5: 'hello'}
         }
       };
 
-      expect(obj1['1'] == null, isTrue);
-      expect(obj1['2'] == null, isTrue);
-      expect(obj1['3'] == null, isTrue);
-      expect(obj1['4'] == null, isTrue);
-      expect(obj1['5'] == null, isTrue);
-      expect(obj1['6'] == null, isTrue);
-      expect(obj1['7'] == null, isTrue);
-
-      atoms1.forEach(obj1.applyAtom);
-
-      expect(obj1['1'] == 'Hans', isTrue);
-      expect(obj1['2'] == 123, isTrue);
-      expect(nestedHashing(obj1['3']) == nestedHashing({2, 3}), isTrue);
-      expect(nestedHashing(obj1['4']) == nestedHashing({2: 3}), isTrue);
-      expect(nestedHashing(obj1['5']) == nestedHashing({'2': 'some string'}), isTrue);
-      expect(nestedHashing(obj1['6']) == nestedHashing({'2': 1234}), isTrue);
+      expect(obj1[1] == 'Hans', isTrue);
+      expect(obj1[2] == 123, isTrue);
+      expect(nestedHashing(obj1[3]) == nestedHashing({2, 3}), isTrue);
+      expect(nestedHashing(obj1[4]) == nestedHashing({2: 3}), isTrue);
+      expect(nestedHashing(obj1[5]) == nestedHashing({2: 'some string'}), isTrue);
+      expect(nestedHashing(obj1[6]) == nestedHashing({2: 1234}), isTrue);
 
       // nested
       expect(
-          nestedHashing(obj1['7']) ==
+          nestedHashing(obj1[7]) ==
               nestedHashing({
-                '2': {
-                  '3': {5: 'hello'}
+                2: {
+                  3: {5: 'hello'}
                 }
               }),
           isTrue);
+
+      print(obj1.toString());
     });
 
     test('CRDT Properties Last Writer Wins', () {
-      obj1['early'] = 'now';
-      obj1['early'] = 'now2';
-
-      // updates first, the second atom
-      expect(obj1.applyAtom(atoms1[1]), 2);
+      obj1[20] = 'now';
       expect(obj1.history.length, 1);
-      // then the first Atom
-      expect(obj1.applyAtom(atoms1[0]), 0);
-      expect(obj1.history.length, 2);
+
+      obj1[20] = 'now2';
 
       // apply the exact same atom twice
-      expect(obj1.applyAtom(atoms1[1]), 1);
-      expect(obj1.history.length, 2);
-
-      // the same old atom, still should give one! =>
-      expect(obj1.applyAtom(atoms1[0]), 0);
+      expect(obj1.applyRemoteAtom(atoms1[0]), -1);
+      expect(obj1.applyRemoteAtom(atoms1[1]), -1);
       expect(obj1.history.length, 2);
 
       // apply null as atom
-      try {
-        obj1.applyAtom(null);
-      } catch (e) {
-        expect(e is NoSuchMethodError, isTrue);
-      }
+      expect(obj1.applyRemoteAtom(null), -2);
 
-      expect(obj1['early'], 'now2');
-      expect(obj1['early'] == 'now', isFalse);
+      expect(obj1[20], 'now2');
+      expect(obj1[20] == 'now', isFalse);
     });
 
     test('CRDT Properties Merge two Objects on different sides', () {
-      obj1['early'] = 'now';
-      obj1['early'] = 'now2';
+      obj1[30] = 'now';
+      obj1[30] = 'now2';
 
       // updates first, the second atom
-      expect(obj1.applyAtom(atoms1[1]), 2);
-      expect(obj1.history.length, 1);
+      expect(obj1.applyRemoteAtom(atoms1[0]), -1);
+      expect(obj1.history.length, 2);
       // then the first Atom
-      expect(obj1.applyAtom(atoms1[0]), 0);
+      expect(obj1.applyRemoteAtom(atoms1[1]), -1);
       expect(obj1.history.length, 2);
 
-      // apply the exact same atom twice
-      expect(obj1.applyAtom(atoms1[1]), 1);
-      expect(obj1.history.length, 2);
-
-      // the same old atom, still should give one! =>
-      expect(obj1.applyAtom(atoms1[0]), 0);
-      expect(obj1.history.length, 2);
+      // updates first, the second atom
+      expect(obj2.applyRemoteAtom(atoms1[0]), 2);
+      expect(obj2.history.length, 1);
+      expect(obj2.applyRemoteAtom(atoms1[1]), 2);
+      expect(obj2.history.length, 2);
 
       // apply null as atom
-      try {
-        obj1.applyAtom(null);
-      } catch (e) {
-        expect(e is NoSuchMethodError, isTrue);
-      }
 
-      expect(obj1['early'], 'now2');
-      expect(obj1['early'] == 'now', isFalse);
+      expect(obj1.applyRemoteAtom(null), -2);
+
+      expect(obj1[30], 'now2');
+      expect(obj1[30] == 'now', isFalse);
     });
   });
 
@@ -147,8 +147,14 @@ void main() {
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(access1, null);
-      obj2 = SyncableObjectImpl(access2, null);
+      obj1 = SyncableObjectImpl(
+        access1,
+        'obj',
+      );
+      obj2 = SyncableObjectImpl(
+        access2,
+        'obj',
+      );
       atoms1 = [];
       atoms2 = [];
     });
@@ -158,14 +164,14 @@ void main() {
     });
 
     test('apply same fields', () {
-      obj1['1'] = 1;
-      obj2['1'] = 1;
+      obj1[1] = 1;
+      obj2[1] = 1;
 
-      atoms1.forEach(obj1.applyAtom);
-      atoms2.forEach(obj2.applyAtom);
+      atoms1.forEach(obj1.applyRemoteAtom);
+      atoms2.forEach(obj2.applyRemoteAtom);
 
-      final id1 = obj1.getOriginIdOfKey('1');
-      final id2 = obj2.getOriginIdOfKey('1');
+      final id1 = obj1.getOriginIdOfKey(1);
+      final id2 = obj2.getOriginIdOfKey(1);
 
       expect(id1 == id2, isFalse);
       expect(id1.site, 11111);
@@ -179,14 +185,14 @@ void main() {
     });
 
     test('apply same fields and merge', () {
-      obj1['1'] = 1;
-      obj2['1'] = 'Test';
+      obj1[1] = 1;
+      obj2[1] = 'Test';
 
-      atoms1.forEach(obj1.applyAtom);
-      atoms2.forEach(obj2.applyAtom);
+      atoms1.forEach(obj1.applyRemoteAtom);
+      atoms2.forEach(obj2.applyRemoteAtom);
 
-      final id1 = obj1.getOriginIdOfKey('1');
-      final id2 = obj2.getOriginIdOfKey('1');
+      final id1 = obj1.getOriginIdOfKey(1);
+      final id2 = obj2.getOriginIdOfKey(1);
 
       expect(id1 == id2, isFalse);
       expect(id1.site, 11111);
@@ -195,32 +201,32 @@ void main() {
       /// --------------------------------
       /// --------------------------------
       // merge now both atoms
-      atoms2.forEach(obj1.applyAtom);
-      atoms1.forEach(obj2.applyAtom);
+      atoms2.forEach(obj1.applyRemoteAtom);
+      atoms1.forEach(obj2.applyRemoteAtom);
 
-      final id11 = obj1.getOriginIdOfKey('1');
-      final id22 = obj2.getOriginIdOfKey('1');
+      final id11 = obj1.getOriginIdOfKey(1);
+      final id22 = obj2.getOriginIdOfKey(1);
 
       expect(id11 == id22, isTrue);
       expect(id11.site, 22222);
       expect(id22.site, 22222);
 
-      expect(obj1['1'], 'Test');
-      expect(obj2['1'], 'Test');
+      expect(obj1[1], 'Test');
+      expect(obj2[1], 'Test');
     });
 
     test('apply same fields and merge with time delay', () {
       Timer(Duration(milliseconds: 1), () {
-        obj2['1'] = 'Test';
+        obj2[1] = 'Test';
       });
 
       Timer(Duration(milliseconds: 100), () {
-        obj1['1'] = 1;
-        atoms1.forEach(obj1.applyAtom);
-        atoms2.forEach(obj2.applyAtom);
+        obj1[1] = 1;
+        atoms1.forEach(obj1.applyRemoteAtom);
+        atoms2.forEach(obj2.applyRemoteAtom);
 
-        final id1 = obj1.getOriginIdOfKey('1');
-        final id2 = obj2.getOriginIdOfKey('1');
+        final id1 = obj1.getOriginIdOfKey(1);
+        final id2 = obj2.getOriginIdOfKey(1);
 
         expect(id1 == id2, isFalse);
         expect(id1.site, 11111);
@@ -229,29 +235,29 @@ void main() {
         /// --------------------------------
         /// --------------------------------
         // merge now both atoms
-        atoms2.forEach(obj1.applyAtom);
-        atoms1.forEach(obj2.applyAtom);
+        atoms2.forEach(obj1.applyRemoteAtom);
+        atoms1.forEach(obj2.applyRemoteAtom);
 
-        final id11 = obj1.getOriginIdOfKey('1');
-        final id22 = obj2.getOriginIdOfKey('1');
+        final id11 = obj1.getOriginIdOfKey(1);
+        final id22 = obj2.getOriginIdOfKey(1);
 
         expect(id11 == id22, isTrue);
         expect(id11.site, 11111);
         expect(id22.site, 11111);
 
-        expect(obj1['1'], 1);
-        expect(obj2['1'], 1);
+        expect(obj1[1], 1);
+        expect(obj2[1], 1);
       });
     });
 
     test('apply same fields and increase counter', () {
-      obj1['1'] = 'Peter';
-      obj1['1'] = 'Pan';
-      obj1['1'] = 'Hans';
+      obj1[1] = 'Peter';
+      obj1[1] = 'Pan';
+      obj1[1] = 'Hans';
 
-      atoms1.forEach(obj1.applyAtom);
+      atoms1.forEach(obj1.applyRemoteAtom);
 
-      final clock = obj1.getOriginIdOfKey('1');
+      final clock = obj1.getOriginIdOfKey(1);
       expect(atoms1.length, 3);
 
       // if counter is 0 => 'Hans' was just set, when the milliseconds went up by one
@@ -276,8 +282,8 @@ void main() {
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(access1, null);
-      obj2 = SyncableObjectImpl(access2, null);
+      obj1 = SyncableObjectImpl(access1, 'object_ID3');
+      obj2 = SyncableObjectImpl(access2, 'object_ID4');
       atoms1 = [];
       atoms2 = [];
     });

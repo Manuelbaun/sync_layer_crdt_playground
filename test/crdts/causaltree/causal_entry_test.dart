@@ -16,9 +16,9 @@ void main() {
       final e = CausalEntry(Id(LogicalClock(0), 2));
       final e2 = CausalEntry(Id(LogicalClock(0), 2), cause: Id(LogicalClock(1), 3));
       final e3 = CausalEntry(Id(LogicalClock(0), 2), cause: Id(LogicalClock(1), 3), data: 'hans');
-      expect(e.toString(), 'S2@T0->null : null');
-      expect(e2.toString(), 'S2@T0->S3@T1 : null');
-      expect(e3.toString(), 'S2@T0->S3@T1 : hans');
+      expect(e.toString(), 'S02@T00->null:null');
+      expect(e2.toString(), 'S02@T00->S03@T01:null');
+      expect(e3.toString(), 'S02@T00->S03@T01:hans');
     });
 
     test('missing id error', () {

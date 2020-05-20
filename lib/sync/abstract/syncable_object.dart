@@ -8,8 +8,11 @@ abstract class SyncableObject<Key> extends SyncableBase {
   /// contains all Atoms received and inserted
   List<AtomBase> get history;
 
-  // fires when the object got updated!
-  Stream<MapEntry<Key, dynamic>> get stream;
+  /// fires when the object got updated!
+  ///
+  /// TODO: should something be transported?
+  ///
+  Stream<void> get onChange;
 
   /// Returns the timestamp for that field
   IdBase getOriginIdOfKey(Key key);
@@ -18,23 +21,4 @@ abstract class SyncableObject<Key> extends SyncableBase {
 
   /// set operator field value
   operator []=(Key key, dynamic value);
-}
-
-class IdValuePair {
-  IdValuePair(this.id, this.value);
-  final IdBase id;
-  final dynamic value;
-
-  @override
-  String toString() => 'Entry(c: $id, v: $value)';
-
-  @override
-  bool operator ==(Object o) {
-    if (identical(this, o)) return true;
-
-    return o is IdValuePair && o.id == id && o.value == value;
-  }
-
-  @override
-  int get hashCode => id.hashCode ^ value.hashCode;
 }

@@ -23,12 +23,11 @@ import 'abstract/syncable_base.dart';
 /// * tombstone
 /// * abstract causal tree
 /// * rename in ordered list?
+/// * Create own Acessor
 class SyncableCausalTree<T> extends SyncableBase {
   SyncableCausalTree(this.proxy, this.id)
       : assert(proxy != null, 'Accessor prop cannot be null'),
         assert(id != null, 'Id cannot be null') {
-    tombstone = false;
-
     _internal = CausalTree(
       proxy.site,
       onChange: _onTreeChange,
@@ -41,7 +40,7 @@ class SyncableCausalTree<T> extends SyncableBase {
 
   /// create atom from local entry
   void _ontreeLocalUpdate(entry) {
-    final a = proxy.update(id, entry, true);
+    final a = proxy.update(id, entry);
   }
 
   /// get the values,which are note delete.
@@ -65,7 +64,7 @@ class SyncableCausalTree<T> extends SyncableBase {
   List<CausalEntry<T>> get entries => _filteredEntries;
   List<CausalEntry<T>> get entriesUnfiltered => _internal.sequence;
 
-  /// if called, all [ObjectReference] will be looked up and return Syncable Objects
+  /// if called, all [SyncableObjectRef] will be looked up and return Syncable Objects
   List<T> _filteredValues = <T>[];
 
   /// returns the values, deleted are filtered out.
@@ -80,7 +79,14 @@ class SyncableCausalTree<T> extends SyncableBase {
 
   /// Marks if the object is deleted!
   @override
-  bool tombstone;
+  bool get tombstone {
+    return false;
+  }
+
+  @override
+  void delete() {
+    throw AssertionError('not implemented yet');
+  }
 
   /// Object Id, Like RowId or Index in a Database, etc..
   @override
@@ -118,7 +124,7 @@ class SyncableCausalTree<T> extends SyncableBase {
 
     if (_syncableObjectsRefs.containsKey(e.id)) {
       data = _getSyncableRef(e.id);
-    } else if (data is ObjectReference) {
+    } else if (data is SyncableObjectRef) {
       data = proxy.objectLookup(e.data);
       _setSyncableRef(e.id, data);
     }
@@ -136,7 +142,7 @@ class SyncableCausalTree<T> extends SyncableBase {
   List<AtomBase> get history => _history.toList(growable: false)..sort();
 
   ///
-  /// ### [applyAtom] => for remote!
+  /// ### [applyRemoteAtom] => for remote!
   ///
   /// TODO: * think about remote and local update state
   /// * isLocalUpdate
@@ -148,7 +154,7 @@ class SyncableCausalTree<T> extends SyncableBase {
   /// * returns [-1] : if nothing applied => should never happen
   ///
   @override
-  int applyAtom(AtomBase atom, {bool isLocalUpdate = true}) {
+  int applyRemoteAtom(AtomBase atom, {bool isLocalUpdate = true}) {
     final entries = (atom.data is List) ? atom.data as List<CausalEntry<T>> : <CausalEntry<T>>[atom.data];
 
     // if atom did not exist, add and merge

@@ -5,6 +5,7 @@ import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/acess_proxy.dart';
 import 'abstract/sync_layer.dart';
 
+/// [SynclayerAccessor] is to be used within a syncablebase object
 class SynclayerAccessor implements AccessProxy {
   SynclayerAccessor(this.synclayer, int type)
       : _type = type,
@@ -20,20 +21,19 @@ class SynclayerAccessor implements AccessProxy {
   @override
   int get site => synclayer.site;
 
+  /// should only be called within a synable base object
   @override
-  AtomBase update(String objectId, dynamic data, bool isLocal) {
-    final atom = synclayer.createAtom(objectId, type, data);
-
-    /// with local update
-    synclayer.applyAtoms([atom], isLocalUpdate: isLocal);
+  AtomBase update(String objectId, dynamic data) {
+    final atom = synclayer.createAtom(type, objectId, data);
+    synclayer.applyLocalAtoms([atom]);
     return atom;
   }
 
   @override
-  String generateID() => synclayer.generateID();
+  String generateID() => synclayer.generateNewObjectIds();
 
   @override
-  SyncableBase objectLookup(ObjectReference ref, [bool shouldCreateIfNull = true]) {
+  SyncableBase objectLookup(SyncableObjectRef ref, [bool shouldCreateIfNull = true]) {
     final container = synclayer.getObjectContainer(typeNumber: ref.type);
 
     if (container != null) {

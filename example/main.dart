@@ -72,8 +72,8 @@ void main(List<String> arguments) {
           a.firstName = 'Doch Ben';
           a.todo = t;
 
-          t.assignee = a;
           // circular ref!
+          t.assignee = a;
         }
       });
 

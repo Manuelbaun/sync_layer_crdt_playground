@@ -22,7 +22,7 @@ class FakeNetwork {
     final atom = msgpackDecode(atomBytes);
     for (var obj in map.entries) {
       if (a.id.site != obj.value.proxy.site && obj.value.type == a.type) {
-        obj.value.applyAtom(atom, isLocalUpdate: false);
+        obj.value.applyRemoteAtom(atom);
       }
     }
   }

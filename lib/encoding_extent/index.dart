@@ -26,7 +26,7 @@ class _ExtendetEncoder implements ExtEncoder {
     if (o is SyncableEntry) return 3;
     if (o is Atom) return 4;
     if (o is CausalEntry) return 5;
-    if (o is ObjectReference) return 6;
+    if (o is SyncableObjectRef) return 6;
     if (o is MerkleTrie) return 8;
     if (o is Id) return 9;
 
@@ -60,7 +60,7 @@ class _ExtendetEncoder implements ExtEncoder {
       ]);
     }
 
-    if (o is ObjectReference) return msgpackEncode([o.type, o.id]);
+    if (o is SyncableObjectRef) return msgpackEncode([o.type, o.id]);
     if (o is MerkleTrie) return msgpackEncode(o.toMap());
     if (o is Id) return msgpackEncode([o.ts, o.site]);
 
@@ -101,7 +101,7 @@ class _ExtendetDecoder implements ExtDecoder {
 
     if (extType == 6) {
       final v = msgpackDecode(data);
-      return ObjectReference(v[0], v[1]);
+      return SyncableObjectRef(v[0], v[1]);
     }
 
     if (extType == 8) {

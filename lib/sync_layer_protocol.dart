@@ -82,7 +82,10 @@ class SyncLayerProtocol {
   ///
   SyncLayerProtocol(this.syn, {doBroadcast = true}) {
     if (doBroadcast) {
-      atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
+      atomSub = syn.atomStream.listen((atoms) {
+        logger.error('who am I, broadcasting all atoms');
+        broadCastAtoms(atoms);
+      });
     }
   }
 
@@ -132,7 +135,7 @@ class SyncLayerProtocol {
   }
 
   void broadCastAtoms(List<AtomBase> atoms) {
-    logger.info('send:MessageEnum.ATOMS Broadcast');
+    logger.info('broadcast :MessageEnum.ATOMS Broadcast : ${atoms.length}');
     final data = _EnDecoder.encodeAtoms(atoms);
 
     for (final ws in websockets) {
@@ -177,15 +180,17 @@ class SyncLayerProtocol {
           break;
         case _ProtocolHeaders.STATE_RESPONSE:
           final atoms = _EnDecoder.decodeAtoms(data);
-          syn.receiveAtoms(atoms);
+          syn.applyRemoteAtoms(atoms);
 
+          ///! NOTE:
           /// normally state response should not be relayed
           /// send to all online people, there are news online!
           relayMessage(rawData, ws);
           break;
         case _ProtocolHeaders.ATOMS:
           final atoms = _EnDecoder.decodeAtoms(data);
-          syn.receiveAtoms(atoms);
+          syn.applyRemoteAtoms(atoms);
+
           logger.info('⏫ MessageEnum.ATOMS relay');
           relayMessage(rawData, ws);
           break;

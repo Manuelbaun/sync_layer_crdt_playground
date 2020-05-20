@@ -11,7 +11,7 @@ abstract class SyncableObjectContainer<T extends SyncableBase> {
 
   /// added this object to a set of objects, which will be send via [changeStream]
   /// as updated objects
-  void setUpdatedObject(T obj);
+  void setUpdatedObject(String objectId);
 
   /// this will trigger an update, all objects set via setUpdatedObject will be
   /// send via [changeStream]
