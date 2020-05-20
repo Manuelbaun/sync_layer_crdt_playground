@@ -9,17 +9,16 @@ import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/acess_proxy.dart';
 import 'abstract/syncable_base.dart';
 
-/// Actually, this is a syncable ordered list!!!
-/// like it is implemented
+/// Actually, this is a syncable ordered list!!! like it is implemented
+/// the Delete operator does not delete the entries, rather tombstone with
+/// anther entry
 ///
-/// The causal tree, handels its one entries ... => how to work with this??
 ///
 /// At the moment [SyncableCausalTree] atom in creation order
 /// no pending sync mechanism yet
 ///
 ///
 /// TODO:
-/// * Object reference
 /// * Pending sync
 /// * tombstone
 /// * abstract causal tree
@@ -37,11 +36,12 @@ class SyncableCausalTree<T> extends SyncableBase {
     );
   }
 
+  /// the acutal causal tree => orderted list
+  CausalTree<T> _internal;
+
   /// create atom from local entry
   void _ontreeLocalUpdate(entry) {
     final a = proxy.update(id, entry, true);
-
-    
   }
 
   /// get the values,which are note delete.
@@ -52,9 +52,10 @@ class SyncableCausalTree<T> extends SyncableBase {
   }
 
   final _controller = StreamController<List<T>>();
-  Stream<List<T>> get stream => _controller.stream;
 
-  CausalTree<T> _internal;
+  /// [stream] trigger, when values are changed. and return only the
+  /// 'filtered' [values]
+  Stream<List<T>> get stream => _controller.stream;
 
   /// this is a workaround to get index and entries mapped
   List<CausalEntry<T>> _filteredEntries = <CausalEntry<T>>[];
@@ -66,6 +67,8 @@ class SyncableCausalTree<T> extends SyncableBase {
 
   /// if called, all [ObjectReference] will be looked up and return Syncable Objects
   List<T> _filteredValues = <T>[];
+
+  /// returns the values, deleted are filtered out.
   List<T> get values => _filteredValues;
 
   @override
