@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/sync/abstract/syncable_base.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
@@ -30,7 +31,7 @@ abstract class SyncLayer {
   AtomBase createAtom(String objectId, int typeId, dynamic data);
 
   /// Function to add atoms
-  void applyAtoms(List<AtomBase> atoms);
+  void applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true});
 
   /// This method is used for incoming/receiving atoms
   /// since the clock will be updated based on the incoming atoms

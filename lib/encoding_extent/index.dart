@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sync_layer/basic/index.dart';
 import 'package:sync_layer/crdts/causal_tree/causal_entry.dart';
-import 'package:sync_layer/types/id_atom.dart';
+
 import 'package:sync_layer/types/index.dart';
 
 /// encodes into bytes
@@ -39,9 +39,11 @@ class _ExtendetEncoder implements ExtEncoder {
     if (o is HybridLogicalClock) return msgpackEncode([o.ms, o.counter]);
     if (o is SyncableEntry) return msgpackEncode([o.key, o.value]);
     if (o is Atom) {
+      /// Knowing ts clock is HLC!
+      final ts = (o.id.ts as HybridLogicalClock);
       return msgpackEncode([
-        o.id.ts.ms,
-        o.id.ts.counter,
+        ts.ms,
+        ts.counter,
         o.id.site,
         o.type,
         o.objectId,
@@ -86,7 +88,7 @@ class _ExtendetDecoder implements ExtDecoder {
 
     if (extType == 4) {
       final v = msgpackDecode(data);
-      final id = AtomId(HybridLogicalClock(v[0], v[1]), v[2]);
+      final id = Id(HybridLogicalClock(v[0], v[1]), v[2]);
       return Atom(id, v[3], v[4], v[5]);
     }
 

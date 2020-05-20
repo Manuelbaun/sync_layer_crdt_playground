@@ -4,7 +4,7 @@ import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/logical_clock_base.dart';
 import 'package:sync_layer/types/atom.dart';
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
-import 'package:sync_layer/types/id_atom.dart';
+import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/types/object_reference.dart';
 
 class FakeAccessProxyHLC implements AccessProxy {
@@ -23,13 +23,13 @@ class FakeAccessProxyHLC implements AccessProxy {
   @override
   final int type;
 
-  AtomId _getNextAtomId() {
+  Id _getNextAtomId() {
     baseClock = HybridLogicalClock.send(baseClock);
-    return AtomId(baseClock, site);
+    return Id(baseClock, site);
   }
 
   @override
-  AtomBase update(String objId, dynamic data) {
+  AtomBase update(String objId, dynamic data, bool isLocal) {
     final tsId = _getNextAtomId();
     final a = Atom(tsId, type, objId, data);
     if (update != null) onUpdate(a);
@@ -43,7 +43,6 @@ class FakeAccessProxyHLC implements AccessProxy {
 
   @override
   SyncableBase objectLookup(ObjectReference ref) {
-    
     return db[ref.id];
   }
 }

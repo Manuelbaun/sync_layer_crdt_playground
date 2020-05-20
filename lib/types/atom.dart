@@ -1,7 +1,7 @@
 import 'package:sync_layer/basic/hashing.dart';
 
 import 'abstract/atom_base.dart';
-import 'id_atom.dart';
+import 'id.dart';
 
 class Atom<T> implements AtomBase<T> {
   Atom(this.id, this.type, this.objectId, this.data);
@@ -9,7 +9,7 @@ class Atom<T> implements AtomBase<T> {
   /// depending on the atom type, the id the hashcode of the atom or the clock
   // final IdBase id;
   @override
-  final AtomId id;
+  final Id id;
 
   @override
   final int type;

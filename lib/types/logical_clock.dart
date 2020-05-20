@@ -3,6 +3,9 @@ import 'dart:math';
 import 'abstract/logical_clock_base.dart';
 
 /// now, logical clock can be made more general with HLC!
+/// TODO:
+/// * match the Hybrid Logical Clock implements with logical clock!
+/// or extend from logical clock
 class LogicalClock implements LogicalClockBase<LogicalClock> {
   /// to be compatible to js, only 32 bits!
   @override
@@ -13,22 +16,24 @@ class LogicalClock implements LogicalClockBase<LogicalClock> {
   LogicalClock(this.counter) : assert(counter != null && counter >= 0);
 
   @override
+  @pragma('vm:prefer-inline')
   String radixTime(int radix) => logicalTime.toRadixString(radix);
 
-  /// increases
+  /// when called will increase the logicalTime by 1
   @override
+  @pragma('vm:prefer-inline')
   factory LogicalClock.send(LogicalClock lc) => LogicalClock(lc.logicalTime + 1);
 
   /// Takes the maximum of both clocks /// Think again, should it increase too,
   /// like in HLC??? since send increase it
   @override
+  @pragma('vm:prefer-inline')
   factory LogicalClock.recv(LogicalClock local, LogicalClock remote) {
-    /// Takes the maximum
-    final ts = max(local.logicalTime, remote.logicalTime);
-    return LogicalClock(ts);
+    return LogicalClock.fromLogical(max(local.logicalTime, remote.logicalTime));
   }
 
   @override
+  @pragma('vm:prefer-inline')
   factory LogicalClock.fromLogical(int ts) => LogicalClock(ts);
 
   @override
@@ -37,6 +42,7 @@ class LogicalClock implements LogicalClockBase<LogicalClock> {
   }
 
   @override
+  @pragma('vm:prefer-inline')
   int compareTo(LogicalClock o) => logicalTime.compareTo(o.logicalTime);
 
   @override

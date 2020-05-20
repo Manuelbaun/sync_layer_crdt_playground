@@ -37,5 +37,5 @@ abstract class SyncableBase extends Comparable<SyncableBase> {
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
   /// * returns [-1] : if nothing applied => should never happen
-  int applyAtom(AtomBase atom);
+  int applyAtom(AtomBase atom, {bool isLocalUpdate = true});
 }

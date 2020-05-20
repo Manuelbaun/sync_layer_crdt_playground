@@ -31,15 +31,15 @@ void main(List<String> arguments) {
   // apply changes
   final tt = dao.todos.create();
   final id = tt.id;
-  tt.title = 'init Title';
+  // tt.title = 'init Title';
 
   Timer.periodic(Duration(seconds: 2), (tt) {
     final t = dao.todos.read(id);
 
     if (t != null) {
       dao.syn.transaction(() {
-        t.title = 'hallo $nodeID ${tt.tick}';
-        t.title = 'hallo $nodeID ${tt.tick}-2';
+        // t.title = 'hallo $nodeID ${tt.tick}';
+        // t.title = 'hallo $nodeID ${tt.tick}-2';
 
         if (t.assignee == null) {
           final a = dao.assignees.create();

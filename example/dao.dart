@@ -8,8 +8,8 @@ import 'package:sync_layer/sync/syncable_object_impl.dart';
 class Todo extends SyncableObjectImpl<int, Todo> {
   Todo(AccessProxy proxy, {String id, String title}) : super(proxy, id);
 
-  String get title => super[0];
-  set title(String v) => super[0] = v;
+  SyncArray get title => super[0];
+  set title(SyncArray v) => super[0] = v;
 
   bool get status => super[1];
   set status(bool v) => super[1] = v;
@@ -88,7 +88,7 @@ class SyncDao {
       _assignees = _syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
       _syncArray = syn.registerObjectType<SyncArray>('syncarray', (c, id) => SyncArray(c, id: id));
 
-      setupListener();
+      // setupListener();
     } else {
       throw AssertionError('cant create this class twice?');
     }

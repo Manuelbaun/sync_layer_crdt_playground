@@ -1,4 +1,3 @@
-import 'package:sync_layer/types/index.dart';
 
 /// This function will be called recursivly only on [Map], [Set], [List]
 int nestedHashing(dynamic o) {

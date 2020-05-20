@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:sync_layer/basic/cuid.dart';
 import 'package:sync_layer/basic/merkle_tire.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
-import 'package:sync_layer/types/id_atom.dart';
 
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/errors/index.dart';
@@ -121,7 +120,7 @@ class SyncLayerImpl implements SyncLayer {
 
   /// Work with Atoms
   ///
-  void _applyAtoms(List<AtomBase> atoms) {
+  void _applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true}) {
     final changedContainer = <SyncableObjectContainer>{};
 
     for (final atom in atoms) {
@@ -135,7 +134,7 @@ class SyncLayerImpl implements SyncLayer {
           var obj = container.read(atom.objectId);
           obj ??= container.create(atom.objectId);
 
-          final res = obj.applyAtom(atom);
+          final res = obj.applyAtom(atom, isLocalUpdate: isLocalUpdate);
 
           // if successfull applied, => trigger!
           if (res == 2) {
@@ -186,7 +185,7 @@ class SyncLayerImpl implements SyncLayer {
 
   @override
   AtomBase createAtom(String objectId, int typeId, dynamic data) {
-    final id = AtomId(clock.getForSend(), site);
+    final id = Id(clock.getForSend(), site);
     return Atom(id, typeId, objectId, data);
   }
 
@@ -195,13 +194,17 @@ class SyncLayerImpl implements SyncLayer {
   /// use Transaction to apply first, which then applies all made changes and
   /// sends via network
   @override
-  void applyAtoms(List<AtomBase> atoms) {
+  void applyAtoms(List<AtomBase> atoms, {bool isLocalUpdate = true}) {
     if (_transactionActive) {
       _transationList.addAll(atoms);
     } else {
       // could be changed?
-      _applyAtoms(atoms);
-      _atomStreamController.add(atoms);
+      _applyAtoms(atoms, isLocalUpdate: isLocalUpdate);
+
+      /// local update will be send not remote!!!
+      if (isLocalUpdate) {
+        _atomStreamController.add(atoms);
+      }
     }
   }
 
@@ -217,7 +220,7 @@ class SyncLayerImpl implements SyncLayer {
     _transactionActive = false;
 
     /// TODO: should it be copying the refs
-    _applyAtoms([..._transationList]);
+    _applyAtoms([..._transationList], isLocalUpdate: true);
     _transationList.clear();
   }
 
@@ -231,7 +234,7 @@ class SyncLayerImpl implements SyncLayer {
       clock.fromReceive(atom.id.ts);
     }
 
-    _applyAtoms(atoms);
+    _applyAtoms(atoms, isLocalUpdate: false);
   }
 
   List<AtomBase> getAtomsSinceMs(HybridLogicalClock clock) {

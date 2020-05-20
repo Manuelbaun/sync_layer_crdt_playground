@@ -10,17 +10,22 @@ import 'causal_entry.dart';
 /// https://youtu.be/B5NULPSiOGw?t=2507
 
 enum FilterSemantic { AND, OR }
+typedef VoidCallback = void Function();
+typedef OnUpdate<T> = void Function(T update);
 
 class CausalTree<T> {
-  CausalTree(this.site, {onChange})
-      : localClock = LogicalClock(0),
-        _onChange = onChange {
+  CausalTree(this.site, {this.onChange, this.onLocalUpdate}) : localClock = LogicalClock(0) {
     root = CausalEntry(Id(localClock, -1), data: null, cause: null);
   }
 
   int site;
   CausalEntry root;
-  final void Function(CausalEntry<T> entry) _onChange;
+
+  /// [onchange] gets triggerd as void callback, if a new entry changed the [CausalTree]
+  final VoidCallback onChange;
+
+  /// [onLocalUpdate] gets triggered if a local change happend and provides with that entry
+  final OnUpdate onLocalUpdate;
 
   // should we use deltedAtoms?
   final Set<Id> _deletedIds = {};
@@ -50,12 +55,17 @@ class CausalTree<T> {
   /// same site cannot have the same counter.
   LogicalClockBase localClock;
 
+  @pragma('vm:prefer-inline')
   Id _newID() {
     localClock = LogicalClock.send(localClock);
     return Id(localClock, site);
   }
 
-  void _insert(CausalEntry<T> entry, {int index, bool sequenceRun = true}) {
+  /// returns
+  /// triggers onChange only when successfull
+  /// TODO:
+  /// * trigger pending ?
+  void _insert(CausalEntry<T> entry, {int index}) {
     if (_allIds.contains(entry.id)) return;
 
     _allIds.add(entry.id);
@@ -86,33 +96,37 @@ class CausalTree<T> {
       }
 
       sequence.insert(causeIndex, entry);
-    } else if (causeIndex < 0 && sequence.isNotEmpty) {
-      pending.add(entry);
-
-      /// TODO: mechanism to insert pending atom
-      print('pending atom $entry');
-      // throw AssertionError('Pending is not supported yet');
     }
 
-    yarns[entry.site] ??= <CausalEntry<T>>[];
-    yarns[entry.site].add(entry);
+    // if not found, => pending, will insert as soon as the right entry arrive
+    // TODO: * pending impl
+    if (causeIndex < 0 && sequence.isNotEmpty) {
+      pending.add(entry);
+      print('pending atom $entry => not working yet');
+    }
 
-    if (_onChange != null) _onChange(entry);
+    /// else successfull added
+    else {
+      yarns[entry.site] ??= <CausalEntry<T>>[];
+      yarns[entry.site].add(entry);
+
+      if (onChange != null) onChange();
+    }
   }
 
-  // Add to deletedAtoms set
-  void _delete(CausalEntry<T> entry, [int index]) {
+  /// Adds to deleted ids set
+  /// and insert the delete entry to the trie
+  @pragma('vm:prefer-inline')
+  void _delete(CausalEntry<T> entry, {int index}) {
     _deletedIds.add(entry.cause);
     _deletedIds.add(entry.id);
     _insert(entry, index: index);
   }
 
-  void mergeRemoteEntriees(List<CausalEntry<T>> entries, [recvActive = true]) {
+  void mergeRemoteEntries(List<CausalEntry<T>> entries) {
     for (final entry in entries) {
-      /// normally
-      if (recvActive) {
-        localClock = LogicalClock.recv(localClock, entry.id.ts);
-      }
+      /// increase local time, get the max!
+      localClock = LogicalClock.recv(localClock, entry.id.ts);
 
       if (entry.data == null) {
         _delete(entry);
@@ -130,6 +144,9 @@ class CausalTree<T> {
     );
 
     _insert(entry, index: parent == null ? 0 : null);
+
+    if (onLocalUpdate != null) onLocalUpdate(entry);
+
     return entry;
   }
 
@@ -141,12 +158,9 @@ class CausalTree<T> {
     );
 
     _insert(entry, index: sequence.length);
-    // maybe just add here?
-    return entry;
-  }
+    if (onLocalUpdate != null) onLocalUpdate(entry);
 
-  void pop() {
-    _delete(sequence.last, sequence.length);
+    return entry;
   }
 
   CausalEntry<T> delete(CausalEntry<T> deleteEntry) {
@@ -157,6 +171,8 @@ class CausalTree<T> {
     );
 
     _delete(entry);
+
+    if (onLocalUpdate != null) onLocalUpdate(entry);
     return entry;
   }
 
@@ -231,15 +247,18 @@ class CausalTree<T> {
 
   @override
   String toString() {
-    return sequence
-        .where((entry) => !(entry.data == null || _deletedIds.contains(entry.id)))
-        .map(((a) => a.data.toString()))
-        .join('');
+    return sequence.toString();
+  }
+
+  String toStringData() {
+    return sequence.map((e) => e.data).toString();
   }
 
   /// workaround to get a cleaned sequence without tombstone...
   /// filtered sequence
-  List<CausalEntry<T>> value() {
-    return sequence.where((entry) => !(entry.data == null || _deletedIds.contains(entry.id))).toList();
+  List<CausalEntry<T>> get value {
+    return sequence.where((entry) {
+      return !(entry.data == null || _deletedIds.contains(entry.id));
+    }).toList();
   }
 }

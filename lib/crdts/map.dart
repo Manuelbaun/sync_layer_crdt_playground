@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:sync_layer/basic/index.dart';
-import 'package:sync_layer/types/id_atom.dart';
+
 import 'package:sync_layer/types/index.dart';
 
 /// This CRDT map is currently not working!

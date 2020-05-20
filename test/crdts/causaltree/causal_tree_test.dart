@@ -4,57 +4,30 @@ import 'package:sync_layer/utils/measure.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('CausalTree manually: ', mergeTestManually);
+  group('CausalTree with onLocalUpdateCallback: ', mergeTestWithCallback);
+}
+
+void mergeTestManually() {
   CausalTree<String> a;
   CausalTree<String> b;
   CausalTree<String> c;
   CausalTree<String> d;
 
   setUp(() {
-    a = CausalTree<String>(
-      1,
-      //  onChange: (atom) {
-      //   b.mergeRemoteEntriees([atom]);
-      //   c.mergeRemoteEntriees([atom]);
-      //   d.mergeRemoteEntriees([atom]);
-      // }
-    );
+    a = CausalTree<String>(1);
+    b = CausalTree<String>(2);
+    c = CausalTree<String>(3);
+    d = CausalTree<String>(4);
 
-    b = CausalTree<String>(
-      2,
-      // onChange:
-      //  (atom) {
-      //   a.mergeRemoteEntriees([atom]);
-      //   c.mergeRemoteEntriees([atom]);
-      //   d.mergeRemoteEntriees([atom]);
-      // }
-    );
-
-    c = CausalTree<String>(
-      3,
-      // onChange: (atom) {
-      //   a.mergeRemoteEntriees([atom]);
-      //   b.mergeRemoteEntriees([atom]);
-      //   d.mergeRemoteEntriees([atom]);
-      // }
-    );
-
-    d = CausalTree<String>(
-      4,
-      // onChange: (atom) {
-      //   a.mergeRemoteEntriees([atom]);
-      //   b.mergeRemoteEntriees([atom]);
-      //   c.mergeRemoteEntriees([atom]);
-      // }
-    );
-
-    measureExecution('add and merge', () {
+    measureExecution('add and merge Manually', () {
       final a1 = a.insert(null, 'C');
       final a2 = a.insert(a1, 'M');
       final a3 = a.insert(a2, 'D');
 
-      b.mergeRemoteEntriees(a.sequence);
-      c.mergeRemoteEntriees(a.sequence);
-      d.mergeRemoteEntriees(a.sequence);
+      b.mergeRemoteEntries(a.sequence);
+      c.mergeRemoteEntries(a.sequence);
+      d.mergeRemoteEntries(a.sequence);
 
       a.localClock = LogicalClock(5);
       final a6 = a.delete(a2);
@@ -81,7 +54,7 @@ void main() {
 
       // ------------- D
       d.localClock = LogicalClock(10);
-      d.mergeRemoteEntriees(a.sequence);
+      d.mergeRemoteEntries(a.sequence);
       final d10 = d.insert(aA, 'S');
       final d11 = d.insert(d10, 'P');
       final d12 = d.insert(d11, 'A');
@@ -89,20 +62,20 @@ void main() {
       final d14 = d.insert(d13, 'E');
 
       /// all changed merge into a
-      a.mergeRemoteEntriees(b.sequence);
-      a.mergeRemoteEntriees(c.sequence);
-      a.mergeRemoteEntriees(d.sequence);
+      a.mergeRemoteEntries(b.sequence);
+      a.mergeRemoteEntries(c.sequence);
+      a.mergeRemoteEntries(d.sequence);
 
       /// merge new state of a into b, c, d
-      b.mergeRemoteEntriees(a.sequence);
-      c.mergeRemoteEntriees(a.sequence);
-      d.mergeRemoteEntriees(a.sequence);
+      b.mergeRemoteEntries(a.sequence);
+      c.mergeRemoteEntries(a.sequence);
+      d.mergeRemoteEntries(a.sequence);
     });
   });
 
   test('subscription Merge', () {
     measureExecution('Tree print time: ', () {
-      final str = a.toString();
+      final str = a.value.map((e) => e.data).join('');
     });
 
     print('$a - ${a.length}: ${a.deletedLength}');
@@ -110,22 +83,19 @@ void main() {
     print('$c - ${c.length}: ${c.deletedLength}');
     print('$d - ${d.length}: ${d.deletedLength}');
 
-    final sa = a.sequence.map((e) => e.data).join(' ');
-    final sb = b.sequence.map((e) => e.data).join(' ');
-    final sc = c.sequence.map((e) => e.data).join(' ');
-    final sd = d.sequence.map((e) => e.data).join(' ');
+    final sa = a.value.map((e) => e.data).join('');
+    final sb = b.value.map((e) => e.data).join('');
+    final sc = c.value.map((e) => e.data).join('');
+    final sd = d.value.map((e) => e.data).join('');
 
-    print(sa);
-    print(sb);
-    print(sc);
-    print(sd);
+    /// test if all values are in the same sequence
+    expect(sa, 'CTRLSPACEALTDELACT');
+    expect(sb, 'CTRLSPACEALTDELACT');
+    expect(sc, 'CTRLSPACEALTDELACT');
+    expect(sd, 'CTRLSPACEALTDELACT');
 
     var index = 0;
-    final abEqual = a.sequence.every((a) {
-      final e = a == b.sequence[index++];
-      print('$a == ${b.sequence[index - 1]} : $e');
-      return e;
-    });
+    final abEqual = a.sequence.every((a) => a == b.sequence[index++]);
 
     index = 0;
     final acEqual = a.sequence.every((a) => a == c.sequence[index++]);
@@ -133,11 +103,7 @@ void main() {
     index = 0;
     final adEqual = a.sequence.every((a) => a == d.sequence[index++]);
 
-    expect(a.toString(), 'CTRLSPACEALTDELACT');
-    expect(b.toString(), 'CTRLSPACEALTDELACT');
-    expect(c.toString(), 'CTRLSPACEALTDELACT');
-    expect(d.toString(), 'CTRLSPACEALTDELACT');
-
+    /// test if all entries are actually in the same sequnce
     expect(abEqual, true);
     expect(acEqual, true);
     expect(adEqual, true);
@@ -224,25 +190,178 @@ void main() {
   });
 }
 
-// S01@T01->S-1@T00:   C == S01@T01->S-1@T00:   C : true
-// S01@T08->S01@T01:   T == S01@T08->S01@T01:   T : true
-// S01@T09->S01@T08:   R == S01@T09->S01@T08:   R : true
-// S01@T10->S01@T09:   L == S01@T10->S01@T09:   L : true
-// S04@T11->S01@T10:   S == S04@T11->S01@T10:   S : true
-// S04@T12->S04@T11:   P == S04@T12->S04@T11:   P : true
-// S04@T13->S04@T12:   A == S04@T13->S04@T12:   A : true
-// S04@T14->S04@T13:   C == S04@T14->S04@T13:   C : true
-// S04@T15->S04@T14:   E == S04@T15->S04@T14:   E : true
-// S01@T02->S01@T01:   M == S01@T02->S01@T01:   M : true
-// S01@T06->S01@T02:null == S01@T06->S01@T02:null : true
-// S01@T03->S01@T02:   D == S01@T03->S01@T02:   D : true
-// S03@T07->S01@T03:   A == S03@T07->S01@T03:   A : true
-// S03@T08->S03@T07:   L == S03@T08->S03@T07:   L : true
-// S03@T09->S03@T08:   T == S03@T09->S03@T08:   T : true
-// S01@T07->S01@T03:null == S02@T06->S01@T03:   D : false
-// S02@T06->S01@T03:   D == S01@T07->S01@T03:null : false
-// S02@T07->S02@T06:   E == S02@T07->S02@T06:   E : true
-// S02@T08->S02@T07:   L == S02@T08->S02@T07:   L : true
-// S02@T09->S02@T08:   A == S02@T09->S02@T08:   A : true
-// S02@T10->S02@T09:   C == S02@T10->S02@T09:   C : true
-// S02@T11->S02@T10:   T == S02@T11->S02@T10:   T : true
+void mergeTestWithCallback() {
+  CausalTree<String> a;
+  CausalTree<String> b;
+  CausalTree<String> c;
+  CausalTree<String> d;
+
+  setUp(() {
+    a = CausalTree<String>(1, onLocalUpdate: (atom) {
+      b.mergeRemoteEntries([atom]);
+      c.mergeRemoteEntries([atom]);
+      d.mergeRemoteEntries([atom]);
+    });
+
+    b = CausalTree<String>(2, onLocalUpdate: (atom) {
+      a.mergeRemoteEntries([atom]);
+      c.mergeRemoteEntries([atom]);
+      d.mergeRemoteEntries([atom]);
+    });
+
+    c = CausalTree<String>(3, onLocalUpdate: (atom) {
+      a.mergeRemoteEntries([atom]);
+      b.mergeRemoteEntries([atom]);
+      d.mergeRemoteEntries([atom]);
+    });
+
+    d = CausalTree<String>(4, onLocalUpdate: (atom) {
+      a.mergeRemoteEntries([atom]);
+      b.mergeRemoteEntries([atom]);
+      c.mergeRemoteEntries([atom]);
+    });
+
+    measureExecution('add and merge with callback', () {
+      final a1 = a.insert(null, 'C');
+      final a2 = a.insert(a1, 'M');
+      final a3 = a.insert(a2, 'D');
+
+      a.localClock = LogicalClock(5);
+      final a6 = a.delete(a2);
+      final a7 = a.delete(a3);
+      final a8 = a.insert(a1, 'T');
+      final a9 = a.insert(a8, 'R');
+      final aA = a.insert(a9, 'L');
+
+      // ------------- B
+      b.localClock = LogicalClock(5);
+      final b6 = b.insert(a3, 'D');
+      final b7 = b.insert(b6, 'E');
+      final b8 = b.insert(b7, 'L');
+
+      final b9 = b.insert(b8, 'A');
+      final bA = b.insert(b9, 'C');
+      final bB = b.insert(bA, 'T');
+
+      // ------------- C
+      c.localClock = LogicalClock(6);
+      final c7 = c.insert(a3, 'A');
+      final c8 = c.insert(c7, 'L');
+      final c9 = c.insert(c8, 'T');
+
+      // ------------- D
+      d.localClock = LogicalClock(10);
+      // d.mergeRemoteEntries(a.sequence);
+      final d10 = d.insert(aA, 'S');
+      final d11 = d.insert(d10, 'P');
+      final d12 = d.insert(d11, 'A');
+      final d13 = d.insert(d12, 'C');
+      final d14 = d.insert(d13, 'E');
+    });
+  });
+
+  test('eqal test', () {
+    final astr = a.sequence.map((e) => e.data).join('');
+    final bstr = b.sequence.map((e) => e.data).join('');
+    final cstr = c.sequence.map((e) => e.data).join('');
+    final dstr = d.sequence.map((e) => e.data).join('');
+
+    expect(astr, bstr);
+    expect(bstr, cstr);
+    expect(cstr, dstr);
+
+    final aval = a.value.map((e) => e.data).join('');
+    final bval = b.value.map((e) => e.data).join('');
+    final cval = c.value.map((e) => e.data).join('');
+    final dval = d.value.map((e) => e.data).join('');
+
+    expect(aval, bval);
+    expect(bval, cval);
+    expect(cval, dval);
+  });
+}
+
+void mergeFail() {
+  CausalTree<String> a;
+  CausalTree<String> b;
+
+  test('Merge CTRLDEL Merge', () {
+    a = CausalTree<String>(1, onLocalUpdate: (entry) {
+      b.mergeRemoteEntries([entry]);
+    });
+    b = CausalTree<String>(2, onLocalUpdate: (entry) {
+      a.mergeRemoteEntries([entry]);
+    });
+
+    measureExecution('add and merge', () {
+      final a1 = a.insert(null, 'C');
+      final a2 = a.insert(a1, 'M');
+      final a3 = a.insert(a2, 'D');
+
+      a.localClock = LogicalClock(5);
+      final a6 = a.delete(a2);
+      final a7 = a.delete(a3);
+      final a8 = a.insert(a1, 'T');
+      final a9 = a.insert(a8, 'R');
+      final aA = a.insert(a9, 'L');
+
+      // ------------- B
+      b.localClock = LogicalClock(5);
+      final b6 = b.insert(a3, 'D');
+      final b7 = b.insert(b6, 'E');
+      final b8 = b.insert(b7, 'L');
+    });
+
+    measureExecution('Tree print time: ', () {
+      final str = a.toString();
+    });
+
+    print('$a - ${a.length}: ${a.deletedLength}');
+    print('$b - ${b.length}: ${b.deletedLength}');
+
+    var index = 0;
+    final abEqual = a.sequence.every((a) => a == b.sequence[index++]);
+
+    expect(a.toString(), 'CTRLDEL');
+    expect(b.toString(), 'CTRLDEL');
+
+    expect(abEqual, true);
+  });
+  test('Fail merge', () {
+    // final unsubscribeA = a.stream.listen((atom) {
+    //   b.mergeRemoteAtoms([atom]);
+    // });
+
+    // final unsubscribeB = b.stream.listen((atom) {
+    //   a.mergeRemoteAtoms([atom]);
+    // });
+
+    final all = <CausalEntry<String>>[];
+    all.add(a.push('H'));
+    all.add(a.push('A'));
+    all.add(a.push('L'));
+    all.add(a.push(' '));
+
+    b.mergeRemoteEntries(all);
+    print(a.toString());
+    print(b.toString());
+    print('................');
+    all.add(a.push('W'));
+    all.add(a.push('O'));
+    all.add(a.push('R'));
+    all.add(a.push('L'));
+    all.add(a.push('D'));
+
+    /// correction
+    all.add(a.insert(all[2], 'O'));
+    print(a.toString());
+    print(b.toString());
+    // all.add();
+
+    a.mergeRemoteEntries([b.insert(all[2], 'L')]);
+
+    b.mergeRemoteEntries(a.sequence);
+    print(a.toString());
+    print(b.toString());
+  });
+}

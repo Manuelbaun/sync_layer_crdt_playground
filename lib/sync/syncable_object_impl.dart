@@ -129,7 +129,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
     // send atom
 
     final copy = {..._subTransactionMap};
-    final atom = _proxy.update(id, copy);
+    final atom = _proxy.update(id, copy, true);
     // creates new map for next
     _subTransactionMap.clear();
   }
@@ -143,7 +143,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
     if (_subTransaction) {
       _subTransactionMap[key] = value;
     } else {
-      final atom = _proxy.update(id, {key: value});
+      final atom = _proxy.update(id, {key: value}, true);
     }
 
     /// Todo: set atom entry now?....
@@ -172,6 +172,8 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   operator []=(Key key, dynamic value) => _setValue(key, value);
 
   /// applies atom and returns
+  /// * TODO fix Me:
+  /// * got [isLocalUpdate]
   ///
   ///! * implementation changed: .... below is wrong !
   ///
@@ -186,7 +188,7 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
   ///
   /// normally Synclayer is filtering it out!
   @override
-  int applyAtom(AtomBase atom) {
+  int applyAtom(AtomBase atom, {bool isLocalUpdate = true}) {
     /// use
     // the same atom should not happen, this will only happen, if
     // the atom is not filtered out

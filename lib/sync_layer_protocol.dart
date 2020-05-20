@@ -20,6 +20,22 @@ enum _ProtocolHeaders {
   NO_ATOMS,
 }
 
+// class Debouncer {
+//   final int milliseconds;
+//   VoidCallback action;
+//   Timer _timer;
+
+//   Debouncer({this.milliseconds});
+
+//   run(VoidCallback action) {
+//     if (_timer != null) {
+//       _timer.cancel();
+//     }
+
+//     _timer = Timer(Duration(milliseconds: milliseconds), action);
+//   }
+// }
+
 class _EnDecoder {
   static Uint8List encodeAtoms(List<AtomBase> atoms) {
     final buff = msgpackEncode(atoms);
@@ -56,8 +72,18 @@ class SyncLayerProtocol {
   final websocketsNames = <WebSocket, String>{};
 
   StreamSubscription atomSub;
-  SyncLayerProtocol(this.syn) {
-    atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
+
+  /// [doBroadcast] will allow, as soon as possible,
+  /// for a server node, it is not really needed.
+  /// this will relay, incoming
+  ///
+  /// TODO: this needs to be fixed!
+  /// sync needs to check wether its a remote or local change!!
+  ///
+  SyncLayerProtocol(this.syn, {doBroadcast = true}) {
+    if (doBroadcast) {
+      atomSub = syn.atomStream.listen((atoms) => broadCastAtoms(atoms));
+    }
   }
 
   void dispose() async {
@@ -106,8 +132,8 @@ class SyncLayerProtocol {
   }
 
   void broadCastAtoms(List<AtomBase> atoms) {
-    final data = _EnDecoder.encodeAtoms(atoms);
     logger.info('send:MessageEnum.ATOMS Broadcast');
+    final data = _EnDecoder.encodeAtoms(atoms);
 
     for (final ws in websockets) {
       ws.add([_ProtocolHeaders.ATOMS.index, ...data]);
@@ -136,7 +162,8 @@ class SyncLayerProtocol {
 
           if (atoms.isNotEmpty) {
             logger.info('⏫ :MessageEnum.STATE_RESPONSE');
-            final msg = [_ProtocolHeaders.STATE_RESPONSE.index, ..._EnDecoder.encodeAtoms(atoms)];
+            final encoded = _EnDecoder.encodeAtoms(atoms);
+            final msg = [_ProtocolHeaders.STATE_RESPONSE.index, ...encoded];
             ws.add(msg);
           } else {
             logger.info('⏫ MessageEnum.NO_ATOMS');

@@ -30,16 +30,25 @@ class SyncableCausalTree<T> extends SyncableBase {
         assert(id != null, 'Id cannot be null') {
     tombstone = false;
 
-    _internal = CausalTree(proxy.site, onChange: _onTreeChange);
+    _internal = CausalTree(
+      proxy.site,
+      onChange: _onTreeChange,
+      onLocalUpdate: _ontreeLocalUpdate,
+    );
   }
 
-  void _onTreeChange(CausalEntry<T> entry) {
-    /// get the values,which are note delete.
-    _filteredEntries = _internal.value();
+  /// create atom from local entry
+  void _ontreeLocalUpdate(entry) {
+    final a = proxy.update(id, entry, true);
 
-    /// THis here needs a revisit!!!
-    final a = proxy.update(id, entry);
-    _controller.add(values);
+    
+  }
+
+  /// get the values,which are note delete.
+  void _onTreeChange() {
+    _filteredEntries = _internal.value;
+    _filteredValues = _filteredEntries.map(_convertEntry2Data).toList();
+    _controller.add(_filteredValues);
   }
 
   final _controller = StreamController<List<T>>();
@@ -53,9 +62,11 @@ class SyncableCausalTree<T> extends SyncableBase {
   /// gets the real tree entries,  [map],[list], a [primitives] or [objectReference]
   /// try using values
   List<CausalEntry<T>> get entries => _filteredEntries;
+  List<CausalEntry<T>> get entriesUnfiltered => _internal.sequence;
 
   /// if called, all [ObjectReference] will be looked up and return Syncable Objects
-  List<T> get values => _filteredEntries.map(_convertEntry2Data).toList();
+  List<T> _filteredValues = <T>[];
+  List<T> get values => _filteredValues;
 
   @override
   final AccessProxy proxy;
@@ -121,14 +132,20 @@ class SyncableCausalTree<T> extends SyncableBase {
   final _history = <AtomBase>{};
   List<AtomBase> get history => _history.toList(growable: false)..sort();
 
+  ///
+  /// ### [applyAtom] => for remote!
+  ///
+  /// TODO: * think about remote and local update state
+  /// * isLocalUpdate
+  ///
   /// applies atom and returns
   /// * returns [ 2] : if apply successfull
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
   /// * returns [-1] : if nothing applied => should never happen
-
+  ///
   @override
-  int applyAtom(AtomBase atom) {
+  int applyAtom(AtomBase atom, {bool isLocalUpdate = true}) {
     final entries = (atom.data is List) ? atom.data as List<CausalEntry<T>> : <CausalEntry<T>>[atom.data];
 
     // if atom did not exist, add and merge
@@ -136,7 +153,7 @@ class SyncableCausalTree<T> extends SyncableBase {
       // update time;
       if (_lastUpdated == null || _lastUpdated < atom.id) _lastUpdated = atom.id;
       // update causal tree
-      _internal.mergeRemoteEntriees(entries);
+      _internal.mergeRemoteEntries(entries);
       return 2;
     }
     return 0;
@@ -162,16 +179,19 @@ class SyncableCausalTree<T> extends SyncableBase {
     return true;
   }
 
+  /// todo: change to push! when refactor works again!
   bool add(dynamic value) {
     /// check if it is syncable object
     value = _syncableBaseCheck(value);
-
     _internal.push(value);
+
     return false;
   }
 
   void pop() {
-    _internal.pop();
+    if (_filteredEntries.isNotEmpty) {
+      removeAt(_filteredEntries.length - 1);
+    }
   }
 
   bool removeAt(int index) {

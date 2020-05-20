@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:sync_layer/encoding_extent/index.dart';
-import 'package:sync_layer/types/id_atom.dart';
+
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 
@@ -14,15 +14,12 @@ void main() {
   final msg3 = [352155687227, 2, 4332, 3, '8989dad-41518-dv', 6, 'ok, jetzt wirds brenzlig'];
   final msg4 = [352153425222, 8, 123, 99, 'sas-41518-dv', 55, 's brenzlig'];
 
-  final a1 = Atom(AtomId(HybridLogicalClock(msg[0], msg[1]), msg[2]), msg[3], msg[4], SyncableEntry(msg[5], msg[6]));
+  final a1 = Atom(Id(HybridLogicalClock(msg[0], msg[1]), msg[2]), msg[3], msg[4], SyncableEntry(msg[5], msg[6]));
 
-  final a2 =
-      Atom(AtomId(HybridLogicalClock(msg2[0], msg2[1]), msg2[2]), msg2[3], msg2[4], SyncableEntry(msg2[5], msg2[6]));
-  final a3 =
-      Atom(AtomId(HybridLogicalClock(msg3[0], msg3[1]), msg3[2]), msg3[3], msg3[4], SyncableEntry(msg3[5], msg3[6]));
+  final a2 = Atom(Id(HybridLogicalClock(msg2[0], msg2[1]), msg2[2]), msg2[3], msg2[4], SyncableEntry(msg2[5], msg2[6]));
+  final a3 = Atom(Id(HybridLogicalClock(msg3[0], msg3[1]), msg3[2]), msg3[3], msg3[4], SyncableEntry(msg3[5], msg3[6]));
 
-  final a4 =
-      Atom(AtomId(HybridLogicalClock(msg4[0], msg4[1]), msg4[2]), msg4[3], msg4[4], SyncableEntry(msg4[5], msg4[6]));
+  final a4 = Atom(Id(HybridLogicalClock(msg4[0], msg4[1]), msg4[2]), msg4[3], msg4[4], SyncableEntry(msg4[5], msg4[6]));
 
   var time1 = 0;
   var time2 = 0;

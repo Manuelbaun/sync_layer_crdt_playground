@@ -8,20 +8,26 @@ import 'abstract/logical_clock_base.dart';
 class Id implements IdBase, Comparable<Id> {
   Id(this.ts, this.site)
       : assert(ts != null, 'ts cant be null'),
-        assert(site != null, 'site cant be null'),
-        // ensure only 32 bits, ts hashcode is 32 bits
-        // TODO: radixtime? or maybe just hashCode are enough?
-        _hashCode = MurmurHashV3('${ts.logicalTime}-${site}');
+        assert(site != null, 'site cant be null') {
+    // ensure only 32 bits, ts hashcode is 32 bits
+    // TODO: radixtime? or maybe just hashCode are enough?
+
+    _string = '${site}-${ts.logicalTime}';
+    _hashCode = MurmurHashV3(_string);
+  }
 
   @override
   final LogicalClockBase ts;
 
   @override
   final int site;
-  final int _hashCode;
+  int _hashCode;
+  String _string;
 
   @override
-  String toString() => 'Id(ts: $ts, site: $site)';
+  String toString() => 'Id($_string)';
+  
+  String toStringPretty() => 'Id(ts: $ts, site: $site)';
 
   @override
   String toRONString() => 'S' + '$site'.padLeft(2, '0') + '@T' + '$ts'.padLeft(2, '0');
