@@ -20,6 +20,7 @@ import 'abstract/syncable_base.dart';
 ///
 /// TODO:
 /// * Pending sync
+/// * transaction
 /// * tombstone
 /// * abstract causal tree
 /// * rename in ordered list?
@@ -50,11 +51,12 @@ class SyncableCausalTree<T> extends SyncableBase {
     _controller.add(_filteredValues);
   }
 
-  final _controller = StreamController<List<T>>();
+  final _controller = StreamController<List<T>>.broadcast();
 
   /// [stream] trigger, when values are changed. and return only the
   /// 'filtered' [values]
-  Stream<List<T>> get stream => _controller.stream;
+  @override
+  Stream<List<T>> get onChange => _controller.stream;
 
   /// this is a workaround to get index and entries mapped
   List<CausalEntry<T>> _filteredEntries = <CausalEntry<T>>[];

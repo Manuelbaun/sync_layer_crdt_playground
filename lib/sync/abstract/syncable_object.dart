@@ -8,12 +8,6 @@ abstract class SyncableObject<Key> extends SyncableBase {
   /// contains all Atoms received and inserted
   List<AtomBase> get history;
 
-  /// fires when the object got updated!
-  ///
-  /// TODO: should something be transported?
-  ///
-  Stream<void> get onChange;
-
   /// Returns the timestamp for that field
   IdBase getOriginIdOfKey(Key key);
 

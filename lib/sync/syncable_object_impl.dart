@@ -60,11 +60,11 @@ class SyncableObjectImpl<Key, TypeWrapper extends SyncableObject> extends Syncab
   }
 
   // fires when the object got updated!
-  final _onChangeController = StreamController<void>.broadcast();
+  final _onChangeController = StreamController<bool>.broadcast();
 
   /// notifies, when object changes:
   @override
-  Stream<void> get onChange => _onChangeController.stream;
+  Stream<bool> get onChange => _onChangeController.stream;
 
   @override
   AccessProxy get proxy => _proxy;
@@ -184,8 +184,7 @@ class SyncableObjectImpl<Key, TypeWrapper extends SyncableObject> extends Syncab
     }
 
     /// TODO: apply atom? here or before
-
-    _onChangeController.add(null);
+    _onChangeController.add(true);
   }
 
   // ---------------------------------------------------------------------------

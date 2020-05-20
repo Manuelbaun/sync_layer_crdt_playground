@@ -22,11 +22,16 @@ abstract class SyncableBase extends Comparable<SyncableBase> {
   /// the Access Proxy object, to decouple synclayer and SyncableBase
   AccessProxy get proxy;
 
+  /// fires when the object got updated!
+  ///
+  /// TODO: should something be transported?
+  ///
+  Stream get onChange;
+
   SyncableObjectRef toObjectRef() => SyncableObjectRef(type, id);
 
   @override
   int compareTo(SyncableBase other) => id.compareTo(other.id);
-
 
   /// will delete the object
   void delete();
