@@ -45,8 +45,8 @@ class IdValuePair {
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
 ///
-/// [TypeWrapper] should extends from [SyncableObjectImpl]!
-class SyncableObjectImpl<Key, TypeWrapper extends SyncableObject> extends SyncableObject<Key> {
+/// [THIS] should extends from [SyncableObjectImpl]!
+class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
@@ -200,10 +200,10 @@ class SyncableObjectImpl<Key, TypeWrapper extends SyncableObject> extends Syncab
   /// *Note: Changes are stored in a Map, therefor, appling the same Key,
   /// will result in the last writer wins strategy
   @override
-  void transact(void Function(TypeWrapper ref) func) {
+  void transact(void Function(THIS self) func) {
     // start changes
     _subTransaction = true;
-    func(this as TypeWrapper);
+    func(this as THIS);
     _subTransaction = false;
 
     // copies the map and sends it

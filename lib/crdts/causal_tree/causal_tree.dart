@@ -11,7 +11,7 @@ import 'causal_entry.dart';
 
 enum FilterSemantic { AND, OR }
 typedef VoidCallback = void Function();
-typedef OnUpdate<T> = void Function(T update);
+typedef OnUpdate<T> = void Function(CausalEntry<T> update);
 
 class CausalTree<T> {
   CausalTree(this.site, {this.onChange, this.onLocalUpdate}) : localClock = LogicalClock(0) {

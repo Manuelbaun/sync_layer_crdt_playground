@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:faker/faker.dart';
 import 'package:sync_layer/logger/index.dart';
 import 'dao.dart';
 
@@ -15,7 +16,16 @@ void main(List<String> arguments) {
   final dao = SyncDao(nodeID);
 
   final list1 = dao.syncArray.create();
-  list1.add('Hello world');
+  list1.push('Hello world');
+
+  final text = dao.syncArray.create();
+  final title = faker.job.title();
+
+  text.transact((self) {
+    for (var i = 0; i < title.length; i++) {
+      self.push(title[i]);
+    }
+  });
 
   /// Setup connection
   WebSocket.connect('ws://localhost:8000').then((WebSocket ws) {

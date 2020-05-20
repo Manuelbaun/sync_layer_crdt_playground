@@ -44,10 +44,10 @@ void syncableCausalTree() {
   network.register(list1);
   network.register(list2);
 
-  list1.add('h');
-  list1.add('e');
-  list1.add('l');
-  list1.add('o');
+  list1.push('h');
+  list1.push('e');
+  list1.push('l');
+  list1.push('o');
 
   list1.insert(3, 'l');
 
@@ -95,9 +95,9 @@ void nested() {
 
   // now nest objs
   obj1[0] = list1;
-  list1.add('Hans');
-  list1.add('Peter');
-  list1.add(obj1);
+  list1.push('Hans');
+  list1.push('Peter');
+  list1.push(obj1);
 
   SyncableCausalTree h = obj2[0];
 

@@ -8,8 +8,8 @@ import 'package:sync_layer/sync/syncable_object_impl.dart';
 class Todo extends SyncableObjectImpl<int, Todo> {
   Todo(AccessProxy proxy, {String id, String title}) : super(proxy, id);
 
-  SyncArray get title => super[0];
-  set title(SyncArray v) => super[0] = v;
+  SyncString get title => super[0];
+  set title(SyncString v) => super[0] = v;
 
   bool get status => super[1];
   set status(bool v) => super[1] = v;
@@ -59,12 +59,12 @@ class Assignee extends SyncableObjectImpl<int, Assignee> {
   }
 }
 
-class SyncArray extends SyncableCausalTree {
-  SyncArray(AccessProxy accessor, {String id}) : super(accessor, id);
+class SyncString extends SyncableCausalTree<String, SyncString> {
+  SyncString(AccessProxy accessor, {String id}) : super(accessor, id);
 }
 
-class SyncText extends SyncableCausalTree {
-  SyncText(AccessProxy accessor, {String id}) : super(accessor, id);
+class SyncArray extends SyncableCausalTree {
+  SyncArray(AccessProxy accessor, {String id}) : super(accessor, id);
 }
 
 class SyncDao {
@@ -86,7 +86,7 @@ class SyncDao {
       // create first container by type
       _todos = _syn.registerObjectType<Todo>('todos', (c, id) => Todo(c, id: id));
       _assignees = _syn.registerObjectType<Assignee>('assignee', (c, id) => Assignee(c, id: id));
-      _syncArray = syn.registerObjectType<SyncArray>('syncarray', (c, id) => SyncArray(c, id: id));
+      _syncArray = syn.registerObjectType<SyncString>('syncarray', (c, id) => SyncString(c, id: id));
 
       // setupListener();
     } else {
@@ -118,6 +118,6 @@ class SyncDao {
   SyncableObjectContainer<Assignee> get assignees => _assignees;
   SyncableObjectContainer<Assignee> _assignees;
 
-  SyncableObjectContainer<SyncArray> get syncArray => _syncArray;
-  SyncableObjectContainer<SyncArray> _syncArray;
+  SyncableObjectContainer<SyncString> get syncArray => _syncArray;
+  SyncableObjectContainer<SyncString> _syncArray;
 }

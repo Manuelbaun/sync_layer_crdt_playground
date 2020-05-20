@@ -9,6 +9,8 @@ import 'package:sync_layer/types/object_reference.dart';
 import 'abstract/acess_proxy.dart';
 import 'abstract/syncable_base.dart';
 
+abstract class SyncableCausalTreeBase extends SyncableBase {}
+
 /// Actually, this is a syncable ordered list!!! like it is implemented
 /// the Delete operator does not delete the entries, rather tombstone with
 /// anther entry
@@ -25,11 +27,11 @@ import 'abstract/syncable_base.dart';
 /// * abstract causal tree
 /// * rename in ordered list?
 /// * Create own Acessor
-class SyncableCausalTree<T> extends SyncableBase {
+class SyncableCausalTree<T, THIS extends SyncableCausalTreeBase> extends SyncableCausalTreeBase {
   SyncableCausalTree(this.proxy, this.id)
       : assert(proxy != null, 'Accessor prop cannot be null'),
         assert(id != null, 'Id cannot be null') {
-    _internal = CausalTree(
+    _internal = CausalTree<T>(
       proxy.site,
       onChange: _onTreeChange,
       onLocalUpdate: _ontreeLocalUpdate,
@@ -39,16 +41,30 @@ class SyncableCausalTree<T> extends SyncableBase {
   /// the acutal causal tree => orderted list
   CausalTree<T> _internal;
 
+  final _transactList = <CausalEntry<T>>[];
+  var _isTransaction = false;
+
+  @pragma('vm:prefer-inline')
+  void _sendUpate(List<CausalEntry<T>> data) {
+    final a = proxy.update(id, data);
+  }
+
   /// create atom from local entry
-  void _ontreeLocalUpdate(entry) {
-    final a = proxy.update(id, entry);
+  void _ontreeLocalUpdate(CausalEntry<T> entry) {
+    if (_isTransaction == false) {
+      _sendUpate([entry]);
+    } else {
+      _transactList.add(entry);
+    }
   }
 
   /// get the values,which are note delete.
   void _onTreeChange() {
-    _filteredEntries = _internal.value;
-    _filteredValues = _filteredEntries.map(_convertEntry2Data).toList();
-    _controller.add(_filteredValues);
+    if (_isTransaction == false) {
+      _filteredEntries = _internal.value;
+      _filteredValues = _filteredEntries.map(_convertEntry2Data).toList();
+      _controller.add(_filteredValues);
+    }
   }
 
   final _controller = StreamController<List<T>>.broadcast();
@@ -80,11 +96,13 @@ class SyncableCausalTree<T> extends SyncableBase {
   int get type => proxy.type;
 
   /// Marks if the object is deleted!
+  /// not implemented yet
   @override
   bool get tombstone {
     return false;
   }
 
+  /// not implemented yet
   @override
   void delete() {
     throw AssertionError('not implemented yet');
@@ -120,8 +138,9 @@ class SyncableCausalTree<T> extends SyncableBase {
     return value;
   }
 
+  // TODO: fix me, with types..
   @pragma('vm:prefer-inline')
-  dynamic _convertEntry2Data(CausalEntry e) {
+  T _convertEntry2Data(dynamic e) {
     var data = e.data;
 
     if (_syncableObjectsRefs.containsKey(e.id)) {
@@ -129,15 +148,22 @@ class SyncableCausalTree<T> extends SyncableBase {
     } else if (data is SyncableObjectRef) {
       data = proxy.objectLookup(e.data);
       _setSyncableRef(e.id, data);
+    } else {
+      data = data as T;
     }
-
     return data;
   }
 
   /// will use an list
   @override
-  void transact(void Function(SyncableBase ref) func) {
-    throw AssertionError('not supported yet');
+  void transact(void Function(THIS self) func) {
+    _isTransaction = true;
+    func(this as THIS);
+    _isTransaction = false;
+
+    _sendUpate([..._transactList]);
+    _transactList.clear();
+    _onTreeChange();
   }
 
   final _history = <AtomBase>{};
@@ -157,7 +183,9 @@ class SyncableCausalTree<T> extends SyncableBase {
   ///
   @override
   int applyRemoteAtom(AtomBase atom, {bool isLocalUpdate = true}) {
-    final entries = (atom.data is List) ? atom.data as List<CausalEntry<T>> : <CausalEntry<T>>[atom.data];
+    final entries = (atom.data as List)
+        .map<CausalEntry<T>>((e) => CausalEntry<T>(e.id, cause: e.cause, data: e.data as T))
+        .toList();
 
     // if atom did not exist, add and merge
     if (_history.add(atom)) {
@@ -172,7 +200,7 @@ class SyncableCausalTree<T> extends SyncableBase {
 
   /// main functionality
   /// TODO: think
-  bool insert(int index, dynamic value) {
+  bool insert(int index, T value) {
     assert(index >= 0, 'cant insert negative index');
 
     /// check if it is syncable object
@@ -191,7 +219,7 @@ class SyncableCausalTree<T> extends SyncableBase {
   }
 
   /// todo: change to push! when refactor works again!
-  bool add(dynamic value) {
+  bool push(T value) {
     /// check if it is syncable object
     value = _syncableBaseCheck(value);
     _internal.push(value);

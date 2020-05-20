@@ -42,7 +42,7 @@ abstract class SyncableBase extends Comparable<SyncableBase> {
   ///
   /// *Note: Changes are stored in a Map, therefor, appling the same Key, will result in the
   /// last writer wins
-  void transact(void Function(SyncableBase ref) func);
+  void transact(void Function(SyncableBase self) func);
 
   /// applies atom and returns
   /// * returns [ 2] : if apply successfull
