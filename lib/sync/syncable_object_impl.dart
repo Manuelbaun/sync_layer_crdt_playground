@@ -34,11 +34,8 @@ class SyncableObjectImpl<Key, Type extends SyncableObject> extends SyncableObjec
 
   SyncableObjectImpl(this._proxy, String _id)
       : assert(_proxy != null, 'AccessProxy prop cannot be null'),
-        // TODO: remove me laster!
         id = _id ?? _proxy.generateID() {
-    /// direct set! no Id/Ts
-    // if (Key is int) if (Key is String) ;
-
+          
     _internal[_TOMBSTONE_NUM] = IdValuePair(null, false);
   }
 
