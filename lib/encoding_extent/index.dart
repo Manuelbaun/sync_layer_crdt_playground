@@ -38,7 +38,7 @@ class _ExtendetEncoder implements ExtEncoder {
     if (o is LogicalClock) return msgpackEncode(o.logicalTime);
     if (o is HybridLogicalClock) return msgpackEncode([o.ms, o.counter]);
     if (o is SyncableEntry) return msgpackEncode([o.key, o.value]);
-    if (o is Atom) {
+    if (o is Atom && o.id.ts is HybridLogicalClock) {
       /// Knowing ts clock is HLC!
       final ts = (o.id.ts as HybridLogicalClock);
       return msgpackEncode([
@@ -50,6 +50,19 @@ class _ExtendetEncoder implements ExtEncoder {
         o.data,
       ]);
     }
+
+    if (o is Atom && o.id.ts is LogicalClock) {
+      /// Knowing ts clock is HLC!
+      final ts = (o.id.ts as LogicalClock);
+      return msgpackEncode([
+        ts.counter,
+        o.id.site,
+        o.type,
+        o.objectId,
+        o.data,
+      ]);
+    }
+
     if (o is CausalEntry) {
       return msgpackEncode([
         o.id.ts.logicalTime,
@@ -88,10 +101,20 @@ class _ExtendetDecoder implements ExtDecoder {
 
     if (extType == 4) {
       final v = msgpackDecode(data);
+      if (v.length == 6) {
+        final id = Id(HybridLogicalClock(v[0], v[1]), v[2]);
+        return Atom(id, v[3], v[4], v[5]);
+      } else {
+        final id = Id(LogicalClock(v[0]), v[1]);
+        return Atom(id, v[2], v[3], v[4]);
+      }
+    }
+
+    if (extType == 4) {
+      final v = msgpackDecode(data);
       final id = Id(HybridLogicalClock(v[0], v[1]), v[2]);
       return Atom(id, v[3], v[4], v[5]);
     }
-
     if (extType == 5) {
       final v = msgpackDecode(data);
       final id = Id(LogicalClock(v[0]), v[1]);
