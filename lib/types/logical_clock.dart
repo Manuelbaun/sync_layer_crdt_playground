@@ -29,7 +29,7 @@ class LogicalClock implements LogicalClockBase<LogicalClock> {
   @override
   @pragma('vm:prefer-inline')
   factory LogicalClock.recv(LogicalClock local, LogicalClock remote) {
-    return LogicalClock.fromLogical(max(local.logicalTime, remote.logicalTime));
+    return LogicalClock.fromLogical(max(local.logicalTime, remote.logicalTime) + 1);
   }
 
   @override
