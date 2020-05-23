@@ -198,8 +198,10 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
       __setKeyValueInternal(atom.id, e.key, e.value);
     }
 
-    /// TODO: apply atom? here or before
-    _onChangeController.add(true);
+
+    if (!(tombstone == true && _onChangeController.isClosed)) {
+      _onChangeController.add(true);
+    }
   }
 
   // ---------------------------------------------------------------------------
