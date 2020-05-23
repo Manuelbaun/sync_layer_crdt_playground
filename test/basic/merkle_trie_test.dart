@@ -19,7 +19,7 @@ void main() {
     final localHlcs = hlcs;
     final remoteHlcs = hlcs.sublist(0, hlcs.length - 10);
 
-    for (var radix = 36; radix <= 36; radix++) {
+    for (var radix = 16; radix <= 36; radix++) {
       final localTree = MerkleTrie(radix);
       final remoteTree = MerkleTrie(radix);
       print('=== Radix: $radix '.padRight(50, '='));

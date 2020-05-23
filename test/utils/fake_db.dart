@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:sync_layer/types/hybrid_logical_clock.dart';
 import 'package:sync_layer/types/id.dart';
 
@@ -61,7 +63,10 @@ const TS = [
 ];
 
 class FakeDbForIds {
+  FakeDbForIds([this.seed = 0]) : rand = Random(seed);
+  final int seed;
   List<Id> _db;
+  final Random rand;
 
   List<Id> getHlcs() {
     _db ??= TS.map<Id>((ts) {
@@ -73,6 +78,22 @@ class FakeDbForIds {
 
       return Id(HybridLogicalClock(ms, counter), site);
     }).toList();
+
+    return _db;
+  }
+
+  List<Id> generate(DateTime from, DateTime to, int size) {
+    final minMs = from.millisecondsSinceEpoch;
+    final maxMs = to.millisecondsSinceEpoch;
+    final diff = maxMs - minMs;
+    final step = (diff / size).ceil();
+    var ms = minMs;
+    _db ??= List.generate(size, (int d) {
+      final ts = HybridLogicalClock(ms);
+      ms += step;
+
+      return Id(ts, rand.nextInt(0xffffffff));
+    });
 
     return _db;
   }
@@ -92,6 +113,32 @@ class FakeDbForIds {
       var tsInMinutes = int.parse(k, radix: radix);
       final hlcs = getByTime(tsInMinutes);
       diffs.addAll(hlcs);
+    }
+    return diffs;
+  }
+
+  // compare the diff of 2 sorted list
+  List<Id> filterBySetOfMinutes(List<int> mins) {
+    final diffs = <Id>[];
+
+    int minCounter = 0;
+    for (var h in _db) {
+      final curMin = (h.ts as HybridLogicalClock).minutes;
+
+      if (curMin == mins[minCounter]) {
+        diffs.add(h);
+      } else if (curMin > mins[minCounter]) {
+        for (; minCounter < mins.length; minCounter++) {
+          if (curMin <= mins[minCounter]) break;
+        }
+
+        // reached end of mins
+        if (minCounter == mins.length) break;
+
+        if (curMin == mins[minCounter]) {
+          diffs.add(h);
+        }
+      }
     }
     return diffs;
   }

@@ -36,13 +36,12 @@ class MerkleTrie {
     for (var t in ts) {
       final key = t.ts.radixTime(radix);
 
-      if (!keys.contains(t.hashCode)) {
+      if (keys.add(t.hashCode)) {
         _insert(root, key, t.hashCode, 0);
         root.hash = convHash(root.hash ^ t.hashCode);
-        ms.merged.add(t.toString());
-        keys.add(t.hashCode);
+        ms.merged.add(t);
       } else {
-        ms.skipped.add(t.toString());
+        ms.skipped.add(t);
       }
     }
     return ms;

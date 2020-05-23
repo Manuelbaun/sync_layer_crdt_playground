@@ -14,6 +14,9 @@ class Id implements IdBase, Comparable<Id> {
 
     _string = '${site}-${ts.logicalTime}';
     _hashCode = MurmurHashV3(_string);
+    // print(_hashCode2.bitLength);
+    // _hashCode = hashing(_string);
+    // print(_hashCode.bitLength);
   }
 
   @override
@@ -26,7 +29,7 @@ class Id implements IdBase, Comparable<Id> {
 
   @override
   String toString() => 'Id($_string)';
-  
+
   String toStringPretty() => 'Id(ts: $ts, site: $site)';
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:sync_layer/basic/observable.dart';
 import 'package:sync_layer/logger/logger.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/abstract/id_base.dart';
@@ -12,6 +13,10 @@ import 'abstract/syncable_base.dart';
 /// Meta fixed key numbers!
 const _TOMBSTONE = '__tombstone';
 const _TOMBSTONE_NUM = 0xff as Object;
+
+class COMMON_EVENTS {
+  static String DELETE = 'DELETE';
+}
 
 class IdValuePair {
   IdValuePair(this.id, this.value);
@@ -46,6 +51,9 @@ class IdValuePair {
 /// number and strings
 ///
 /// [THIS] should extends from [SyncableObjectImpl]!
+///
+/// The Observable API is a quick and dirty hack to just listen to the delete method.
+/// and will be refactored some time later!
 class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObject<Key> {
   /// **Important**
   ///
@@ -65,6 +73,8 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
   /// notifies, when object changes:
   @override
   Stream<bool> get onChange => _onChangeController.stream;
+
+  StreamController get onChangeCtrl => _onChangeController;
 
   @override
   AccessProxy get proxy => _proxy;
@@ -101,7 +111,12 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
   bool get tombstone => _getValue(_TOMBSTONE_NUM);
 
   @override
-  void delete() => _setValue(_TOMBSTONE_NUM, true);
+  void delete() {
+    _setValue(_TOMBSTONE_NUM, true);
+    _onChangeController.close();
+
+    notify(COMMON_EVENTS.DELETE, true);
+  }
 
   /// History contains all received atoms.. usefull for a standalone obj,
   /// in combination with the sync layer, which filters allready existing
