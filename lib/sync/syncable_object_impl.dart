@@ -198,7 +198,6 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
       __setKeyValueInternal(atom.id, e.key, e.value);
     }
 
-
     if (!(tombstone == true && _onChangeController.isClosed)) {
       _onChangeController.add(true);
     }
@@ -253,7 +252,7 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
   /// * returns [ 1] : if atom clock is equal to current => same atom
   /// * returns [ 0] : if atom is older then current
   /// * returns [-1] : if nothing applied => atom was allready added
-  /// * returns [-2] : if nothing applied => atom was allready added
+  /// * returns [-2] : if nothing applied => atom was null
   /// this should nevel happen, since synclayer filteres
   ///
   ///
@@ -350,8 +349,6 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
 }
 
 Map<String, dynamic> _toJsonMap(Map m) {
-  print(m);
-
   final newMap = m.map((k, v) {
     var value = v is Map ? _toJsonMap(v) : v;
     value = v is Set ? v.toList() : value;
@@ -359,6 +356,5 @@ Map<String, dynamic> _toJsonMap(Map m) {
     return MapEntry(k.toString(), value);
   });
 
-  print(newMap);
   return newMap;
 }
