@@ -6,6 +6,13 @@ import 'abstract/index.dart';
 import 'abstract/syncable_base.dart';
 
 class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObjectContainer<T> {
+  /// Provide a default factory function for that Syncable Object
+  SyncableObjectContainerImpl(this._proxy, this._objectFactory)
+      : assert(_proxy != null),
+        assert(_objectFactory != null);
+
+  final AccessProxy _proxy;
+
   final Map<String, T> _objects = {}; // the real elements
 
   final SynableObjectFactory<T> _objectFactory;
@@ -16,9 +23,6 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
   /// this returns the length of the container **with** delted Objects!
   @override
   int get length => _objects.length;
-
-  @override
-  // final SyncLayer syn;
 
   @override
   Stream<Set<T>> get changeStream => _controller.stream;
@@ -44,15 +48,7 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
   }
 
   @override
-  int get type => accessor.type;
-
-  /// Provide a default factory function for that Syncable Object
-
-  SyncableObjectContainerImpl(this.accessor, this._objectFactory)
-      : assert(accessor != null),
-        assert(_objectFactory != null);
-
-  final AccessProxy accessor;
+  int get type => _proxy.type;
 
   ///
   /// CRUD Ops
@@ -66,7 +62,7 @@ class SyncableObjectContainerImpl<T extends SyncableBase> implements SyncableObj
 
     if (obj == null) {
       // creates new object with provided ID
-      obj = _objectFactory(accessor, id ?? accessor.generateID());
+      obj = _objectFactory(_proxy, id ?? _proxy.generateID());
 
       return _set(obj);
     } else if (obj.tombstone == true) {
