@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:sync_layer/types/abstract/id_base.dart';
-
-import 'merkle_node.dart';
+import 'package:sync_layer/types/abstract/index.dart';
+import 'package:sync_layer/types/hybrid_logical_clock.dart';
 
 /// dart does not have int32, so when xor, it uses 64 bits, which then are representet different
 /// on the vm then in the browser. JavaScript uses 32 bits, when doing bit operations
@@ -22,22 +22,33 @@ class MergeSkip {
 }
 
 /// This is designed to work with HLC, dont know about LC
-class MerkleTrie {
+class MerkleTrie2 {
   final MerkleNode root;
   final int radix;
-  final keys = <int>{}; // This is quick and dirty, FIXME
+  final keys = <IdBase>{}; // This is quick and dirty, FIXME
 
-  MerkleTrie([this.radix = 36, MerkleNode root]) : this.root = root ?? MerkleNode();
+  MerkleTrie2([this.radix = 256, MerkleNode root]) : this.root = root ?? MerkleNode(true, 256);
+
+  factory MerkleTrie2.fromMap(Map<int, dynamic> map, [int radix = 16]) {
+    var root = MerkleNode(true, radix);
+    root = MerkleNode.fromMap(map, radix);
+
+    final tree = MerkleTrie2(radix, root);
+    return tree;
+  }
 
   int get hash => root.hash;
 
   MergeSkip build(List<IdBase> ts) {
     final ms = MergeSkip();
     for (var t in ts) {
-      final key = t.ts.radixTime(radix);
+      if (keys.add(t)) {
+        // 48 bits in ms
+        final msts = (t.ts as HybridLogicalClock).ms;
+        // in min
+        final min = msts >> 16;
 
-      if (keys.add(t.hashCode)) {
-        _insert(root, key, t.hashCode, 0);
+        _insert(root, min, t.hashCode, 24);
         root.hash = convHash(root.hash ^ t.hashCode);
         ms.merged.add(t);
       } else {
@@ -47,24 +58,16 @@ class MerkleTrie {
     return ms;
   }
 
-  factory MerkleTrie.fromMap(Map<int, dynamic> map, [int radix = 36]) {
-    var root = MerkleNode(true, radix);
-    root = MerkleNode.fromMap(map, radix);
+  MerkleNode _insert(MerkleNode node, int ts, int hash, int bitShift) {
+    if (0 > bitShift) return node;
 
-    final tree = MerkleTrie(radix, root);
-    return tree;
-  }
-
-  MerkleNode _insert(MerkleNode node, String key, int hash, int counter) {
-    if (key.length == counter) return node;
-
-    var pos = int.parse(key[counter], radix: radix);
+    var pos = (ts & 0xff << bitShift) >> bitShift;
     var nextNode = node.children[pos];
-    final nextCounter = counter + 1;
+    final nextShift = bitShift - 8;
 
     // create subnodes
-    nextNode ??= (key.length == nextCounter) ? MerkleNode(false) : MerkleNode();
-    nextNode = _insert(nextNode, key, hash, nextCounter);
+    nextNode ??= MerkleNode(0 <= nextShift, 256);
+    nextNode = _insert(nextNode, ts, hash, nextShift);
 
     // make hash
     nextNode.hash = convHash(nextNode.hash ^ hash);
@@ -89,7 +92,7 @@ class MerkleTrie {
   }
 
   /// this returns the first timestamp, which is not equal
-  String diff(MerkleTrie remote) => _diff(root, remote.root);
+  String diff(MerkleTrie2 remote) => _diff(root, remote.root);
 
   // add set to the nodes
   String _diff(MerkleNode local, MerkleNode remote) {
@@ -128,7 +131,7 @@ class MerkleTrie {
   /// when present in local, that means its missing in local
   /// when present in remote, that means its missing in remote
   ///
-  KeysLR getDifferences(MerkleTrie remote) => _diffKeyLR(root, remote.root);
+  KeysLR getDifferences(MerkleTrie2 remote) => _diffKeyLR(root, remote.root);
 
   KeysLR _diffKeyLR(MerkleNode local, MerkleNode remote, [String currKey = '']) {
     // if (local.hash == remote.hash) return null;
@@ -163,11 +166,6 @@ class MerkleTrie {
     return rlKeys;
   }
 
-  // TODO: fix map<int, dynamic> does not work as json!!
-  // String toJson() {
-  //   return json.encode(root.toMap());
-  // }
-
   String toJsonPretty() {
     var encoder = JsonEncoder.withIndent('  ');
     final m = converting(root.toMap());
@@ -189,4 +187,57 @@ Map<String, dynamic> converting(Map<int, dynamic> mm) {
 class KeysLR {
   List<String> local = [];
   List<String> remote = [];
+}
+
+final _hashCode = 300;
+final _tempHashCode = 400;
+
+class MerkleNode {
+  List<MerkleNode> children;
+  int hash = 0;
+
+  MerkleNode([bool subchild = true, int radix = 36]) {
+    if (subchild) children = List(radix);
+  }
+
+  Map<int, dynamic> toMap() {
+    var map = <int, dynamic>{};
+    if (children != null) {
+      for (var i = 0; i < children.length; i++) {
+        if (children[i] != null) {
+          final res = children[i].toMap();
+
+          map[i] = res[_tempHashCode] ?? res;
+        }
+      }
+    } else {
+      return {_tempHashCode: hash};
+    }
+
+    map[_hashCode] = hash;
+    return map;
+  }
+
+  factory MerkleNode.fromMap(Map<int, dynamic> map, [int radix = 36]) {
+    final node = MerkleNode(true, radix);
+
+    for (var i in map.keys) {
+      var value = map[i];
+
+      if (i != _hashCode) {
+        if (value is Map) {
+          // value =
+          node.children[i] = MerkleNode.fromMap(value.cast<int, dynamic>(), radix);
+        } else if (value is num) {
+          // the end of the tree
+          node.children[i] = MerkleNode(false, radix);
+          node.children[i].hash = value;
+        }
+      } else {
+        node.hash = map[_hashCode] as int;
+      }
+    }
+
+    return node;
+  }
 }

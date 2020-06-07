@@ -47,7 +47,7 @@ void main(List<String> arguments) {
     final t = dao.todos.read(id);
 
     if (t != null) {
-      dao.syn.transaction(() {
+      dao.syn.transation(() {
         // t.title = 'hallo $nodeID ${tt.tick}';
         // t.title = 'hallo $nodeID ${tt.tick}-2';
 

@@ -13,11 +13,11 @@ import 'logger/index.dart';
 
 enum _ProtocolHeaders {
   STATE,
-  STATE_REQUEST,
   STATE_RESPONSE,
   ATOMS,
+  // STATE_REQUEST,
   NODE_NAME,
-  NO_ATOMS,
+  // NO_ATOMS,
 }
 
 // class Debouncer {
@@ -67,7 +67,7 @@ class _EnDecoder {
 }
 
 class SyncLayerProtocol {
-  final SyncLayer syn;
+  final Synchronizer syn;
   final websockets = <WebSocket>{};
   final websocketsNames = <WebSocket, String>{};
 
@@ -83,7 +83,7 @@ class SyncLayerProtocol {
   SyncLayerProtocol(this.syn, {doBroadcast = true}) {
     if (doBroadcast) {
       atomSub = syn.atomStream.listen((atoms) {
-        logger.error('who am I, broadcasting all atoms');
+        // logger.error('who am I, broadcasting all atoms');
         broadCastAtoms(atoms);
       });
     }
@@ -110,10 +110,10 @@ class SyncLayerProtocol {
     );
 
     // Start sync process => send local State
-    logger.info('send:MessageEnum.NODE_NAME');
+    // logger.info('send:MessageEnum.NODE_NAME');
     ws.add(Uint8List.fromList([_ProtocolHeaders.NODE_NAME.index, syn.site]));
 
-    logger.info('send:MessageEnum.STATE');
+    // logger.info('send:MessageEnum.STATE');
 
     final buff = _EnDecoder.encodeState(syn.getState());
     ws.add([_ProtocolHeaders.STATE.index, ...buff]);
@@ -135,11 +135,13 @@ class SyncLayerProtocol {
   }
 
   void broadCastAtoms(List<AtomBase> atoms) {
-    logger.info('broadcast :MessageEnum.ATOMS Broadcast : ${atoms.length}');
-    final data = _EnDecoder.encodeAtoms(atoms);
+    // logger.info('broadcast :MessageEnum.ATOMS Broadcast : ${atoms.length}');
+    if (websockets.isNotEmpty) {
+      final data = _EnDecoder.encodeAtoms(atoms);
 
-    for (final ws in websockets) {
-      ws.add([_ProtocolHeaders.ATOMS.index, ...data]);
+      for (final ws in websockets) {
+        ws.add([_ProtocolHeaders.ATOMS.index, ...data]);
+      }
     }
   }
 
@@ -169,15 +171,15 @@ class SyncLayerProtocol {
             final msg = [_ProtocolHeaders.STATE_RESPONSE.index, ...encoded];
             ws.add(msg);
           } else {
-            logger.info('⏫ MessageEnum.NO_ATOMS');
-            ws.add([_ProtocolHeaders.NO_ATOMS.index]);
+            // logger.info('⏫ MessageEnum.NO_ATOMS');
+            // ws.add([_ProtocolHeaders.NO_ATOMS.index]);
           }
           break;
-        case _ProtocolHeaders.STATE_REQUEST:
-          final buff = _EnDecoder.encodeState(syn.getState());
-          logger.info('⏫ MessageEnum.STATE');
-          ws.add([_ProtocolHeaders.STATE.index, ...buff]);
-          break;
+        // case _ProtocolHeaders.STATE_REQUEST:
+        //   final buff = _EnDecoder.encodeState(syn.getState());
+        //   logger.info('⏫ MessageEnum.STATE');
+        //   ws.add([_ProtocolHeaders.STATE.index, ...buff]);
+        //   break;
         case _ProtocolHeaders.STATE_RESPONSE:
           final atoms = _EnDecoder.decodeAtoms(data);
           syn.applyRemoteAtoms(atoms);
@@ -197,9 +199,9 @@ class SyncLayerProtocol {
         case _ProtocolHeaders.NODE_NAME:
           websocketsNames[ws] = String.fromCharCodes(rawData.sublist(1));
           break;
-        case _ProtocolHeaders.NO_ATOMS:
-          // todo?
-          break;
+        // case _ProtocolHeaders.NO_ATOMS:
+        //   // todo?
+        //   break;
         default:
           logger.error('UNKOWN type $header');
       }

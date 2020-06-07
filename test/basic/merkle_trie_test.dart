@@ -92,11 +92,12 @@ void main() {
         localMap = localTree.toMap();
       });
 
-      var trie;
+      MerkleTrie trie;
 
       measureExecution('from json local tree', () {
         trie = MerkleTrie.fromMap(localMap, radix);
       });
+      // print(trie.toJsonPretty());
     }
   });
 }

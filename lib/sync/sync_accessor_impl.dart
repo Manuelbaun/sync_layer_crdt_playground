@@ -3,7 +3,7 @@ import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/types/object_reference.dart';
 
 import 'abstract/acess_proxy.dart';
-import 'abstract/sync_layer.dart';
+import 'abstract/synchronizer.dart';
 
 /// [SynclayerAccessor] is to be used within a syncablebase object
 class SynclayerAccessor implements AccessProxy {
@@ -12,7 +12,7 @@ class SynclayerAccessor implements AccessProxy {
         assert(synclayer != null),
         assert(type != null);
 
-  final SyncLayer synclayer;
+  final Synchronizer synclayer;
 
   final int _type;
   @override
@@ -23,7 +23,7 @@ class SynclayerAccessor implements AccessProxy {
 
   /// should only be called within a synable base object
   @override
-  AtomBase update(String objectId, dynamic data) {
+  AtomBase mutate(String objectId, dynamic data) {
     final atom = synclayer.createAtom(type, objectId, data);
     synclayer.applyLocalAtoms([atom]);
     return atom;
@@ -33,7 +33,7 @@ class SynclayerAccessor implements AccessProxy {
   String generateID() => synclayer.generateNewObjectIds();
 
   @override
-  SyncableBase objectLookup(SyncableObjectRef ref, [bool shouldCreateIfNull = true]) {
+  SyncableBase refLookup(SyncableObjectRef ref, [bool shouldCreateIfNull = true]) {
     final container = synclayer.getObjectContainer(typeNumber: ref.type);
 
     if (container != null) {

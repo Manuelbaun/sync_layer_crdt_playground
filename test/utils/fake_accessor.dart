@@ -29,10 +29,10 @@ class FakeAccessProxyHLC implements AccessProxy {
   }
 
   @override
-  AtomBase update(String objId, dynamic data) {
+  AtomBase mutate(String objId, dynamic data) {
     final tsId = _getNextAtomId();
     final a = Atom(tsId, type, objId, data);
-    if (update != null) onUpdate(a);
+    if (mutate != null) onUpdate(a);
     return a;
   }
 
@@ -42,7 +42,7 @@ class FakeAccessProxyHLC implements AccessProxy {
   var db = <String, SyncableBase>{};
 
   @override
-  SyncableBase objectLookup(SyncableObjectRef ref) {
+  SyncableBase refLookup(SyncableObjectRef ref) {
     return db[ref.id];
   }
 }

@@ -9,7 +9,7 @@ abstract class AccessProxy {
   int get type;
   int get site;
 
-  AtomBase update(String objectId, dynamic value);
+  AtomBase mutate(String objectId, dynamic value);
   String generateID();
-  SyncableBase objectLookup(SyncableObjectRef ref);
+  SyncableBase refLookup(SyncableObjectRef ref);
 }

@@ -14,6 +14,7 @@ import 'abstract/syncable_base.dart';
 const _TOMBSTONE = '__tombstone';
 const _TOMBSTONE_NUM = 0xff as Object;
 
+// TODO: create time!
 class COMMON_EVENTS {
   static String DELETE = 'DELETE';
 }
@@ -89,7 +90,7 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
   final Map<Key, SyncableBase> _syncableObjectsRefs = {};
 
   /// once a key gets set, this will send the update action via
-  /// [container.update]. This will create an Atom and sends it back to
+  /// [container.mutate]. This will create an Atom and sends it back to
   /// apply to the [_internal] through the synclayer
   ///
   /// THINK: maybe a short cut could be created?
@@ -175,7 +176,7 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
 
     // lookup if it is on object reference
     if (value is SyncableObjectRef) {
-      final obj = _proxy.objectLookup(value);
+      final obj = _proxy.refLookup(value);
       _setSyncableObjectRef(key, obj);
     }
   }
@@ -190,7 +191,9 @@ class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObjec
   ///
   /// TODO: Think, should a time/id comparing happening!
   void _updateLocally(Map<Key, dynamic> data) {
-    final atom = _proxy.update(id, data);
+    final atom = _proxy.mutate(id, data);
+    // set updated time
+    _lastUpdated = atom.id;
     // add to local history
     _history.add(atom);
 

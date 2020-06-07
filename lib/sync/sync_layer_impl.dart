@@ -45,7 +45,7 @@ class StringNumberMapper {
   bool containsNumber(String typeNumber) => id2type.containsKey(typeNumber);
 }
 
-class SyncLayerImpl implements SyncLayer {
+class SyncLayerImpl implements Synchronizer {
   SyncLayerImpl(this.site, [MerkleTrie trie])
       : _clock = Clock(site),
         _trie = trie ?? MerkleTrie();
@@ -197,7 +197,7 @@ class SyncLayerImpl implements SyncLayer {
 
       if (atoms.isEmpty) {
         logger.warning(
-            '==> Empty Atom list! This happens, when tranaction function result in no atoms. Sending is not happening');
+            '==> Empty Atom list! This happens, when transaction function result in no atoms. Sending is not happening');
       } else {
         // Send to the network!
         _atomStreamController.add(atoms);
@@ -226,7 +226,7 @@ class SyncLayerImpl implements SyncLayer {
   bool _transactionActive = false;
 
   @override
-  void transaction(Function func) {
+  void transation(Function func) {
     _transactionActive = true;
     func();
     _transactionActive = false;

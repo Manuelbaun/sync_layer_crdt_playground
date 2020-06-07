@@ -46,7 +46,7 @@ class SyncableCausalTree<T, THIS extends SyncableCausalTreeBase> extends Syncabl
 
   @pragma('vm:prefer-inline')
   void _sendUpate(List<CausalEntry<T>> data) {
-    final a = proxy.update(id, data);
+    final a = proxy.mutate(id, data);
   }
 
   /// create atom from local entry
@@ -146,7 +146,7 @@ class SyncableCausalTree<T, THIS extends SyncableCausalTreeBase> extends Syncabl
     if (_syncableObjectsRefs.containsKey(e.id)) {
       data = _getSyncableRef(e.id);
     } else if (data is SyncableObjectRef) {
-      data = proxy.objectLookup(e.data);
+      data = proxy.refLookup(e.data);
       _setSyncableRef(e.id, data);
     } else {
       data = data as T;

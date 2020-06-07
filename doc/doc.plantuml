@@ -1,0 +1,775 @@
+@startuml
+set namespaceSeparator ::
+
+class "sync_layer::basic::merkle_node.dart::MerkleNode" {
+  +List<MerkleNode> children
+  +int hash
+  +Map toMap()
+}
+
+class "sync_layer::basic::merkle_tire.dart::MergeSkip" {
+  +List merged
+  +List skipped
+  +String toString()
+}
+
+class "sync_layer::basic::merkle_tire.dart::MerkleTrie" {
+  +MerkleNode root
+  +int radix
+  +Set<int> keys
+  +int hash
+  +MergeSkip build()
+  -MerkleNode _insert()
+  -List _keys()
+  -Iterable _getNodeKeys()
+  +String diff()
+  -String _diff()
+  +KeysLR getDifferences()
+  -KeysLR _diffKeyLR()
+  +String toJsonPretty()
+  +Map toMap()
+}
+
+"sync_layer::basic::merkle_tire.dart::MerkleTrie" o-- "sync_layer::basic::merkle_node.dart::MerkleNode"
+
+class "sync_layer::basic::merkle_tire.dart::KeysLR" {
+  +List<String> local
+  +List<String> remote
+}
+
+class "sync_layer::basic::merkle_tire_2.dart::MergeSkip" {
+  +List merged
+  +List skipped
+  +String toString()
+}
+
+class "sync_layer::basic::merkle_tire_2.dart::MerkleTrie2" {
+  +MerkleNode root
+  +int radix
+  +Set<IdBase> keys
+  +int hash
+  +MergeSkip build()
+  -MerkleNode _insert()
+  -List _keys()
+  -Iterable _getNodeKeys()
+  +String diff()
+  -String _diff()
+  +KeysLR getDifferences()
+  -KeysLR _diffKeyLR()
+  +String toJsonPretty()
+  +Map toMap()
+}
+
+"sync_layer::basic::merkle_tire_2.dart::MerkleTrie2" o-- "sync_layer::basic::merkle_tire_2.dart::MerkleNode"
+
+class "sync_layer::basic::merkle_tire_2.dart::KeysLR" {
+  +List<String> local
+  +List<String> remote
+}
+
+class "sync_layer::basic::merkle_tire_2.dart::MerkleNode" {
+  +List<MerkleNode> children
+  +int hash
+  +Map toMap()
+}
+
+class "sync_layer::basic::observable.dart::Observable<T>" {
+  -Map<String, Set<void Function(T)>> _subscribers
+  -Map<String, Set<void Function(T)>> _onceSubscribers
+  +null subscribe()
+  +bool unsubscribe()
+  +void notify()
+  +void once()
+}
+
+class "sync_layer::crdts::causal_tree::causal_entry.dart::CausalEntry<T>" {
+  -int _hashcode
+  +IdBase id
+  +IdBase cause
+  +T data
+  +LogicalClockBase ts
+  +int site
+  +LogicalClockBase causeTs
+  +int causeSite
+  +int hashCode
+  +bool isSibling()
+  +RelationShip relatesTo()
+  +bool isLeftOf()
+  +bool <()
+  +bool >()
+  +String toString()
+  +bool ==()
+}
+
+"sync_layer::crdts::causal_tree::causal_entry.dart::CausalEntry<T>" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"sync_layer::crdts::causal_tree::causal_entry.dart::CausalEntry<T>" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+"sync_layer::crdts::causal_tree::causal_entry_base.dart::CausalEntryBase<T>" <|-- "sync_layer::crdts::causal_tree::causal_entry.dart::CausalEntry<T>"
+
+class "sync_layer::crdts::causal_tree::causal_entry_base.dart::RelationShip" {
+  +int index
+  {static} +List<RelationShip> values
+  {static} +RelationShip Sibling
+  {static} +RelationShip CausalLeft
+  {static} +RelationShip CausalRight
+  {static} +RelationShip Unknown
+  {static} +RelationShip Identical
+}
+
+"sync_layer::crdts::causal_tree::causal_entry_base.dart::RelationShip" o-- "sync_layer::crdts::causal_tree::causal_entry_base.dart::RelationShip"
+
+abstract class "sync_layer::crdts::causal_tree::causal_entry_base.dart::CausalEntryBase<T>" {
+  +IdBase id
+  +IdBase cause
+  +T data
+  +LogicalClockBase ts
+  +int site
+  +LogicalClockBase causeTs
+  +int causeSite
+  +RelationShip relatesTo()
+  +bool isSibling()
+  +bool isLeftOf()
+  +bool ==()
+}
+
+"sync_layer::crdts::causal_tree::causal_entry_base.dart::CausalEntryBase<T>" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"sync_layer::crdts::causal_tree::causal_entry_base.dart::CausalEntryBase<T>" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+
+class "sync_layer::crdts::causal_tree::causal_tree.dart::FilterSemantic" {
+  +int index
+  {static} +List<FilterSemantic> values
+  {static} +FilterSemantic AND
+  {static} +FilterSemantic OR
+}
+
+"sync_layer::crdts::causal_tree::causal_tree.dart::FilterSemantic" o-- "sync_layer::crdts::causal_tree::causal_tree.dart::FilterSemantic"
+
+class "sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>" {
+  +int site
+  +CausalEntry root
+  +void Function() onChange
+  +void Function(CausalEntry<dynamic>) onLocalUpdate
+  -Set<Id> _deletedIds
+  -Set<Id> _allIds
+  +List<CausalEntry<T>> pending
+  +List<CausalEntry<T>> sequence
+  +Map<int, List<CausalEntry<T>>> yarns
+  +Map<int, int> weft
+  +LogicalClockBase localClock
+  +int length
+  +int deletedLength
+  +int fullLength
+  +List<CausalEntry<T>> value
+  +bool exist()
+  +bool isDeleted()
+  -Id _newID()
+  -void _insert()
+  -void _delete()
+  +void mergeRemoteEntries()
+  +CausalEntry insert()
+  +CausalEntry push()
+  +CausalEntry delete()
+  +List filtering()
+  -bool _filterTimestamp()
+  -bool _filterIsDelete()
+  -bool _filterSiteIds()
+  +String toString()
+  +String toStringData()
+}
+
+"sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>" o-- "sync_layer::crdts::causal_tree::causal_entry.dart::CausalEntry"
+"sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>" o-- "sync_layer::crdts::causal_tree::causal_tree.dart::void Function()"
+"sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>" o-- "sync_layer::crdts::causal_tree::causal_tree.dart::void Function(CausalEntry<dynamic>)"
+"sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+
+class "sync_layer::crdts::map.dart::AtomMapValue<K, V>" {
+  +String objId
+  +K key
+  +V value
+}
+
+class "sync_layer::crdts::map.dart::CRDTMap<K, V>" {
+  +String objId
+  +int site
+  -Map<K, V> _obj
+  -Map<K, HybridLogicalClock> _objHlc
+  +List<Atom> history
+  +Set<int> historySet
+  -HybridLogicalClock _timestamp
+  +HybridLogicalClock hlc
+  +int hashCode
+  +void []=()
+  +Atom set()
+  +V []()
+  +V get()
+  +void mergeRemote()
+  +bool ==()
+  {static} +bool deepEqual()
+  +String toString()
+}
+
+"sync_layer::crdts::map.dart::CRDTMap<K, V>" o-- "sync_layer::types::hybrid_logical_clock.dart::HybridLogicalClock"
+
+class "sync_layer::encoding_extent::index.dart::_ExtendetEncoder" {
+  +int extTypeForObject()
+  +Uint8List encodeObject()
+}
+
+"msgpack_dart::msgpack_dart.dart::ExtEncoder" <|-- "sync_layer::encoding_extent::index.dart::_ExtendetEncoder"
+
+class "sync_layer::encoding_extent::index.dart::_ExtendetDecoder" {
+  +dynamic decodeObject()
+}
+
+"msgpack_dart::msgpack_dart.dart::ExtDecoder" <|-- "sync_layer::encoding_extent::index.dart::_ExtendetDecoder"
+
+class "sync_layer::errors::sync_layer_error.dart::SyncLayerError" {
+  +String msg
+  +String toString()
+}
+
+"dart::core::Error" <|-- "sync_layer::errors::sync_layer_error.dart::SyncLayerError"
+
+class "sync_layer::logger::logger.dart::CustomOutput" {
+  +void init()
+  +void output()
+  +void destroy()
+}
+
+"logger::src::log_output.dart::LogOutput" <|-- "sync_layer::logger::logger.dart::CustomOutput"
+
+class "sync_layer::logger::logger.dart::CustomLogger" {
+  +Logger logger
+  +void debug()
+  +void verbose()
+  +void info()
+  +void fine()
+  +void warning()
+  +void error()
+}
+
+"sync_layer::logger::logger.dart::CustomLogger" o-- "logger::src::logger.dart::Logger"
+
+abstract class "sync_layer::sync::abstract::acess_proxy.dart::AccessProxy" {
+  +int type
+  +int site
+  +AtomBase update()
+  +String generateID()
+  +SyncableBase objectLookup()
+}
+
+abstract class "sync_layer::sync::abstract::syncable_base.dart::SyncableBase" {
+  +bool tombstone
+  +String id
+  +int type
+  +IdBase lastUpdated
+  +AccessProxy proxy
+  +Stream onChange
+  +SyncableObjectRef toObjectRef()
+  +int compareTo()
+  +void delete()
+  +void transact()
+  +int applyRemoteAtom()
+}
+
+"sync_layer::sync::abstract::syncable_base.dart::SyncableBase" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"sync_layer::sync::abstract::syncable_base.dart::SyncableBase" o-- "sync_layer::sync::abstract::acess_proxy.dart::AccessProxy"
+"sync_layer::sync::abstract::syncable_base.dart::SyncableBase" o-- "dart::async::Stream"
+"dart::core::Comparable<T>" <|-- "sync_layer::sync::abstract::syncable_base.dart::SyncableBase"
+
+abstract class "sync_layer::sync::abstract::syncable_object.dart::SyncableObject<Key>" {
+  +List<AtomBase> history
+  +IdBase getOriginIdOfKey()
+  +dynamic []()
+  +void []=()
+}
+
+"sync_layer::sync::abstract::syncable_base.dart::SyncableBase" <|-- "sync_layer::sync::abstract::syncable_object.dart::SyncableObject<Key>"
+"sync_layer::basic::observable.dart::Observable<T>" <|-- "sync_layer::sync::abstract::syncable_object.dart::SyncableObject<Key>"
+
+abstract class "sync_layer::sync::abstract::syncable_object_container.dart::SyncableObjectContainer<T>" {
+  +int type
+  +int length
+  +Stream<Set<T>> changeStream
+  +void setUpdatedObject()
+  +void triggerUpdateChange()
+  +List allObjects()
+  +T create()
+  +T read()
+  +void update()
+  +bool delete()
+}
+
+"sync_layer::sync::abstract::syncable_object_container.dart::SyncableObjectContainer<T>" o-- "dart::async::Stream<Set<T>>"
+
+abstract class "sync_layer::sync::abstract::sync_clock.dart::SyncLayerClock" {
+  +LogicalClockBase localTime
+  +LogicalClockBase getClock()
+  +void applyReceivedClock()
+  +LogicalClockBase getNextTs()
+  +int convertRadix()
+  +LogicalClockBase getClockFromTSKey()
+}
+
+"sync_layer::sync::abstract::sync_clock.dart::SyncLayerClock" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+
+abstract class "sync_layer::sync::abstract::sync_layer.dart::SyncLayer" {
+  +int site
+  +Stream<List<AtomBase>> atomStream
+  +SyncableObjectContainer getObjectContainer()
+  +SyncableObjectContainer registerObjectType()
+  +String generateNewObjectIds()
+  +AtomBase createAtom()
+  +void applyRemoteAtoms()
+  +void applyLocalAtoms()
+  +List getAtomsByReceivingState()
+  +MerkleTrie getState()
+  +void transaction()
+}
+
+"sync_layer::sync::abstract::sync_layer.dart::SyncLayer" o-- "dart::async::Stream<List<AtomBase>>"
+
+abstract class "sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTreeBase" {
+}
+
+"sync_layer::sync::abstract::syncable_base.dart::SyncableBase" <|-- "sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTreeBase"
+
+class "sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" {
+  -CausalTree<T> _internal
+  -List<CausalEntry<T>> _transactList
+  -bool _isTransaction
+  -StreamController<List<T>> _controller
+  -List<CausalEntry<T>> _filteredEntries
+  -List<T> _filteredValues
+  +AccessProxy proxy
+  +String id
+  -IdBase _lastUpdated
+  -Map<IdBase, SyncableBase> _syncableObjectsRefs
+  -Set<AtomBase> _history
+  +Stream<List<T>> onChange
+  +List<CausalEntry<T>> entries
+  +List<CausalEntry<T>> entriesUnfiltered
+  +List<T> values
+  +int type
+  +bool tombstone
+  +IdBase lastUpdated
+  +List<AtomBase> history
+  -void _sendUpate()
+  -void _ontreeLocalUpdate()
+  -void _onTreeChange()
+  +void delete()
+  +String toString()
+  -SyncableBase _getSyncableRef()
+  -void _setSyncableRef()
+  -dynamic _syncableBaseCheck()
+  -T _convertEntry2Data()
+  +void transact()
+  +int applyRemoteAtom()
+  +bool insert()
+  +bool push()
+  +void pop()
+  +bool removeAt()
+  +dynamic getAtIndex()
+}
+
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" o-- "sync_layer::crdts::causal_tree::causal_tree.dart::CausalTree<T>"
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" o-- "dart::async::StreamController<List<T>>"
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" o-- "sync_layer::sync::abstract::acess_proxy.dart::AccessProxy"
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>" o-- "dart::async::Stream<List<T>>"
+"sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTreeBase" <|-- "sync_layer::sync::syncable_causal_tree.dart::SyncableCausalTree<T, THIS>"
+
+class "sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>" {
+  -AccessProxy _proxy
+  -Map<String, T> _objects
+  -T Function(AccessProxy, String) _objectFactory
+  -StreamController<Set<T>> _controller
+  -Set<T> _updatedObjects
+  +int length
+  +Stream<Set<T>> changeStream
+  +int type
+  +List allObjects()
+  +void setUpdatedObject()
+  +void triggerUpdateChange()
+  +T create()
+  -SyncableBase _set()
+  -SyncableBase _get()
+  +T read()
+  +void update()
+  +bool delete()
+}
+
+"sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>" o-- "sync_layer::sync::abstract::acess_proxy.dart::AccessProxy"
+"sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>" o-- "sync_layer::sync::abstract::syncable_object_container.dart::T Function(AccessProxy, String)"
+"sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>" o-- "dart::async::StreamController<Set<T>>"
+"sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>" o-- "dart::async::Stream<Set<T>>"
+"sync_layer::sync::abstract::syncable_object_container.dart::SyncableObjectContainer<T>" <|-- "sync_layer::sync::syncable_object_container_impl.dart::SyncableObjectContainerImpl<T>"
+
+class "sync_layer::sync::syncable_object_impl.dart::COMMON_EVENTS" {
+  {static} +String DELETE
+}
+
+class "sync_layer::sync::syncable_object_impl.dart::IdValuePair" {
+  +IdBase id
+  +dynamic value
+  +int hashCode
+  +String toString()
+  +bool ==()
+}
+
+"sync_layer::sync::syncable_object_impl.dart::IdValuePair" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+
+class "sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" {
+  -StreamController<bool> _onChangeController
+  -AccessProxy _proxy
+  -Map<Key, IdValuePair> _internal
+  -Map<Key, SyncableBase> _syncableObjectsRefs
+  -bool _subTransaction
+  -Map<Key, dynamic> _subTransactionMap
+  +String id
+  -Set<AtomBase> _history
+  -IdBase _lastUpdated
+  +Stream<bool> onChange
+  +StreamController onChangeCtrl
+  +AccessProxy proxy
+  +int type
+  +bool tombstone
+  +List<AtomBase> history
+  +IdBase lastUpdated
+  +void delete()
+  -SyncableBase _getSyncableObjectRef()
+  -void _setSyncableObjectRef()
+  -dynamic _getValue()
+  -IdBase _getIdTs()
+  +IdBase getOriginIdOfKey()
+  -void _setValue()
+  -void __setKeyValueInternal()
+  -void _updateLocally()
+  +void transact()
+  +dynamic []()
+  +void []=()
+  +int applyRemoteAtom()
+  +int compareTo()
+  +String toString()
+}
+
+"sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" o-- "dart::async::StreamController<bool>"
+"sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" o-- "sync_layer::sync::abstract::acess_proxy.dart::AccessProxy"
+"sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" o-- "dart::async::Stream<bool>"
+"sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>" o-- "dart::async::StreamController"
+"sync_layer::sync::abstract::syncable_object.dart::SyncableObject<Key>" <|-- "sync_layer::sync::syncable_object_impl.dart::SyncableObjectImpl<Key, THIS>"
+
+class "sync_layer::sync::sync_accessor_impl.dart::SynclayerAccessor" {
+  +SyncLayer synclayer
+  -int _type
+  +int type
+  +int site
+  +AtomBase update()
+  +String generateID()
+  +SyncableBase objectLookup()
+}
+
+"sync_layer::sync::sync_accessor_impl.dart::SynclayerAccessor" o-- "sync_layer::sync::abstract::sync_layer.dart::SyncLayer"
+"sync_layer::sync::abstract::acess_proxy.dart::AccessProxy" <|-- "sync_layer::sync::sync_accessor_impl.dart::SynclayerAccessor"
+
+class "sync_layer::sync::sync_clock_impl.dart::Clock" {
+  -HybridLogicalClock _localTime
+  +HybridLogicalClock getHlc()
+  +HybridLogicalClock getForSend()
+  +void fromReceive()
+  +int tsKeyToMillisecond()
+  +HybridLogicalClock getClockFromTSKey()
+}
+
+"sync_layer::sync::sync_clock_impl.dart::Clock" o-- "sync_layer::types::hybrid_logical_clock.dart::HybridLogicalClock"
+
+class "sync_layer::sync::sync_layer_impl.dart::StringNumberMapper" {
+  +Map<String, int> type2Id
+  +Map<int, String> id2type
+  +int containerCounter
+  +int registerNewTypeName()
+  +String getTypeName()
+  +int getTypeNumber()
+  +bool containsTypeName()
+  +bool containsNumber()
+}
+
+class "sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" {
+  +SyncLayerAtomCache atomCache
+  +Map<int, SyncableObjectContainer<SyncableBase>> containers
+  +int site
+  -Clock _clock
+  -StreamController<List<AtomBase>> _atomStreamController
+  -MerkleTrie _trie
+  +StringNumberMapper mapper
+  -Map<int, Set<String>> _toUpdateContainerAndObjId
+  -List<AtomBase> _transationList
+  -bool _transactionActive
+  +Stream<List<AtomBase>> atomStream
+  +MerkleTrie getState()
+  +SyncableObjectContainer getObjectContainer()
+  +SyncableObjectContainer registerObjectType()
+  +String generateNewObjectIds()
+  -void _applyRemoteAtoms()
+  -void _setContainerEvent()
+  -void _triggerAllEvents()
+  +void applyLocalAtoms()
+  +AtomBase createAtom()
+  +void applyRemoteAtoms()
+  +void transaction()
+  +List getAtomsSinceMs()
+  +List getAtomsByReceivingState()
+}
+
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "sync_layer::sync_layer_atom_cache.dart::SyncLayerAtomCache"
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "sync_layer::sync::sync_clock_impl.dart::Clock"
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "dart::async::StreamController<List<AtomBase>>"
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "sync_layer::basic::merkle_tire.dart::MerkleTrie"
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "sync_layer::sync::sync_layer_impl.dart::StringNumberMapper"
+"sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl" o-- "dart::async::Stream<List<AtomBase>>"
+"sync_layer::sync::abstract::sync_layer.dart::SyncLayer" <|-- "sync_layer::sync::sync_layer_impl.dart::SyncLayerImpl"
+
+class "sync_layer::sync_layer_atom_cache.dart::SyncLayerAtomCache" {
+  -List<AtomBase> _allAtoms
+  -Set<int> _allAtomsHashcodes
+  +bool add()
+  +bool exist()
+  +List getSince()
+}
+
+class "sync_layer::sync_layer_protocol.dart::_ProtocolHeaders" {
+  +int index
+  {static} +List<_ProtocolHeaders> values
+  {static} +_ProtocolHeaders STATE
+  {static} +_ProtocolHeaders STATE_REQUEST
+  {static} +_ProtocolHeaders STATE_RESPONSE
+  {static} +_ProtocolHeaders ATOMS
+  {static} +_ProtocolHeaders NODE_NAME
+  {static} +_ProtocolHeaders NO_ATOMS
+}
+
+"sync_layer::sync_layer_protocol.dart::_ProtocolHeaders" o-- "sync_layer::sync_layer_protocol.dart::_ProtocolHeaders"
+
+class "sync_layer::sync_layer_protocol.dart::_EnDecoder" {
+  {static} +Uint8List encodeAtoms()
+  {static} +List decodeAtoms()
+  {static} +Uint8List encodeState()
+  {static} +MerkleTrie decodeState()
+}
+
+class "sync_layer::sync_layer_protocol.dart::SyncLayerProtocol" {
+  +SyncLayer syn
+  +Set<WebSocket> websockets
+  +Map<WebSocket, String> websocketsNames
+  +StreamSubscription atomSub
+  +void dispose()
+  +void registerConnection()
+  +void unregisterConnection()
+  +void disconnectFromAll()
+  +void broadCastAtoms()
+  +void relayMessage()
+  +void receiveBuffer()
+}
+
+"sync_layer::sync_layer_protocol.dart::SyncLayerProtocol" o-- "sync_layer::sync::abstract::sync_layer.dart::SyncLayer"
+"sync_layer::sync_layer_protocol.dart::SyncLayerProtocol" o-- "dart::async::StreamSubscription"
+
+abstract class "sync_layer::types::abstract::atom_base.dart::AtomBase<D>" {
+  +IdBase id
+  +int type
+  +String objectId
+  +D data
+  +int compareToDESC()
+}
+
+"sync_layer::types::abstract::atom_base.dart::AtomBase<D>" o-- "sync_layer::types::abstract::id_base.dart::IdBase"
+"dart::core::Comparable<T>" <|-- "sync_layer::types::abstract::atom_base.dart::AtomBase<D>"
+
+abstract class "sync_layer::types::abstract::id_base.dart::IdBase" {
+  +LogicalClockBase ts
+  +int site
+  +String toRONString()
+  +bool ==()
+  +bool <()
+  +bool >()
+  +String toString()
+}
+
+"sync_layer::types::abstract::id_base.dart::IdBase" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+
+abstract class "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase<T>" {
+  +int counter
+  +int logicalTime
+  +String radixTime()
+  +bool ==()
+  +bool <()
+  +bool <=()
+  +bool >()
+  +bool >=()
+  +int -()
+}
+
+"dart::core::Comparable<T>" <|-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase<T>"
+
+abstract class "sync_layer::types::abstract::sync_entry.dart::SyncEntry" {
+}
+
+class "sync_layer::types::alternatives::hlc.dart::HybridLogicalClock_2" {
+  -int _millis
+  -int _counter
+  -int _minutes
+  -int _logicalTime
+  -DateTime _time4debug
+  +String node
+  -String _internal
+  -int _hashcode
+  +int millis
+  +int counter
+  +int minutes
+  +int logicalTime
+  +DateTime time4debug
+  +String site
+  +int hashCode
+  +String toRadixString()
+  +String toJson()
+  +String toString()
+  +bool ==()
+  +bool <()
+  +bool <=()
+  +bool >()
+  +bool >=()
+  +int compareTo()
+  {static} +bool isEqaul()
+  {static} +bool compareWithNodes()
+}
+
+"dart::core::Comparable<T>" <|-- "sync_layer::types::alternatives::hlc.dart::HybridLogicalClock_2"
+
+class "sync_layer::types::alternatives::hlc.dart::ClockDriftException" {
+  +int drift
+  +String toString()
+}
+
+"dart::core::Exception" <|-- "sync_layer::types::alternatives::hlc.dart::ClockDriftException"
+
+class "sync_layer::types::alternatives::hlc.dart::OverflowException" {
+  +int counter
+  +String toString()
+}
+
+"dart::core::Exception" <|-- "sync_layer::types::alternatives::hlc.dart::OverflowException"
+
+class "sync_layer::types::atom.dart::Atom<T>" {
+  +Id id
+  +int type
+  +String objectId
+  +T data
+  +int hashCode
+  +int compareTo()
+  +int compareToDESC()
+  +String toString()
+  +bool ==()
+}
+
+"sync_layer::types::atom.dart::Atom<T>" o-- "sync_layer::types::id.dart::Id"
+"sync_layer::types::abstract::atom_base.dart::AtomBase<D>" <|-- "sync_layer::types::atom.dart::Atom<T>"
+
+class "sync_layer::types::hybrid_logical_clock.dart::HybridLogicalClock" {
+  +int logicalTime
+  +int ms
+  +int counter
+  +int minutes
+  +int hashCode
+  +String radixTime()
+  +bool ==()
+  +bool <()
+  +bool <=()
+  +bool >()
+  +bool >=()
+  +int -()
+  +String toString()
+  +String toStringCompact()
+  +int compareTo()
+}
+
+"sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase<T>" <|-- "sync_layer::types::hybrid_logical_clock.dart::HybridLogicalClock"
+
+class "sync_layer::types::hybrid_logical_clock.dart::ClockDriftException" {
+  +int drift
+  +String toString()
+}
+
+"dart::core::Exception" <|-- "sync_layer::types::hybrid_logical_clock.dart::ClockDriftException"
+
+class "sync_layer::types::hybrid_logical_clock.dart::OverflowException" {
+  +int counter
+  +String toString()
+}
+
+"dart::core::Exception" <|-- "sync_layer::types::hybrid_logical_clock.dart::OverflowException"
+
+class "sync_layer::types::id.dart::Id" {
+  +LogicalClockBase ts
+  +int site
+  -int _hashCode
+  -String _string
+  +int hashCode
+  +String toString()
+  +String toStringPretty()
+  +String toRONString()
+  +bool ==()
+  +bool <()
+  +bool >()
+  +int compareTo()
+}
+
+"sync_layer::types::id.dart::Id" o-- "sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase"
+"sync_layer::types::abstract::id_base.dart::IdBase" <|-- "sync_layer::types::id.dart::Id"
+"dart::core::Comparable<T>" <|-- "sync_layer::types::id.dart::Id"
+
+class "sync_layer::types::logical_clock.dart::LogicalClock" {
+  +int counter
+  +int logicalTime
+  +int hashCode
+  +String radixTime()
+  +int compareTo()
+  +bool ==()
+  +bool <()
+  +bool <=()
+  +bool >()
+  +bool >=()
+  +int -()
+  +String toString()
+}
+
+"sync_layer::types::abstract::logical_clock_base.dart::LogicalClockBase<T>" <|-- "sync_layer::types::logical_clock.dart::LogicalClock"
+
+class "sync_layer::types::object_entry.dart::SyncableEntry<K, V>" {
+  +K key
+  +V value
+  +int hashCode
+  +bool ==()
+  +String toString()
+}
+
+"sync_layer::types::abstract::sync_entry.dart::SyncEntry" <|-- "sync_layer::types::object_entry.dart::SyncableEntry<K, V>"
+
+class "sync_layer::types::object_reference.dart::SyncableObjectRef" {
+  +int type
+  +String id
+  +int hashCode
+  +String toString()
+  +bool ==()
+  +SyncableObjectRef copyWith()
+  +Map toMap()
+  {static} +SyncableObjectRef fromMap()
+  +String toJson()
+  {static} +SyncableObjectRef fromJson()
+}
+
+class "sync_layer::utils::formatting.dart::Formatter" {
+  {static} +String micro2Ms()
+}
+
+
+@enduml

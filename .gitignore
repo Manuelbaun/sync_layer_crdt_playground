@@ -13,5 +13,7 @@ doc/api/
 coverage.json
 
 hacking
-experiments/e**
+experiments/ct**
+experiments/map*
+experiments/measur*
 experiments/*.exe

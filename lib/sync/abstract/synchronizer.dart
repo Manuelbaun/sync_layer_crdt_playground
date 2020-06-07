@@ -7,9 +7,9 @@ import 'package:sync_layer/types/abstract/atom_base.dart';
 
 import 'syncable_object_container.dart';
 
-/// This is the abstract [SyncLayer].
-abstract class SyncLayer {
-  SyncLayer(this.site);
+/// This is the abstract [Synchronizer].
+abstract class Synchronizer {
+  Synchronizer(this.site);
   final int site;
 
   SyncableObjectContainer<T> getObjectContainer<T extends SyncableBase>({
@@ -43,6 +43,6 @@ abstract class SyncLayer {
 
   MerkleTrie getState();
 
-  /// when called, all updates insice [func] will be send once the is done
-  void transaction(Function func);
+  /// when called, all updates inside [func] will be send once the is done
+  void transation(Function func);
 }
