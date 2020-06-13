@@ -70,11 +70,11 @@ var res = false;
 void main(List<String> arguments) async {
   if (!PATH.contains('experiments')) PATH += 'experiments\\';
 
-  await ep1_map_set_key_value();
-  await ep2_ct_push();
-  await ep3_ct_insert_at_0();
-  await ep4_ct_insert_random();
-  // ct_ep5();
+  // await ep1_map_set_key_value();
+  // await ep2_ct_push();
+  // await ep3_ct_insert_at_0();
+  // await ep4_ct_insert_random();
+  ct_ep5();
 }
 
 Future ep1_map_set_key_value() async {
@@ -282,8 +282,8 @@ void ct_ep5() {
   });
 
   // full copy!!
-  final atoms = l.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a)));
-
+  final atoms = l.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a))).toList();
+  atoms.sort();
   measureExecution('remote [push] $items', () {
     var i = 0;
     for (var a in atoms) {
@@ -305,7 +305,8 @@ void ct_ep5() {
     }
   });
 
-  final atoms2 = l2.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a)));
+  final atoms2 = l2.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a))).toList();
+  atoms2.sort();
   // full copy!!
   measureExecution('remote [insert rand] $items', () {
     var i = 0;
