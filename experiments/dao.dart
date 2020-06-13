@@ -21,12 +21,12 @@ class SyncDao {
 
   SyncDao(this.nodeID) {
     if (_instance == null) {
-      _syn = SyncLayerImpl(nodeID);
+      _syn = SynchronizerImple(nodeID);
       _protocol = SyncLayerProtocol(_syn);
 
       // create first container by type
       _array = syn.registerObjectType<SyncArray>('syncarray', (c, id) => SyncArray(c, id: id));
-      _map = syn.registerObjectType<SyncableObjectImpl>('map', (c, id) => SyncableObjectImpl(c, id));
+      _map = syn.registerObjectType<SyncableMap>('map', (c, id) => SyncableMap(c, id));
     } else {
       throw AssertionError('cant create this class twice?');
     }
@@ -35,12 +35,12 @@ class SyncDao {
   SyncLayerProtocol _protocol;
   SyncLayerProtocol get protocol => _protocol;
 
-  SyncLayerImpl _syn;
-  SyncLayerImpl get syn => _syn;
+  SynchronizerImple _syn;
+  SynchronizerImple get syn => _syn;
 
   SyncableObjectContainer<SyncArray> get array => _array;
   SyncableObjectContainer<SyncArray> _array;
 
-  SyncableObjectContainer<SyncableObjectImpl> get map => _map;
-  SyncableObjectContainer<SyncableObjectImpl> _map;
+  SyncableObjectContainer<SyncableMap> get map => _map;
+  SyncableObjectContainer<SyncableMap> _map;
 }

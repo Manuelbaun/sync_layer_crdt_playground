@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:sync_layer/encoding_extent/index.dart';
 import 'package:sync_layer/sync/abstract/syncable_base.dart';
+import 'package:sync_layer/sync/index.dart';
 import 'package:sync_layer/types/abstract/atom_base.dart';
 import 'package:sync_layer/utils/measure.dart';
 
@@ -13,19 +14,26 @@ import 'dao.dart';
 /// --------------------------------------------------------------
 /// --------------------------------------------------------------
 // create protocol class
-final rand = Random(0);
+final rand = Random(8);
 final nodeID = rand.nextInt(999999);
 final nodeIDRemote = rand.nextInt(999999);
 var PATH = Directory.current.path + '\\';
+final createOBjects = 100;
 
-List<IOSink> getFiles(String folder, int items) {
-  final newPath = PATH + '$folder\\';
+IOSink getFiles(String fileName) {
+  final newPath = PATH + 'measurements\\';
   final dir = Directory(newPath)..createSync(recursive: true);
-  final path = dir.path + '\\';
-  final file = File(path + '$items.csv').openWrite(mode: FileMode.append);
-  final file2 = File(path + '${items}_remote.csv').openWrite(mode: FileMode.append);
-  final file3 = File(path + '${items}_size.csv').openWrite(mode: FileMode.append);
-  return [file, file2, file3];
+  final pp = newPath + '$fileName.csv';
+
+  final exist = FileSystemEntity.typeSync(pp) != FileSystemEntityType.notFound;
+
+  final file = File(pp).openWrite(mode: FileMode.append);
+
+  if (!exist) {
+    file.write('items;time[us];ticks;node\n');
+  }
+
+  return file;
 }
 
 bool compare(SyncDao local, SyncDao remote) {
@@ -57,25 +65,37 @@ bool compare(SyncDao local, SyncDao remote) {
   return equal && noDiff;
 }
 
+var bools = <bool>[];
+var res = false;
 void main(List<String> arguments) async {
   if (!PATH.contains('experiments')) PATH += 'experiments\\';
-  var bools = <bool>[];
-  var res = false;
+
+  await ep1_map_set_key_value();
+  await ep2_ct_push();
+  await ep3_ct_insert_at_0();
+  await ep4_ct_insert_random();
+  // ct_ep5();
+}
+
+Future ep1_map_set_key_value() async {
+  final file = getFiles('map_e1');
 
   for (var items = 1; items <= itemsList.length; items++) {
     final local = SyncDao(nodeID);
     final remote = SyncDao(nodeIDRemote);
 
     await exp(
-      testName: 'map_e1',
+      file: file,
       items: items,
       local: local,
       remote: remote,
+      createObjects: createOBjects,
       type: 'Map',
-      func: (local) {
-        final map = local.map.create();
-
-        map.transact((ref) {
+      skipLog: true,
+      useticks: true,
+      preFunc: (i) => local.map.create(),
+      func: (map) {
+        (map as SyncableMap).transact((ref) {
           for (var j = 0; j < items; j++) {
             ref[j] = itemsList[j];
           }
@@ -84,23 +104,41 @@ void main(List<String> arguments) async {
       },
     );
 
+    for (var i = 0; i < createOBjects; i++) {
+      final s = Stopwatch()..start();
+      final map = <dynamic, dynamic>{};
+      map['id'] = local.syn.generateNewObjectIds();
+
+      for (var j = 0; j < items; j++) {
+        map[j] = itemsList[j];
+      }
+      s.stop();
+
+      file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};native\n');
+    }
+
     bools.add(compare(local, remote));
   }
 
+  await file.close();
+}
+
+Future ep2_ct_push() async {
+  final file = getFiles('ct_e1');
   for (var items = 1; items <= itemsList.length; items++) {
     final local = SyncDao(nodeID);
     final remote = SyncDao(nodeIDRemote);
 
     await exp(
-      testName: 'ct_e1',
+      file: file,
       items: items,
       local: local,
       remote: remote,
       type: 'CT',
-      func: (local) {
-        final ct = local.array.create();
-
-        ct.transact((ref) {
+      createObjects: createOBjects,
+      preFunc: (i) => local.array.create(),
+      func: (ct) {
+        (ct as SyncArray).transact((ref) {
           for (var i = 0; i < items; i++) {
             ref.push(itemsList[i]);
           }
@@ -110,22 +148,40 @@ void main(List<String> arguments) async {
       },
     );
 
+    for (var i = 0; i < createOBjects; i++) {
+      final s = Stopwatch()..start();
+      final item = [];
+      item.add(local.syn.generateNewObjectIds());
+
+      for (var j = 0; j < items; j++) {
+        item.add(itemsList[j]);
+      }
+      s.stop();
+
+      file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};native\n');
+    }
+
     bools.add(compare(local, remote));
   }
+  await file.close();
+}
+
+Future ep3_ct_insert_at_0() async {
+  final file = getFiles('ct_e2');
 
   for (var items = 1; items <= itemsList.length; items++) {
     final local = SyncDao(nodeID);
     final remote = SyncDao(nodeIDRemote);
     await exp(
-      testName: 'ct_e2',
+      file: file,
       items: items,
       local: local,
       remote: remote,
+      createObjects: createOBjects,
       type: 'CT',
-      func: (local) {
-        final ct = local.array.create();
-
-        ct.transact((ref) {
+      preFunc: (i) => local.array.create(),
+      func: (ct) {
+        (ct as SyncArray).transact((ref) {
           for (var i = 0; i < items; i++) {
             ref.insert(0, itemsList[i]);
           }
@@ -135,25 +191,45 @@ void main(List<String> arguments) async {
       },
     );
 
+    for (var i = 0; i < createOBjects; i++) {
+      final s = Stopwatch()..start();
+      final item = [];
+      item.insert(0, local.syn.generateNewObjectIds());
+
+      for (var j = 0; j < items; j++) {
+        item.insert(0, itemsList[j]);
+      }
+      s.stop();
+
+      file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};native\n');
+    }
+
     bools.add(compare(local, remote));
   }
+
+  await file.close();
+}
+
+Future ep4_ct_insert_random() async {
+  final file = getFiles('ct_e3');
 
   for (var items = 1; items <= itemsList.length; items++) {
     final local = SyncDao(nodeID);
     final remote = SyncDao(nodeIDRemote);
+    final pos = List.generate(items, (i) => i > 1 ? rand.nextInt(i - 1) : 0);
+
     await exp(
-      testName: 'ct_e3',
+      file: file,
       items: items,
       local: local,
       remote: remote,
       type: 'CT',
-      func: (local) {
-        final ct = local.array.create();
-
-        ct.transact((ref) {
+      createObjects: createOBjects,
+      preFunc: (i) => local.array.create(),
+      func: (ct) {
+        (ct as SyncArray).transact((ref) {
           for (var i = 0; i < items; i++) {
-            var pos = items > 1 ? rand.nextInt(items - 1) : 0;
-            ref.insert(pos, itemsList[i]);
+            ref.insert(pos[i], itemsList[i]);
           }
         });
 
@@ -161,137 +237,134 @@ void main(List<String> arguments) async {
       },
     );
 
+    for (var i = 0; i < createOBjects; i++) {
+      final s = Stopwatch()..start();
+      final item = [];
+      item.insert(0, local.syn.generateNewObjectIds());
+
+      for (var j = 0; j < items; j++) {
+        item.insert(pos[j], itemsList[j]);
+      }
+      s.stop();
+
+      file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};native\n');
+    }
+
     bools.add(compare(local, remote));
   }
 
   res = bools.every((e) => e == true);
   print(res);
-
-  ct_e4_insert_vs_push();
+  await file.close();
 }
 
-void ct_e4_insert_vs_push() {
-  final newPath = PATH + 'ct_e4\\';
-  final dir = Directory(newPath)..createSync(recursive: true);
-  final path = dir.path + '\\';
-
-  // final remote = SyncDao(nodeIDRemote);
-
-  final file = File(path + 'push_l_${DateTime.now().millisecondsSinceEpoch}.csv').openWrite(mode: FileMode.append);
-
-  final file2 = File(path + 'rand_l_${DateTime.now().millisecondsSinceEpoch}.csv').openWrite(mode: FileMode.append);
-
+/// Measure push and insert random position
+void ct_ep5() {
   final l = SyncDao(nodeID);
   final l2 = SyncDao(nodeID);
   final r = SyncDao(nodeID);
   final r2 = SyncDao(nodeID);
-  
+
   final ct_push = l.array.create('push_op');
   final ct_insert_random = l2.array.create('random_insert');
+  final values_us = <int, String>{};
 
-  final map_push = <int, String>{};
-  final map_rand = <int, String>{};
+  final items = 10000;
+  final skipLog = true;
 
-  for (var i = 0; i < 10000; i++) {
-    final us1 = measureExecution('ct push', () {
-      ct_push.push('a');
-    }, skipLog: true);
-
-    final us2 = measureExecution('ct random insert', () {
-      var pos = i > 1 ? rand.nextInt(i - 1) : 0;
-      ct_insert_random.insert(pos, 'a');
-    }, skipLog: true);
-
-    map_push[i] = '$us1;';
-    map_rand[i] = '$us2;';
-  }
-
-  final ll = {};
-  var i = 0;
-  for (var a in l.syn.atomCache.allAtoms) {
-    final us1 = measureExecution('ct apply remote pushed atom', () {
-      r.syn.applyRemoteAtoms([a]);
-    }, skipLog: true);
-    map_push[i++] += '$us1;\n';
-  }
-
-  i = 0;
-  for (var a in l2.syn.atomCache.allAtoms) {
-    final us1 = measureExecution('ct apply remote pushed atom', () {
-      r2.syn.applyRemoteAtoms([a]);
-    }, skipLog: true);
-    map_rand[i++] += '$us1;\n';
-  }
-
-  map_push.forEach((i, v) {
-    file.write(v);
+  measureExecution('local [push] $items', () {
+    for (var i = 0; i < items; i++) {
+      final us1 = measureExecution('local push atom', () {
+        ct_push.push('a');
+      }, skipLog: skipLog);
+      values_us[i] = '$us1;';
+    }
   });
 
-  map_rand.forEach((i, v) {
-    file2.write(v);
+  // full copy!!
+  final atoms = l.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a)));
+
+  measureExecution('remote [push] $items', () {
+    var i = 0;
+    for (var a in atoms) {
+      final us1 = measureExecution('remote pushed atom', () {
+        r.syn.applyRemoteAtoms([a]);
+      }, skipLog: skipLog);
+      values_us[i++] += '$us1;';
+    }
   });
 
+  measureExecution('local [insert rand] $items', () {
+    for (var i = 0; i < items; i++) {
+      final us2 = measureExecution('local rand insert atom', () {
+        var pos = rand.nextInt(i < 1 ? 1 : i);
+        ct_insert_random.insert(pos, 'a');
+      }, skipLog: skipLog);
+
+      values_us[i] += '$us2;';
+    }
+  });
+
+  final atoms2 = l2.syn.atomCache.allAtoms.map((a) => msgpackDecode(msgpackEncode(a)));
+  // full copy!!
+  measureExecution('remote [insert rand] $items', () {
+    var i = 0;
+
+    for (var a in atoms2) {
+      final us1 = measureExecution('remote rand insert atom', () {
+        r2.syn.applyRemoteAtoms([a]);
+      }, skipLog: skipLog);
+      values_us[i++] += '$us1';
+    }
+  });
+
+  final file = File(PATH + 'measurements\\' 'ct_ep5.csv').openWrite(mode: FileMode.append);
+  file.write('index;l_push;r_push;l_rand;r_rand\n');
+  values_us.forEach((i, v) => file.write('$i;$v\n'));
   file.close();
-  file2.close();
 }
 
 void exp({
   int items,
   String type,
-  String testName,
+  IOSink file,
   SyncDao local,
   SyncDao remote,
-  SyncableBase Function(SyncDao local) func,
+  int createObjects = 100,
+  bool skipLog = true,
+  bool useticks = false,
+  SyncableBase Function(SyncableBase) func,
+  SyncableBase Function(int) preFunc,
 }) async {
   final completers = <String, Completer>{};
-  final us_map = <String, Map<String, dynamic>>{};
 
   local.syn.atomStream.listen((a) {
     final b = msgpackEncode(a);
-    final payload = msgpackEncode(a.map((a) => a.data));
+    final aa = List<AtomBase>.from(msgpackDecode(b));
+
     String id;
 
-    var us = measureExecution('$type remote $items:', () {
-      final atoms = msgpackDecode(b);
-      final aa = List<AtomBase>.from(atoms);
-      id = aa[0].objectId;
-      remote.syn.applyRemoteAtoms(aa);
-    }, skipLog: true);
+    final s = Stopwatch()..start();
 
-    us_map[id] ??= {};
-    us_map[id]['remote'] = us;
-    us_map[id]['size'] = b.length;
-    us_map[id]['payload'] = payload.length;
+    id = aa[0].objectId;
+    remote.syn.applyRemoteAtoms(aa);
+    s.stop();
+
+    file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};remote\n');
     completers[id].complete();
   });
 
-  for (var i = 0; i < 10; i++) {
-    SyncableBase item;
+  for (var i = 0; i < createObjects; i++) {
+    final item = preFunc(i);
+    final s = Stopwatch()..start();
+    func(item);
+    s.stop();
 
-    var us = measureExecution('$type $items:', () {
-      item = func(local);
-    }, skipLog: true);
-
-    us_map[item.id] ??= {};
-    us_map[item.id]['local'] = us;
-
+    file.write('$items;${s.elapsedMicroseconds};${s.elapsedTicks};local\n');
     completers[item.id] = Completer();
   }
 
   await Future.wait(completers.values.map((c) => c.future));
-  final files = getFiles(testName, items);
-
-  us_map.values.forEach((e) {
-    files[0].write('${e['local']};');
-    files[1].write('${e['remote']};');
-    double ratio = (e['payload'] / e['size']);
-    files[2].write('${ratio.toStringAsFixed(3)};');
-  });
-
-  files.forEach((f) {
-    f.write('\n');
-    f.close();
-  });
 }
 
 var itemsList = [

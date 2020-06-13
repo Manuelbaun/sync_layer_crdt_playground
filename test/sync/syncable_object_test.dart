@@ -41,8 +41,8 @@ void main() {
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(access1, null);
-      obj2 = SyncableObjectImpl(access1, null);
+      obj1 = SyncableMap(access1, null);
+      obj2 = SyncableMap(access1, null);
 
       // obj1.onChange.listen((n) => print(obj1));
 
@@ -147,11 +147,11 @@ void main() {
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(
+      obj1 = SyncableMap(
         access1,
         'obj',
       );
-      obj2 = SyncableObjectImpl(
+      obj2 = SyncableMap(
         access2,
         'obj',
       );
@@ -282,8 +282,8 @@ void main() {
 
     setUp(() {
       // create test object
-      obj1 = SyncableObjectImpl(access1, 'object_ID3');
-      obj2 = SyncableObjectImpl(access2, 'object_ID4');
+      obj1 = SyncableMap(access1, 'object_ID3');
+      obj2 = SyncableMap(access2, 'object_ID4');
       atoms1 = [];
       atoms2 = [];
     });

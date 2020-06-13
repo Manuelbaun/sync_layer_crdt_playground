@@ -81,6 +81,7 @@ class SyncableCausalTree<T, THIS extends SyncableCausalTreeBase> extends Syncabl
   /// try using values
   List<CausalEntry<T>> get entries => _filteredEntries;
   List<CausalEntry<T>> get entriesUnfiltered => _internal.sequence;
+  List<CausalEntry<T>> get entryValue => _internal.value;
 
   /// if called, all [SyncableObjectRef] will be looked up and return Syncable Objects
   List<T> _filteredValues = <T>[];

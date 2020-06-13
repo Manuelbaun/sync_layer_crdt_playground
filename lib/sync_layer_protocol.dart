@@ -138,6 +138,8 @@ class SyncLayerProtocol {
     // logger.info('broadcast :MessageEnum.ATOMS Broadcast : ${atoms.length}');
     if (websockets.isNotEmpty) {
       final data = _EnDecoder.encodeAtoms(atoms);
+      print(atoms);
+      print(data);
 
       for (final ws in websockets) {
         ws.add([_ProtocolHeaders.ATOMS.index, ...data]);

@@ -107,8 +107,9 @@ class CausalTree<T> {
 
     /// else successfull added
     else {
-      yarns[entry.site] ??= <CausalEntry<T>>[];
-      yarns[entry.site].add(entry);
+      // yarns come later
+      // yarns[entry.site] ??= <CausalEntry<T>>[];
+      // yarns[entry.site].add(entry);
 
       if (onChange != null) onChange();
     }

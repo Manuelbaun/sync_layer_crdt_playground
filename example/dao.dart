@@ -5,7 +5,7 @@ import 'package:sync_layer/sync/index.dart';
 import 'package:sync_layer/sync/syncable_causal_tree.dart';
 import 'package:sync_layer/sync/syncable_object_impl.dart';
 
-class Todo extends SyncableObjectImpl<int, Todo> {
+class Todo extends SyncableMap<int, Todo> {
   Todo(AccessProxy proxy, {String id, String title}) : super(proxy, id);
 
   SyncString get title => super[0];
@@ -38,7 +38,7 @@ class Todo extends SyncableObjectImpl<int, Todo> {
   }
 }
 
-class Assignee extends SyncableObjectImpl<int, Assignee> {
+class Assignee extends SyncableMap<int, Assignee> {
   Assignee(AccessProxy proxy, {String id}) : super(proxy, id);
 
   String get firstName => super[0];
@@ -59,7 +59,8 @@ class Assignee extends SyncableObjectImpl<int, Assignee> {
   }
 }
 
-class SyncString extends SyncableCausalTree<String, SyncString> {
+class SyncString extends 
+SyncableCausalTree<String, SyncString> {
   SyncString(AccessProxy accessor, {String id}) : super(accessor, id);
 }
 
@@ -80,7 +81,7 @@ class SyncDao {
 
   SyncDao(this.nodeID) {
     if (_instance == null) {
-      _syn = SyncLayerImpl(nodeID);
+      _syn = SynchronizerImple(nodeID);
       _protocol = SyncLayerProtocol(_syn);
 
       // create first container by type
@@ -109,8 +110,8 @@ class SyncDao {
   SyncLayerProtocol _protocol;
   SyncLayerProtocol get protocol => _protocol;
 
-  SyncLayerImpl _syn;
-  SyncLayerImpl get syn => _syn;
+  SynchronizerImple _syn;
+  SynchronizerImple get syn => _syn;
 
   SyncableObjectContainer<Todo> get todos => _todos;
   SyncableObjectContainer<Todo> _todos;

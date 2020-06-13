@@ -8,8 +8,8 @@ import 'package:sync_layer/types/id.dart';
 import 'package:sync_layer/types/index.dart';
 import 'package:sync_layer/utils/measure.dart';
 
-final data = 'Hallo';
-final cuid = newCuid();
+final data = 'A';
+final cuid = 'kb7pxw3m00wq7v';
 final type = 1;
 
 final id = Id(LogicalClock(1), 20);
@@ -20,16 +20,23 @@ final atomLC = Atom(atomId, type, cuid, entry);
 
 final hlc = HybridLogicalClock(DateTime(2020).millisecondsSinceEpoch, 0);
 final atomIdHlc = Id(hlc, 20);
+
 final atomHlc = Atom(atomIdHlc, type, cuid, entry);
 
-/// compare msg vs own implementation.. 
-/// => conclusion: messages could be smaller, 
+/// compare msg vs own implementation..
+/// => conclusion: messages could be smaller,
 /// when manually encoded, but a lot of work to be done.
-/// 
+///
 
 /// xxx notes, that is only encodes , but not properly decodes
+// radix36Int();
 void main() {
-  // radix36Int();
+  final msgAtom = msgpackEncode(Atom(atomIdHlc, type, cuid, entry));
+  final msgAtom3 = msgpackEncode(Atom(atomIdHlc, type, cuid, null));
+  final msgAtom2 = msgpackEncode(Atom(atomIdHlc, type, cuid, {0: 'Peter Pan'}));
+  final msgAtom4 = msgpackEncode({0: 'Peter Pan'});
+
+  return;
 
   encodeCausalEntryManually();
   encodeAtomWithoutMSGSubTypes();

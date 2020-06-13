@@ -25,16 +25,16 @@ void test2() {
       path + 'merkle_trie_grow-${DateTime.now().millisecondsSinceEpoch}.csv',
     ).openWrite(mode: FileMode.append);
 
-    file.write('radix;ts[amount];step[min];build_tree[ms];size[bytes];\n');
+    file.write('radix;id[amount];step[min];build_tree[ms];size[bytes]\n');
 
     MerkleTrie tree;
 
-    var max = 1000;
-    var step = 1;
+    var max = 100000;
+    var step = 10;
     final amount = 10000;
     final from = DateTime(2020, 1).millisecondsSinceEpoch;
 
-    for (var min = 1; min < max; min += step) {
+    for (var min = 0; min < max; min += step) {
       // generate timestamps
       final ids = List.generate(amount, (int d) {
         final mins = d * min;
@@ -51,7 +51,10 @@ void test2() {
       }, skipLog: true);
 
       final b = msgpackEncode(tree.toMap());
-      print('$radix;$amount;$min;${us1 / 1000}ms;${b.length};');
+
+      if (min % 1000 == 0) {
+        print('$radix;$amount;$min;${us1 / 1000}ms;${b.length};');
+      }
       file.write('$radix;$amount;$min;${us1 / 1000};${b.length};\n');
       // }
     }
@@ -96,7 +99,7 @@ void test1() {
     final remoteMins = remoteHlcs.map((h) => (h.ts as HybridLogicalClock).minutes).toList();
     final diff = db.filterBySetOfMinutes(remoteMins);
 
-    for (var radix = 36; radix <= 36; radix++) {
+    for (var radix = 3; radix <= 36; radix++) {
       final localTree = MerkleTrie(radix);
       final remoteTree = MerkleTrie(radix);
 

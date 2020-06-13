@@ -51,18 +51,18 @@ class IdValuePair {
 /// Specify the [Key] as [String] or [int] or dynamic to use both types of key
 /// number and strings
 ///
-/// [THIS] should extends from [SyncableObjectImpl]!
+/// [THIS] should extends from [SyncableMap]!
 ///
 /// The Observable API is a quick and dirty hack to just listen to the delete method.
 /// and will be refactored some time later!
-class SyncableObjectImpl<Key, THIS extends SyncableObject> extends SyncableObject<Key> {
+class SyncableMap<Key, THIS extends SyncableObject> extends SyncableObject<Key> {
   /// **Important**
   ///
   /// if Id is not provided,  the container function generateID gets called!
   /// this function is provided by the sync layer, therefore the synclayer
   /// deceides which the form of the id
 
-  SyncableObjectImpl(this._proxy, String _id)
+  SyncableMap(this._proxy, String _id)
       : assert(_proxy != null, 'AccessProxy prop cannot be null'),
         id = _id ?? _proxy.generateID() {
     _internal[_TOMBSTONE_NUM] = IdValuePair(null, false);

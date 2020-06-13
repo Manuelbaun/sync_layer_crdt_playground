@@ -66,11 +66,11 @@ void nested() {
   final acc4 = FakeAccessProxyHLC(222, 0xb, network.add);
 
   final list1 = SyncableCausalTree(acc1, 'tree');
-  final obj1 = SyncableObjectImpl(acc2, 'obj');
-  final obj12 = SyncableObjectImpl(acc2, 'obj2');
+  final obj1 = SyncableMap(acc2, 'obj');
+  final obj12 = SyncableMap(acc2, 'obj2');
 
   final list2 = SyncableCausalTree(acc3, 'tree');
-  final obj2 = SyncableObjectImpl(acc4, 'obj');
+  final obj2 = SyncableMap(acc4, 'obj');
 
   network.register(obj1);
   network.register(obj2);

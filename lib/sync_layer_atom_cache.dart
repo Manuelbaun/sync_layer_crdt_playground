@@ -12,21 +12,21 @@ class SyncLayerAtomCache {
   final List<AtomBase> _allAtoms = [];
 
   // remembers if atom already exits
-  final Set<String> _allAtomsHashcodes = {};
+  final Set<String> _allAtomsIds = {};
 
   List<AtomBase> get allAtoms => _allAtoms;
 
   /// returns true, if atom did not exist in the cache
   bool add(AtomBase atom) {
-    final str = atom.id.toString();
-    if (_allAtomsHashcodes.add(str)) {
+    if (_allAtomsIds.add(atom.id.toString())) {
       _allAtoms.add(atom);
+      _allAtoms.sort((a, b) => a.compareToDESC(b));
       return true;
     }
     return false;
   }
 
-  bool exist(AtomBase atom) => _allAtomsHashcodes.contains(atom.hashCode);
+  bool exist(AtomBase atom) => _allAtomsIds.contains(atom.id.toString());
 
   /// todo: Fix me!! Hlc is extra used
   List<AtomBase> getSince(HybridLogicalClock clock) {
