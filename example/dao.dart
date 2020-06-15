@@ -81,7 +81,7 @@ class SyncDao {
 
   SyncDao(this.nodeID) {
     if (_instance == null) {
-      _syn = SynchronizerImple(nodeID);
+      _syn = SynchronizerImpl(nodeID);
       _protocol = SyncLayerProtocol(_syn);
 
       // create first container by type
@@ -110,8 +110,8 @@ class SyncDao {
   SyncLayerProtocol _protocol;
   SyncLayerProtocol get protocol => _protocol;
 
-  SynchronizerImple _syn;
-  SynchronizerImple get syn => _syn;
+  SynchronizerImpl _syn;
+  SynchronizerImpl get syn => _syn;
 
   SyncableObjectContainer<Todo> get todos => _todos;
   SyncableObjectContainer<Todo> _todos;

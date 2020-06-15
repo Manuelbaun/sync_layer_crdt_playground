@@ -45,8 +45,8 @@ class StringNumberMapper {
   bool containsNumber(String typeNumber) => id2type.containsKey(typeNumber);
 }
 
-class SynchronizerImple implements Synchronizer {
-  SynchronizerImple(this.site, [MerkleTrie trie])
+class SynchronizerImpl implements Synchronizer {
+  SynchronizerImpl(this.site, [MerkleTrie trie])
       : _clock = Clock(site),
         _trie = trie ?? MerkleTrie();
 
